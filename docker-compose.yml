@@ -1,0 +1,13 @@
+name: word-template-bundle
+
+services:
+  php:
+    build: .
+    command: ["sleep", "infinity"]
+    volumes:
+      - .:/app
+      - coverage-data:/app/var/coverage
+    working_dir: /app
+
+volumes:
+  coverage-data: {}

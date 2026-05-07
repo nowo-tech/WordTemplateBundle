@@ -1,0 +1,23 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Symfony runtime
+/var/
+
+# Build outputs and caches
+/dist/
+/build/
+/coverage/
+/.vite/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+
+# Local env (keep examples)
+/.env
+/.env.*
+!.env.example
+
+# Certificates / keys (never commit)
+*.pem
+*.key

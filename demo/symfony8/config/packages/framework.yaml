@@ -1,0 +1,15 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    http_method_override: false
+    session: true
+    csrf_protection: true
+    form:
+        csrf_protection:
+            enabled: true
+    php_errors:
+        log: true
+
+when@dev:
+    framework:
+        profiler:
+            only_exceptions: false

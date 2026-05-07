@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "engram": { "command": "engram", "args": ["mcp"] }
+  }
+}

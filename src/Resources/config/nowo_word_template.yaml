@@ -1,0 +1,4 @@
+# Example: copy to config/packages/nowo_word_template.yaml
+nowo_word_template:
+    macro_opening: '${'
+    macro_closing: '}'

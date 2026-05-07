@@ -1,0 +1,48 @@
+# Usage
+
+Inject `Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface`.
+
+## Placeholders in Word
+
+Authors insert plain-text placeholders in the `.docx`, for example `${company}` or `${project.code}` (nested context keys use dots after flattening).
+
+For repeating **table rows**, the row that must be duplicated must include the anchor placeholder first (e.g. `${line_id}`), then `cloneRow` appends `#1`, `#2`, … to each column placeholder name you fill from PHP.
+
+## Context types
+
+| PHP type | Behaviour |
+|----------|-----------|
+| Scalars / null | `setValue`; booleans become `1` / `0`; null becomes empty string. |
+| Nested arrays | Flattened: `['a' => ['b' => 1]]` → key `a.b`. |
+| `Stringable` | Cast to string. |
+| `TableRows` | `cloneRow` + `setValue` for `name#N` per row. |
+| `HtmlContent` | `setComplexBlock` with HTML parsed by PHPWord (`Html::addHtml`). |
+| `ImageSource` | `setImageValue`; optional width/height passed through to PHPWord. |
+
+## Example
+
+```php
+use Nowo\WordTemplateBundle\Model\HtmlContent;
+use Nowo\WordTemplateBundle\Model\TableRows;
+use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
+
+$result = $processor->process(
+    '/srv/templates/offer.docx',
+    [
+        'offer_title' => 'Maintenance 2026',
+        'client' => ['name' => 'ACME'],
+        'lines' => new TableRows('line_code', [
+            ['line_code' => 'A1', 'description' => 'Item one'],
+            ['line_code' => 'B2', 'description' => 'Item two'],
+        ]),
+        'terms_block' => new HtmlContent('<p>Payment within <strong>30 days</strong>.</p>'),
+    ],
+);
+
+file_put_contents('/tmp/out.docx', $result->readContents());
+$result->dispose();
+```
+
+## Combining with HtmlToWordBundle
+
+Use **WordTemplateBundle** when you already have a `.docx` skeleton with macros. Use **[HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle)** to build a complete `.docx` from HTML alone when you do not maintain a Word template.

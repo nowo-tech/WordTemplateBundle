@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}WordTemplate — demo (Symfony 7){% endblock %}
+
+{% block body %}
+  {# Sanitization marker mirroring App\Form\WordTemplateFormType::DOT_PLACEHOLDER #}
+  {% set DOT = '_DOT_' %}
+
+  <h1>WordTemplateBundle <span class="text-secondary fs-5">(Symfony 7)</span></h1>
+  <p class="lead">
+    This page reads <code>public/demo/{{ template_filename }}</code> with PHPWord
+    <code>TemplateProcessor::getVariables()</code>, lists every <code>${variable}</code> placeholder it finds and
+    builds the form below. Submit it to download a filled <code>.docx</code>.
+  </p>
+
+  <div class="alert alert-info small">
+    <strong>{{ all_variables|length }} placeholder(s)</strong> discovered in the template:
+    {% for v in all_variables %}<code class="me-1">${{ '{' }}{{ v }}{{ '}' }}</code>{% endfor %}
+  </div>
+
+  <details class="mb-3 small">
+    <summary>HTML supported in <span class="badge bg-secondary">HtmlContent</span> fields</summary>
+    <ul class="mt-2">
+      <li>Inline: <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code>, <code>&lt;u&gt;</code>, line breaks.</li>
+      <li>Block: <code>&lt;p&gt;</code> (multiple paragraphs OK).</li>
+      <li>Tables: <code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;…&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</code> (use <code>&lt;strong&gt;</code> in cells for the header row).</li>
+      <li><strong>Lists</strong> (<code>&lt;ul&gt;</code>/<code>&lt;ol&gt;</code>) require a <code>numberingStyle</code> in the parent <code>PhpWord</code> instance — not registered by the bundle's <code>HtmlContent</code> right now. Use bulleted/numbered <code>&lt;p&gt;</code> tags instead, or pair with <a href="https://github.com/nowo-tech/HtmlToWordBundle">HtmlToWordBundle</a> for a full HTML pipeline.</li>
+    </ul>
+    <p class="mb-0">The defaults below show: inline formatting, multi-paragraph blocks, simulated lists with bullets, and an inline HTML table in <code>${methodology.body}</code> and <code>${results.body}</code> — submit the form to see them in the resulting <code>.docx</code>.</p>
+  </details>
+
+  {{ form_start(form, {attr: {class: 'mb-5', novalidate: 'novalidate'}}) }}
+    {% set fields_by_group = {} %}
+    {% for var in simple_vars %}
+      {% set group = (var matches '/\\./') ? var|split('.', 2)|first : '_general' %}
+      {% set fields_by_group = fields_by_group|merge({ (group): (fields_by_group[group]|default([]))|merge([var]) }) %}
+    {% endfor %}
+
+    {% for group, vars in fields_by_group %}
+      <fieldset class="border rounded p-3 mb-3">
+        <legend class="float-none w-auto px-2 fs-6">{{ group == '_general' ? 'General' : group }}</legend>
+        <div class="row g-3">
+          {% for var in vars %}
+            {% set is_html = var in html_vars %}
+            {% set field   = form.placeholders[var|replace({'.': DOT})] %}
+            <div class="{{ is_html ? 'col-12' : 'col-md-6' }}">
+              {{ form_label(field) }}
+              {% if is_html %}<span class="badge bg-secondary ms-1">HtmlContent</span>{% endif %}
+              {{ form_widget(field) }}
+              {{ form_errors(field) }}
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+    {% endfor %}
+
+    {% for anchor, cells in row_groups %}
+      {% set collection = form.rows[anchor|replace({'.': DOT})] %}
+      <fieldset class="border rounded p-3 mb-3">
+        <legend class="float-none w-auto px-2 fs-6">
+          Repeating rows <span class="badge bg-secondary ms-1">TableRows({{ anchor }})</span>
+        </legend>
+        <div class="small text-muted mb-2">
+          Anchor placeholder <code>${{ '{' }}{{ anchor }}{{ '}' }}</code>
+          {% if cells|length > 1 %}with cells {% for c in cells %}<code class="me-1">${{ '{' }}{{ c }}{{ '}' }}</code>{% endfor %}{% endif %}
+          — empty rows are dropped.
+        </div>
+
+        {% for entry in collection %}
+          <div class="row g-2 align-items-end mb-2">
+            {% for cell in cells %}
+              {% set cell_field = entry[cell|replace({'.': DOT})] %}
+              <div class="col">
+                {{ form_label(cell_field) }}
+                {{ form_widget(cell_field) }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </fieldset>
+    {% endfor %}
+
+    {{ form_widget(form.submit) }}
+    {{ form_errors(form) }}
+  {{ form_end(form) }}
+{% endblock %}

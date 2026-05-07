@@ -1,0 +1,15 @@
+# WordTemplateBundle — merge variables into .docx templates (PHPWord TemplateProcessor)
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Nowo\WordTemplateBundle\Processor\WordTemplateProcessor:
+        public: true
+        arguments:
+            $macroOpening: '%nowo_word_template.macro_opening%'
+            $macroClosing: '%nowo_word_template.macro_closing%'
+
+    Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
+        alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor

@@ -1,0 +1,20 @@
+#!/bin/sh
+# Runs PHP-CS-Fixer dry-run when Composer deps exist; otherwise skips (CI/Docker may run full QA).
+set -e
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$ROOT" || exit 0
+
+if [ -x vendor/bin/php-cs-fixer ]; then
+  composer cs-check
+  exit $?
+fi
+
+if command -v docker >/dev/null 2>&1 && [ -f docker-compose.yml ]; then
+  if docker compose ps --status running --services 2>/dev/null | grep -q .; then
+    docker compose exec -T php composer cs-check
+    exit $?
+  fi
+fi
+
+echo "pre-commit: skip (run \`composer install\` or \`make up\` to enable CS checks)."
+exit 0

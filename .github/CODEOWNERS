@@ -1,0 +1,8 @@
+# CODEOWNERS for WordTemplateBundle
+* @HecFranco
+
+/.github/ @HecFranco
+
+/src/ @HecFranco
+
+/tests/ @HecFranco

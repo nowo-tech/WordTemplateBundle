@@ -1,0 +1,13 @@
+/vendor/
+/.phpunit.cache/
+/coverage/
+/coverage-php.txt
+/coverage-output.txt
+.php-cs-fixer.cache
+# Root lockfile optional for libraries; demo apps ship their own locks under demo/
+/composer.lock
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
