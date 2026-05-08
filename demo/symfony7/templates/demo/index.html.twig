@@ -80,7 +80,11 @@
       </fieldset>
     {% endfor %}
 
-    {{ form_widget(form.submit) }}
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      {{ form_widget(form.submit) }}
+      {{ form_widget(form.submit_pdf) }}
+      <small class="text-muted">PDF backend: PhpWord + DomPDF (<code>docx → HTML → PDF</code>) — fidelity is limited (no headers/footers, no <code>numberingStyle</code> lists, simplified tables).</small>
+    </div>
     {{ form_errors(form) }}
   {{ form_end(form) }}
 {% endblock %}

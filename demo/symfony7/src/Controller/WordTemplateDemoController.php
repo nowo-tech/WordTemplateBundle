@@ -8,8 +8,13 @@ use App\Form\WordTemplateFormType;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
+use Nowo\WordTemplateBundle\Result\ProcessedDocument;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\ClickableInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,10 +23,15 @@ use function array_diff;
 use function array_filter;
 use function array_unique;
 use function array_values;
+use function file_get_contents;
 use function in_array;
+use function is_file;
 use function pathinfo;
 use function preg_match;
 use function sort;
+use function sys_get_temp_dir;
+use function tempnam;
+use function unlink;
 
 use const PATHINFO_FILENAME;
 
@@ -100,15 +110,14 @@ final class WordTemplateDemoController extends AbstractController
             $doc = $processor->process($templatePath, $context);
 
             try {
-                $bytes = $doc->readContents();
+                $pdfButton = $form->get('submit_pdf');
+
+                return $pdfButton instanceof ClickableInterface && $pdfButton->isClicked()
+                    ? $this->renderPdfResponse($doc)
+                    : $this->renderDocxResponse($doc);
             } finally {
                 $doc->dispose();
             }
-
-            return new Response($bytes, Response::HTTP_OK, [
-                'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition' => 'attachment; filename="' . pathinfo(self::TEMPLATE_FILENAME, PATHINFO_FILENAME) . '-filled.docx"',
-            ]);
         }
 
         return $this->render('demo/index.html.twig', [
@@ -118,6 +127,53 @@ final class WordTemplateDemoController extends AbstractController
             'html_vars'         => $htmlVars,
             'row_groups'        => self::ROW_GROUPS,
             'form'              => $form,
+        ]);
+    }
+
+    private function renderDocxResponse(ProcessedDocument $doc): Response
+    {
+        return new Response($doc->readContents(), Response::HTTP_OK, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'attachment; filename="' . pathinfo(self::TEMPLATE_FILENAME, PATHINFO_FILENAME) . '-filled.docx"',
+        ]);
+    }
+
+    /**
+     * Loads the rendered {@code .docx} back into a {@see PhpWord} instance and writes it as PDF
+     * via the DomPDF backend. The pipeline is internally {@code docx → HTML → PDF}, so complex Word
+     * features (headers/footers, sectPr, complex tables, lists with numberingStyle, embedded charts)
+     * may render with reduced fidelity. This is acceptable for the demo; for production-grade PDF
+     * rendering use LibreOffice headless or Gotenberg.
+     */
+    private function renderPdfResponse(ProcessedDocument $doc): Response
+    {
+        Settings::setPdfRendererName(Settings::PDF_RENDERER_DOMPDF);
+        // Path is required by PhpWord even though DomPDF is autoloaded by Composer; any non-empty path works.
+        Settings::setPdfRendererPath('.');
+
+        $phpWord = IOFactory::load($doc->path());
+        $writer  = IOFactory::createWriter($phpWord, 'PDF');
+
+        $tmpPdf = tempnam(sys_get_temp_dir(), 'wt_pdf_');
+        if ($tmpPdf === false) {
+            throw new RuntimeException('Could not create a temporary file for the PDF output.');
+        }
+
+        try {
+            $writer->save($tmpPdf);
+            $bytes = @file_get_contents($tmpPdf);
+            if ($bytes === false) {
+                throw new RuntimeException('Could not read the generated PDF.');
+            }
+        } finally {
+            if (is_file($tmpPdf)) {
+                @unlink($tmpPdf);
+            }
+        }
+
+        return new Response($bytes, Response::HTTP_OK, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . pathinfo(self::TEMPLATE_FILENAME, PATHINFO_FILENAME) . '-filled.pdf"',
         ]);
     }
 

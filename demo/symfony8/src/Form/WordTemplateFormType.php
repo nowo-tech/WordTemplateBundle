@@ -33,7 +33,8 @@ use function str_replace;
  * Children:
  *  - {@code placeholders}: one text/textarea per simple variable (textarea when in {@code html_vars}).
  *  - {@code rows}: one {@see CollectionType} per row anchor, fixed at 5 entries (excess empties are dropped server-side).
- *  - {@code submit}: download button.
+ *  - {@code submit}: download as {@code .docx}.
+ *  - {@code submit_pdf}: download as PDF (PhpWord + DomPDF; fidelity limited — see template note).
  */
 final class WordTemplateFormType extends AbstractType
 {
@@ -115,10 +116,10 @@ final class WordTemplateFormType extends AbstractType
                     'cell_map' => $cellMap,
                     'label'    => false,
                 ],
-                'data'         => $sanitizedDefault,
-                'allow_add'    => false,
-                'allow_delete' => false,
-                'label'        => false,
+                'data'          => $sanitizedDefault,
+                'allow_add'     => false,
+                'allow_delete'  => false,
+                'label'         => false,
             ]);
         }
         $builder->add($rows);
@@ -126,6 +127,11 @@ final class WordTemplateFormType extends AbstractType
         $builder->add('submit', SubmitType::class, [
             'label' => 'Download .docx',
             'attr'  => ['class' => 'btn btn-primary'],
+        ]);
+
+        $builder->add('submit_pdf', SubmitType::class, [
+            'label' => 'Download PDF',
+            'attr'  => ['class' => 'btn btn-outline-secondary'],
         ]);
     }
 
