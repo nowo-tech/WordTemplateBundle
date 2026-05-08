@@ -18,7 +18,7 @@ use function sprintf;
 /**
  * Flattens nested scalar arrays into dot keys; preserves {@see HtmlContent}, {@see TableRows}, {@see ImageSource}.
  *
- * @phpstan-return array<string, scalar|\Stringable|HtmlContent|TableRows|ImageSource|null>
+ * @phpstan-return array<string, scalar|Stringable|HtmlContent|TableRows|ImageSource|null>
  */
 final class ContextFlattener
 {

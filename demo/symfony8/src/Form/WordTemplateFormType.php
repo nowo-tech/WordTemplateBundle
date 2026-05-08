@@ -116,10 +116,10 @@ final class WordTemplateFormType extends AbstractType
                     'cell_map' => $cellMap,
                     'label'    => false,
                 ],
-                'data'          => $sanitizedDefault,
-                'allow_add'     => false,
-                'allow_delete'  => false,
-                'label'         => false,
+                'data'         => $sanitizedDefault,
+                'allow_add'    => false,
+                'allow_delete' => false,
+                'label'        => false,
             ]);
         }
         $builder->add($rows);
