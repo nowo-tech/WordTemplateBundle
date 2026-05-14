@@ -9,6 +9,24 @@ There is no separate executable spec language (for example Gherkin); tests and s
 
 ---
 
+## User stories
+
+The sections above/below state **behavior**; this subsection states **intent** in backlog-friendly form. Each story maps to the [bundle functional scope](#bundle-functional-scope) and to [`USAGE.md`](USAGE.md).
+
+| ID | Story |
+| --- | --- |
+| US-01 | **As a** Symfony integrator, **I want** to call `WordTemplateProcessorInterface::process($templatePath, $context)` **so that** I obtain a filled `.docx` (`ProcessedDocument`) without hand-coding PHPWord `TemplateProcessor` wiring. |
+| US-02 | **As a** integrator, **I want** nested PHP arrays in `$context` to become dot-key placeholders (e.g. `client.city`) **so that** Word authors can use `${client.city}` without I flatten arrays manually. |
+| US-03 | **As a** integrator, **I want** scalars, booleans, `null`, and `Stringable` values merged predictably (`setValue`, empty for `null`, `1`/`0` for booleans) **so that** simple mail-merge fields behave consistently. |
+| US-04 | **As a** integrator, **I want** to pass `TableRows` for a declared anchor column **so that** repeating invoice/line items map to cloned table rows with `#1`, `#2`, … placeholders. |
+| US-05 | **As a** integrator, **I want** to pass `HtmlContent` for a block placeholder **so that** rich fragments from HTML render inside the document via PHPWord (within PHPWord limits). |
+| US-06 | **As a** integrator, **I want** to pass `ImageSource` with optional width/height **so that** logos or signatures replace image placeholders. |
+| US-07 | **As a** platform maintainer, **I want** `nowo_word_template.macro_opening` / `macro_closing` configurable **so that** they match what template authors typed in Word (defaults `${` / `}`). |
+
+**Out of scope for these stories:** running Word VBA, or guaranteeing full Word layout/HTML fidelity (see non-goals below).
+
+---
+
 ## Bundle functional scope
 
 **Goal:** fill a **Microsoft Word `.docx` template** using PHPWord’s [`TemplateProcessor`](https://phpoffice.github.io/PHPWord/docs/classes/PhpOffice-PhpWord-TemplateProcessor.html), driven by a **PHP context array** passed to `WordTemplateProcessorInterface::process()`.
