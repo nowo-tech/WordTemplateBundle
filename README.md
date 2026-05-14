@@ -26,6 +26,7 @@ This bundle does **not** execute Word VBA macros; “macros” here means **temp
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)
 - [Contributing](docs/CONTRIBUTING.md)
+- [Spec-driven development](docs/SPEC-DRIVEN-DEVELOPMENT.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Upgrading](docs/UPGRADING.md)
 - [Release](docs/RELEASE.md)
