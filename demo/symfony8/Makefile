@@ -1,6 +1,10 @@
 # Makefile for WordTemplateBundle — Symfony 8 demo (FrankenPHP).
 # REQ-DEMO-005: canonical `up` (sleep 5, composer install, Demo started at: …).
 
+COMPOSE_FILE := docker-compose.yml
+COMPOSE := docker-compose -f $(COMPOSE_FILE)
+SERVICE_PHP := php
+
 .PHONY: help up down build install shell logs test verify-http cache-clear link-bundle update-bundle ensure-up restart release-check
 
 help:
@@ -85,3 +89,8 @@ update-bundle: ensure-up
 
 release-check: ensure-up update-bundle test verify-http
 	@echo "Demo release-check OK."
+
+
+# REQ-MAKE-008: update-deps (REQ-MAKE-008)
+BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
+include $(BUNDLE_ROOT)/../.scripts/Makefile.demo-update-deps.mk

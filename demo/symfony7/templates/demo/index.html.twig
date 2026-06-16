@@ -10,7 +10,8 @@
   <p class="lead">
     This page reads <code>public/demo/{{ template_filename }}</code> with PHPWord
     <code>TemplateProcessor::getVariables()</code>, lists every <code>${variable}</code> placeholder it finds and
-    builds the form below. Submit it to download a filled <code>.docx</code>.
+    builds the form below. Submit it to download a filled <code>.docx</code>, or
+    <a href="{{ path('demo_template') }}">download the blank template</a> with placeholders intact.
   </p>
 
   <div class="alert alert-info small">
@@ -23,7 +24,7 @@
     <ul class="mt-2">
       <li>Inline: <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code>, <code>&lt;u&gt;</code>, line breaks.</li>
       <li>Block: <code>&lt;p&gt;</code> (multiple paragraphs OK).</li>
-      <li>Tables: <code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;…&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</code> (use <code>&lt;strong&gt;</code> in cells for the header row).</li>
+      <li>Tables: <code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;…&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</code> with inline <code>style</code> (borders, <code>background-color</code>, padding). PHPWord expects border shorthand as <code>width color style</code>, e.g. <code>border: 1px #2c5282 solid</code>.</li>
       <li><strong>Lists</strong> (<code>&lt;ul&gt;</code>/<code>&lt;ol&gt;</code>) require a <code>numberingStyle</code> in the parent <code>PhpWord</code> instance — not registered by the bundle's <code>HtmlContent</code> right now. Use bulleted/numbered <code>&lt;p&gt;</code> tags instead, or pair with <a href="https://github.com/nowo-tech/HtmlToWordBundle">HtmlToWordBundle</a> for a full HTML pipeline.</li>
     </ul>
     <p class="mb-0">The defaults below show: inline formatting, multi-paragraph blocks, simulated lists with bullets, and an inline HTML table in <code>${methodology.body}</code> and <code>${results.body}</code> — submit the form to see them in the resulting <code>.docx</code>.</p>
@@ -37,7 +38,7 @@
     {% endfor %}
 
     {% for group, vars in fields_by_group %}
-      <fieldset class="border rounded p-3 mb-3">
+      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
         <legend class="float-none w-auto px-2 fs-6">{{ group == '_general' ? 'General' : group }}</legend>
         <div class="row g-3">
           {% for var in vars %}
@@ -56,7 +57,7 @@
 
     {% for anchor, cells in row_groups %}
       {% set collection = form.rows[anchor|replace({'.': DOT})] %}
-      <fieldset class="border rounded p-3 mb-3">
+      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
         <legend class="float-none w-auto px-2 fs-6">
           Repeating rows <span class="badge bg-secondary ms-1">TableRows({{ anchor }})</span>
         </legend>
@@ -66,21 +67,33 @@
           — empty rows are dropped.
         </div>
 
-        {% for entry in collection %}
-          <div class="row g-2 align-items-end mb-2">
-            {% for cell in cells %}
-              {% set cell_field = entry[cell|replace({'.': DOT})] %}
-              <div class="col">
-                {{ form_label(cell_field) }}
-                {{ form_widget(cell_field) }}
-              </div>
+        <table class="demo-table mb-2">
+          <thead>
+            <tr>
+              {% for cell in cells %}
+                <th>${{ '{' }}{{ cell }}{{ '}' }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in collection %}
+              <tr>
+                {% for cell in cells %}
+                  {% set cell_field = entry[cell|replace({'.': DOT})] %}
+                  <td>
+                    {{ form_label(cell_field) }}
+                    {{ form_widget(cell_field) }}
+                  </td>
+                {% endfor %}
+              </tr>
             {% endfor %}
-          </div>
-        {% endfor %}
+          </tbody>
+        </table>
       </fieldset>
     {% endfor %}
 
     <div class="d-flex flex-wrap gap-2 align-items-center">
+      <a href="{{ path('demo_template') }}" class="btn btn-outline-primary">Download blank template</a>
       {{ form_widget(form.submit) }}
       {{ form_widget(form.submit_pdf) }}
       <small class="text-muted">PDF backend: PhpWord + DomPDF (<code>docx → HTML → PDF</code>) — fidelity is limited (no headers/footers, no <code>numberingStyle</code> lists, simplified tables).</small>

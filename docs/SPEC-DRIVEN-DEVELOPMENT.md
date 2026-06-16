@@ -53,7 +53,7 @@ The sections above/below state **behavior**; this subsection states **intent** i
 - Executing or embedding **Word VBA**.
 - **Guaranteeing** pixel-perfect or full Word feature parity (headers/footers, advanced numbering, etc. depend on PHPWord and template design; rich HTML has the usual PHPWord limits noted in [`README.md`](../README.md) and [`USAGE.md`](USAGE.md)).
 
-**Demos** (`demo/symfony7`, `demo/symfony8`) illustrate integration (forms, download, optional PDF via PhpWord+DomPDF); they are **not** part of the Packagist package API — the contract for consumers is the processor, models, and extension above.
+**Demos** (`demo/symfony7`, `demo/symfony8`) illustrate integration (forms, filled `.docx` / PDF download, blank template download); they are **not** part of the Packagist package API — the contract for consumers is the processor, models, and extension above.
 
 ---
 

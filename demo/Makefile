@@ -28,3 +28,9 @@ release-check:
 
 release-check8:
 	@$(MAKE) -C symfony8 release-check
+
+
+# REQ-MAKE-008: update-deps-all (REQ-MAKE-008)
+DEMOS := symfony7 symfony8
+BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+include $(BUNDLE_ROOT)/../.scripts/Makefile.demo-aggregate-update-deps.mk

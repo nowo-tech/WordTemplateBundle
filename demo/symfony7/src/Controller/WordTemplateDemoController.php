@@ -130,6 +130,27 @@ final class WordTemplateDemoController extends AbstractController
         ]);
     }
 
+    #[Route('/template', name: 'demo_template', methods: ['GET'])]
+    public function downloadTemplate(): Response
+    {
+        $projectDir   = $this->getParameter('kernel.project_dir');
+        $templatePath = $projectDir . '/public/demo/' . self::TEMPLATE_FILENAME;
+
+        if (!is_file($templatePath) || !is_readable($templatePath)) {
+            throw $this->createNotFoundException(sprintf('Template "%s" not found.', self::TEMPLATE_FILENAME));
+        }
+
+        $bytes = file_get_contents($templatePath);
+        if ($bytes === false) {
+            throw new RuntimeException(sprintf('Could not read template "%s".', self::TEMPLATE_FILENAME));
+        }
+
+        return new Response($bytes, Response::HTTP_OK, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'attachment; filename="' . self::TEMPLATE_FILENAME . '"',
+        ]);
+    }
+
     private function renderDocxResponse(ProcessedDocument $doc): Response
     {
         return new Response($doc->readContents(), Response::HTTP_OK, [
@@ -290,19 +311,23 @@ final class WordTemplateDemoController extends AbstractController
                 . '<p>&bull; A <strong>bulleted</strong> series of paragraphs (real bullet/number lists need extra numbering setup in PHPWord).</p>'
                 . '<p>&bull; An inline HTML <em>table</em> below.</p>'
                 . '<p>&bull; Plain paragraphs around them.</p>'
-                . '<p>HTML tables are fully supported:</p>'
-                . '<table>'
-                . '<tr><td><strong>Phase</strong></td><td><strong>Tool</strong></td></tr>'
-                . '<tr><td>Parse</td><td>masterminds/html5</td></tr>'
-                . '<tr><td>Render</td><td>PhpOffice/PhpWord</td></tr>'
-                . '</table>',
+                . '<p>HTML tables support inline styles (borders, background colours, padding):</p>'
+                . $this->styledHtmlTable(
+                    ['Phase', 'Tool'],
+                    [
+                        ['Parse', 'masterminds/html5'],
+                        ['Render', 'PhpOffice/PhpWord'],
+                    ],
+                ),
             'methodology.quote' => '<p><em>"Templates should be boring; data should be interesting."</em></p>',
             'results.body'      => '<p>Aggregated metrics:</p>'
-                . '<table>'
-                . '<tr><td><strong>Metric</strong></td><td><strong>Value</strong></td></tr>'
-                . '<tr><td>Templates filled</td><td>1.2k</td></tr>'
-                . '<tr><td>Avg. time</td><td>~80&nbsp;ms</td></tr>'
-                . '</table>',
+                . $this->styledHtmlTable(
+                    ['Metric', 'Value'],
+                    [
+                        ['Templates filled', '1.2k'],
+                        ['Avg. time', '~80&nbsp;ms'],
+                    ],
+                ),
             'discussion.body'  => '<p>Results align with the hypothesis: rich HTML inserts cleanly into <code>.docx</code> via the bundle.</p>',
             'conclusions.body' => '<p>Conclusions:</p>'
                 . '<p>1. HTML <strong>tables</strong> and inline formatting work out of the box.</p>'
@@ -314,6 +339,35 @@ final class WordTemplateDemoController extends AbstractController
             'table1.caption'        => 'Sample dataset.',
             'table1.source'         => 'Own elaboration',
         ];
+    }
+
+    /**
+     * @param list<string>           $headers
+     * @param list<list<string>>     $rows
+     */
+    private function styledHtmlTable(array $headers, array $rows): string
+    {
+        $tableStyle = 'border-collapse: collapse; width: 100%; border: 1px #2c5282 solid;';
+        $thStyle    = 'border: 1px #2c5282 solid; background-color: #2c5282; color: #ffffff; padding: 6px;';
+        $tdEven     = 'border: 1px #cbd5e0 solid; background-color: #f7fafc; padding: 6px;';
+        $tdOdd      = 'border: 1px #cbd5e0 solid; background-color: #ffffff; padding: 6px;';
+
+        $html = '<table style="' . $tableStyle . '"><tr>';
+        foreach ($headers as $header) {
+            $html .= '<td style="' . $thStyle . '"><strong>' . $header . '</strong></td>';
+        }
+        $html .= '</tr>';
+
+        foreach ($rows as $i => $row) {
+            $tdStyle = $i % 2 === 0 ? $tdEven : $tdOdd;
+            $html .= '<tr>';
+            foreach ($row as $cell) {
+                $html .= '<td style="' . $tdStyle . '">' . $cell . '</td>';
+            }
+            $html .= '</tr>';
+        }
+
+        return $html . '</table>';
     }
 
     /**

@@ -97,3 +97,8 @@ setup-hooks:
 	@mkdir -p .git/hooks
 	@cp -f .githooks/pre-commit .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
+
+
+# REQ-MAKE-008: update-deps (REQ-MAKE-008)
+BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk

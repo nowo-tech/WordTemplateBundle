@@ -1,4 +1,4 @@
-# CI: validate, style, static analysis, tests, coverage (PCOV).
+# CI: tests on PHP × Symfony 7.4, 8.0, 8.1 (minimum minors per REQ-SF-002).
 name: CI
 
 on:
@@ -8,6 +8,47 @@ on:
     branches: [main, master]
 
 jobs:
+  symfony-compatibility:
+    name: PHP ${{ matrix.php }} - Symfony ${{ matrix.symfony }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4', '8.5']
+        symfony: ['7.4', '8.0', '8.1']
+        exclude:
+          - php: '8.2'
+            symfony: '8.0'
+          - php: '8.2'
+            symfony: '8.1'
+          - php: '8.3'
+            symfony: '8.0'
+          - php: '8.3'
+            symfony: '8.1'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, zip, gd, libxml
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies with Symfony ${{ matrix.symfony }}
+        run: |
+          composer require symfony/config:^${{ matrix.symfony }} symfony/dependency-injection:^${{ matrix.symfony }} symfony/http-kernel:^${{ matrix.symfony }} symfony/framework-bundle:^${{ matrix.symfony }} symfony/yaml:^${{ matrix.symfony }} --no-interaction --no-update
+          composer update symfony/* --with-all-dependencies --no-interaction --prefer-dist --no-progress
+
+      - name: PHPUnit (Symfony ${{ matrix.symfony }})
+        run: composer test
+
   tests:
     name: Tests & QA
     runs-on: ubuntu-latest

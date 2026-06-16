@@ -22,7 +22,13 @@ cp .env.example .env
 make up
 ```
 
-Open the printed URL. The form fills a bundled **`template.docx`** (placeholders for nested `client.*`, `TableRows`, `HtmlContent`, and `ImageSource`) and returns **`word-template-demo.docx`**.
+Open the printed URL. The form discovers placeholders in **`public/demo/doc-final-tpl.docx`** (nested keys, `TableRows`, `HtmlContent`) and lets you:
+
+- **Download blank template** — original `.docx` with `${…}` placeholders unchanged (`GET /template`).
+- **Download .docx** — filled document from the form (`doc-final-tpl-filled.docx`).
+- **Download PDF** — same content via PhpWord + DomPDF (fidelity limits noted in the UI).
+
+Default `HtmlContent` values include inline-styled HTML tables (borders and background colours) as a PHPWord styling reference.
 
 The bundle source is mounted at **`/var/word-template-bundle`** (see each demo’s `docker-compose.yml`).
 

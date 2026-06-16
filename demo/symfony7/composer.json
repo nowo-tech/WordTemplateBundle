@@ -7,7 +7,7 @@
         "php": ">=8.2",
         "dompdf/dompdf": "^3.0",
         "nowo-tech/word-template-bundle": "@dev",
-        "symfony/asset": "7.0.*",
+        "symfony/asset": "7.4.*",
         "symfony/console": "^7.0",
         "symfony/dotenv": "^7.0",
         "symfony/flex": "^2.0",
@@ -48,7 +48,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.0.*"
+            "require": "7.4.*"
         }
     },
     "repositories": [

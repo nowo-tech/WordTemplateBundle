@@ -1,5 +1,11 @@
 # Upgrading
 
+## 0.1.2
+
+Demos, documentation, and repository tooling only. **No changes** to `nowo-tech/word-template-bundle` PHP APIs, services, or `nowo_word_template` configuration when upgrading from `0.1.1`.
+
+If you run the FrankenPHP demos from a git clone, pull this tag to get the blank-template download, styled `HtmlContent` samples, and the `make update-deps` fix in `demo/Makefile`.
+
 ## 0.1.1
 
 Documentation only. No changes are required to application code or `nowo_word_template` configuration when upgrading from `0.1.0`.
