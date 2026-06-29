@@ -11,6 +11,8 @@ RUN apk add --no-cache $PHPIZE_DEPS \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+RUN git config --global --add safe.directory /app
+
 WORKDIR /app
 
 ENV COMPOSER_ALLOW_SUPERUSER=1

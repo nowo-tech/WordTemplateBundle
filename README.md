@@ -17,6 +17,7 @@ Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`Templa
 - **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines.
 - **`HtmlContent`** → rich fragments (paragraphs, bold/italic, tables inside HTML, etc.) via PHPWord `Html::addHtml` embedded as a complex block (lists `<ul>`/`<ol>` may require extra numbering setup in PHPWord; prefer plain paragraphs or combine with [HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle) for full HTML pipelines).
 - **`ImageSource`** → `setImageValue` with optional width/height.
+- **`listVariables()`** → read a template and list unique placeholder names (respects configured delimiters).
 
 This bundle does **not** execute Word VBA macros; “macros” here means **template placeholders** in the `.docx` compatible with PHPWord.
 

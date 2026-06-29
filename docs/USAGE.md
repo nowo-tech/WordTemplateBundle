@@ -43,6 +43,18 @@ file_put_contents('/tmp/out.docx', $result->readContents());
 $result->dispose();
 ```
 
+## Listing placeholders
+
+To discover which placeholders a template defines (for dynamic forms, validation, or documentation), call `listVariables()` on the same service:
+
+```php
+/** @var list<string> $variables */
+$variables = $processor->listVariables('/srv/templates/offer.docx');
+// e.g. ['client.name', 'line_code', 'offer_title', 'terms_block']
+```
+
+The method scans the main document part plus headers and footers. It uses the delimiters from `nowo_word_template` (`macro_opening` / `macro_closing`). For repeating table rows, only the base names appear (e.g. `line_code`), not the `#1`, `#2` suffixes added by `cloneRow` during `process()`.
+
 ## Combining with HtmlToWordBundle
 
 Use **WordTemplateBundle** when you already have a `.docx` skeleton with macros. Use **[HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle)** to build a complete `.docx` from HTML alone when you do not maintain a Word template.
