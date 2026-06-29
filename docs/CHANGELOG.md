@@ -4,6 +4,12 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.0.1 — 2026-06-29
+
+### Fixed
+
+- **`WordTemplateProcessorInterface` service alias** — mark the interface alias as `public: true` so `$container->get(WordTemplateProcessorInterface::class)` works after the container is compiled. Without this, Symfony inlines the private alias and throws *"service or alias has been removed or inlined"*. Constructor injection was unaffected.
+
 ## 1.0.0 — 2026-06-29
 
 First **stable** release. The public API (`WordTemplateProcessorInterface`, value objects, `nowo_word_template` configuration, and service id) is now covered by [Semantic Versioning](https://semver.org/) for `1.x`.
