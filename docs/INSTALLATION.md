@@ -9,7 +9,7 @@
 ## Composer
 
 ```bash
-composer require nowo-tech/word-template-bundle
+composer require nowo-tech/word-template-bundle:^1.0
 ```
 
 ## Register the bundle
