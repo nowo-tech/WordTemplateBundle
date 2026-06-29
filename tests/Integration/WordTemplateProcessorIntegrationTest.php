@@ -205,6 +205,45 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
         (new WordTemplateProcessor())->process('/nonexistent/path/template.docx', []);
     }
 
+    public function testListVariablesReturnsUniquePlaceholderNames(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('Hello ${name}, city ${client.city}, again ${name}.');
+        });
+
+        try {
+            $variables = (new WordTemplateProcessor())->listVariables($tpl);
+            sort($variables);
+
+            self::assertSame(['client.city', 'name'], $variables);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testListVariablesRespectsCustomMacroDelimiters(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('{{company}} and ${ignored}');
+        });
+
+        try {
+            $variables = (new WordTemplateProcessor('{{', '}}'))->listVariables($tpl);
+
+            self::assertSame(['company'], $variables);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testListVariablesThrowsWhenTemplateMissing(): void
+    {
+        $this->expectException(TemplateNotFoundException::class);
+
+        (new WordTemplateProcessor())->listVariables('/nonexistent/path/template.docx');
+    }
+
     public function testThrowsWhenTableRowsEmpty(): void
     {
         $tpl = $this->createTemplate(static function (PhpWord $pw): void {

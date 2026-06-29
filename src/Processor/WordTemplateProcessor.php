@@ -31,17 +31,17 @@ final readonly class WordTemplateProcessor implements WordTemplateProcessorInter
     ) {
     }
 
+    public function listVariables(string $templatePath): array
+    {
+        return $this->openTemplate($templatePath)->getVariables();
+    }
+
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument
     {
-        if (!is_file($templatePath) || !is_readable($templatePath)) {
-            throw new TemplateNotFoundException(sprintf('DOCX template not found or not readable: "%s".', $templatePath));
-        }
-
         /** @var array<string, HtmlContent|ImageSource|scalar|Stringable|TableRows|null> $flat */
         $flat = ContextFlattener::flatten($context);
 
-        $processor = new TemplateProcessor($templatePath);
-        $processor->setMacroChars($this->macroOpening, $this->macroClosing);
+        $processor = $this->openTemplate($templatePath);
 
         foreach ($flat as $value) {
             if ($value instanceof TableRows) {
@@ -137,6 +137,18 @@ final readonly class WordTemplateProcessor implements WordTemplateProcessorInter
         }
 
         return (string) $value;
+    }
+
+    private function openTemplate(string $templatePath): TemplateProcessor
+    {
+        if (!is_file($templatePath) || !is_readable($templatePath)) {
+            throw new TemplateNotFoundException(sprintf('DOCX template not found or not readable: "%s".', $templatePath));
+        }
+
+        $processor = new TemplateProcessor($templatePath);
+        $processor->setMacroChars($this->macroOpening, $this->macroClosing);
+
+        return $processor;
     }
 
     private function makeTempOutputPath(): string

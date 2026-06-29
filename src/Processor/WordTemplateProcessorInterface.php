@@ -16,4 +16,11 @@ interface WordTemplateProcessorInterface
      * @param string|null $outputPath writable path for the result; if null, a temporary file is created
      */
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument;
+
+    /**
+     * Returns unique placeholder names in the template (main part, headers, footers).
+     *
+     * @return list<string>
+     */
+    public function listVariables(string $templatePath): array;
 }
