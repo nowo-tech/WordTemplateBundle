@@ -1,5 +1,17 @@
 # Upgrading
 
+## 1.0.1
+
+Bugfix release. **No configuration or API changes.**
+
+If you saw *"WordTemplateProcessorInterface service or alias has been removed or inlined"* when calling `$container->get(WordTemplateProcessorInterface::class)`, upgrade:
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0.1
+```
+
+Prefer constructor injection when possible; both autowiring and explicit `$container->get(WordTemplateProcessorInterface::class)` work after this release.
+
 ## 1.0.0
 
 First stable `1.x` release. **No breaking changes** compared to `0.1.3`.
@@ -13,7 +25,7 @@ Public API now follows semver for `1.x`:
 - `WordTemplateProcessorInterface` — `process()`, `listVariables()`
 - Models — `HtmlContent`, `TableRows`, `ImageSource`
 - Configuration — `nowo_word_template.macro_opening`, `nowo_word_template.macro_closing`
-- Service — `Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface` (alias of `WordTemplateProcessor`)
+- Service — `Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface` (public alias of `WordTemplateProcessor`; since **1.0.1** the interface id is also reachable via `$container->get()`)
 
 If you pinned `^0.1`, you can move to `^1.0` without code changes.
 

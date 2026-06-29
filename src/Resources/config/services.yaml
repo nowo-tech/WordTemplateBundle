@@ -13,3 +13,4 @@ services:
 
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
         alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor
+        public: true
