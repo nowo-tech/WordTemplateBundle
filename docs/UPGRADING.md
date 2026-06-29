@@ -1,5 +1,15 @@
 # Upgrading
 
+## 0.1.3
+
+New optional API: `WordTemplateProcessorInterface::listVariables(string $templatePath): array`. No configuration changes. Fully backward compatible with `0.1.2`.
+
+If you previously called PHPWord `TemplateProcessor::getVariables()` directly to discover placeholders, you can switch to the bundle method so delimiter settings from `nowo_word_template` apply automatically:
+
+```php
+$variables = $this->wordTemplateProcessor->listVariables('/path/to/template.docx');
+```
+
 ## 0.1.2
 
 Demos, documentation, and repository tooling only. **No changes** to `nowo-tech/word-template-bundle` PHP APIs, services, or `nowo_word_template` configuration when upgrading from `0.1.1`.

@@ -33,7 +33,7 @@ final readonly class WordTemplateProcessor implements WordTemplateProcessorInter
 
     public function listVariables(string $templatePath): array
     {
-        return $this->openTemplate($templatePath)->getVariables();
+        return array_values($this->openTemplate($templatePath)->getVariables());
     }
 
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument

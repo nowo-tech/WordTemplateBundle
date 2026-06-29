@@ -4,6 +4,7 @@
 COMPOSE_FILE ?= docker-compose.yml
 COMPOSE      ?= docker-compose -f $(COMPOSE_FILE)
 SERVICE_PHP  ?= php
+COMPOSER_INSTALL = $(COMPOSE) exec -T $(SERVICE_PHP) sh -c 'composer install --no-interaction || { rm -rf vendor; composer clear-cache; composer install --no-interaction; }'
 
 help:
 	@echo "WordTemplateBundle — development commands"
@@ -23,7 +24,7 @@ up:
 	$(COMPOSE) build
 	$(COMPOSE) up -d
 	@sleep 3
-	$(COMPOSE) exec -T $(SERVICE_PHP) composer install --no-interaction
+	$(COMPOSER_INSTALL)
 	@echo "Container ready."
 
 down:
@@ -32,7 +33,7 @@ down:
 ensure-up:
 	@if ! $(COMPOSE) exec -T $(SERVICE_PHP) true 2>/dev/null; then \
 		$(COMPOSE) up -d; sleep 3; \
-		$(COMPOSE) exec -T $(SERVICE_PHP) composer install --no-interaction; \
+		$(COMPOSER_INSTALL); \
 	fi
 
 shell:

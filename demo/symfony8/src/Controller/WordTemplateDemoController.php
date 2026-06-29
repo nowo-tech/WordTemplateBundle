@@ -11,7 +11,6 @@ use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
-use PhpOffice\PhpWord\TemplateProcessor;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\ClickableInterface;
@@ -29,6 +28,7 @@ use function is_file;
 use function pathinfo;
 use function preg_match;
 use function sort;
+use function sprintf;
 use function sys_get_temp_dir;
 use function tempnam;
 use function unlink;
@@ -36,9 +36,9 @@ use function unlink;
 use const PATHINFO_FILENAME;
 
 /**
- * Discovers placeholders in {@see public/demo/doc-final-tpl.docx} via {@see TemplateProcessor::getVariables()}
- * and renders a dynamic form so any user can fill them in and download the resulting `.docx`.
- *
+ * Discovers placeholders in {@see public/demo/doc-final-tpl.docx} via
+ * {@see WordTemplateProcessorInterface::listVariables()} and renders a dynamic form
+ * so any user can fill them in and download the resulting `.docx`.
  * - Variable names containing "." (e.g. {@code chapter.number}) are kept flat — the
  *   {@see \Nowo\WordTemplateBundle\Util\ContextFlattener} accepts them as-is.
  * - Variables in {@see ROW_GROUPS} are treated as repeating-row anchors (PHPWord
@@ -82,7 +82,7 @@ final class WordTemplateDemoController extends AbstractController
         $projectDir   = $this->getParameter('kernel.project_dir');
         $templatePath = $projectDir . '/public/demo/' . self::TEMPLATE_FILENAME;
 
-        $variables = (new TemplateProcessor($templatePath))->getVariables();
+        $variables = $processor->listVariables($templatePath);
         $variables = array_values(array_unique($variables));
         sort($variables);
 
@@ -342,8 +342,8 @@ final class WordTemplateDemoController extends AbstractController
     }
 
     /**
-     * @param list<string>           $headers
-     * @param list<list<string>>     $rows
+     * @param list<string> $headers
+     * @param list<list<string>> $rows
      */
     private function styledHtmlTable(array $headers, array $rows): string
     {

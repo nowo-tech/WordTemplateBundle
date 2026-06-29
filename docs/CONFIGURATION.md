@@ -9,6 +9,8 @@ Root key: `nowo_word_template`.
 
 PHPWord uses **static** delimiter settings internally for `TemplateProcessor`; avoid mixing delimiter styles across concurrent long-lived workers if you change defaults.
 
+`listVariables()` and `process()` both apply these delimiters when opening a template.
+
 Example:
 
 ```yaml

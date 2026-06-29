@@ -4,6 +4,21 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 0.1.3 — 2026-06-29
+
+### Added
+
+- **`WordTemplateProcessorInterface::listVariables()`** — returns unique placeholder names from a `.docx` template (main document, headers, footers), using the configured `macro_opening` / `macro_closing` delimiters. Throws `TemplateNotFoundException` when the file is missing or not readable, same as `process()`.
+
+### Demos
+
+- Symfony 7 / 8 demo controllers use `listVariables()` instead of calling PHPWord `TemplateProcessor::getVariables()` directly.
+
+### Development
+
+- **Docker** — mark `/app` as a Git `safe.directory` to avoid “dubious ownership” warnings when the repository is bind-mounted from the host.
+- **Makefile** — retry `composer install` after clearing a partial `vendor/` directory when the first attempt fails (common on bind mounts / flaky GitHub downloads).
+
 ## 0.1.2 — 2026-06-16
 
 ### Demos
