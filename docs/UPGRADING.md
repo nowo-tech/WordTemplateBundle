@@ -1,5 +1,22 @@
 # Upgrading
 
+## 1.0.0
+
+First stable `1.x` release. **No breaking changes** compared to `0.1.3`.
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0
+```
+
+Public API now follows semver for `1.x`:
+
+- `WordTemplateProcessorInterface` — `process()`, `listVariables()`
+- Models — `HtmlContent`, `TableRows`, `ImageSource`
+- Configuration — `nowo_word_template.macro_opening`, `nowo_word_template.macro_closing`
+- Service — `Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface` (alias of `WordTemplateProcessor`)
+
+If you pinned `^0.1`, you can move to `^1.0` without code changes.
+
 ## 0.1.3
 
 New optional API: `WordTemplateProcessorInterface::listVariables(string $templatePath): array`. No configuration changes. Fully backward compatible with `0.1.2`.

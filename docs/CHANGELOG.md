@@ -4,6 +4,25 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.0.0 — 2026-06-29
+
+First **stable** release. The public API (`WordTemplateProcessorInterface`, value objects, `nowo_word_template` configuration, and service id) is now covered by [Semantic Versioning](https://semver.org/) for `1.x`.
+
+### Summary
+
+- Fill `.docx` templates from a PHP context: scalars, nested keys, `TableRows`, `HtmlContent`, `ImageSource`.
+- Discover placeholders with `listVariables()`.
+- Configurable macro delimiters (`macro_opening` / `macro_closing`).
+- Symfony **6.4 / 7.x / 8.x**, PHP **8.2+**.
+
+### Changed
+
+- **CI** — install Symfony matrix dependencies without a root `composer.lock` (`composer require` for prod + `--dev` packages separately; QA job uses `composer update`).
+
+### Upgrade
+
+Drop-in replacement for `0.1.x`. Set `composer require nowo-tech/word-template-bundle:^1.0`. See [UPGRADING.md](UPGRADING.md).
+
 ## 0.1.3 — 2026-06-29
 
 ### Added

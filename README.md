@@ -47,7 +47,7 @@ This bundle does **not** execute Word VBA macros; “macros” here means **temp
 ## Quick start
 
 ```bash
-composer require nowo-tech/word-template-bundle
+composer require nowo-tech/word-template-bundle:^1.0
 ```
 
 Register `Nowo\WordTemplateBundle\WordTemplateBundle` if needed, then wire your templates and inject `WordTemplateProcessorInterface`:
