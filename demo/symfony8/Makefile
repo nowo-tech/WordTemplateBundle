@@ -26,11 +26,13 @@ help:
 
 up:
 	@if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
+	@rm -f .env.dev
 	docker-compose up -d
 	@echo "Waiting for container to be ready..."
 	@sleep 5
 	@echo "Installing dependencies..."
 	@docker-compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 php composer install --no-interaction --prefer-dist
+	@rm -f .env.dev
 	@docker-compose exec -T php php -d memory_limit=256M bin/console cache:clear || true
 	@docker-compose exec -T php php bin/console assets:install public --symlink || true
 	@PORT=$$(grep "^PORT=" .env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \

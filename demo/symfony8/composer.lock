@@ -234,7 +234,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/word-template-bundle",
-                "reference": "54a28c251daf03c7573173b9efd381b3a671b722"
+                "reference": "14c0cdfb77a756fe5f77cd1d3ee695db4de00e86"
             },
             "require": {
                 "ext-dom": "*",
@@ -283,10 +283,10 @@
                     "@php vendor/bin/phpunit --colors=always"
                 ],
                 "test-coverage": [
-                    "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text --coverage-clover=coverage/clover.xml | tee coverage-php.txt && sh .scripts/php-coverage-percent.sh coverage-php.txt"
+                    "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text --coverage-clover=coverage.xml | tee coverage-php.txt && sh .scripts/php-coverage-percent.sh coverage-php.txt"
                 ],
                 "coverage-check": [
-                    "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text=coverage-output.txt --coverage-clover=coverage/clover.xml && sh .scripts/coverage-fail-under.sh coverage-output.txt 93"
+                    "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text=coverage-output.txt --coverage-clover=coverage.xml && sh .scripts/coverage-fail-under.sh coverage-output.txt 99"
                 ],
                 "cs-check": [
                     "@php vendor/bin/php-cs-fixer fix --dry-run --diff"
@@ -4655,16 +4655,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v3.27.1",
+            "version": "v3.28.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "ae2071bffb38f04847fc0864d730c94b9cb8ab74"
+                "reference": "597c12ed286fb9d1701a36684ce6e0cbe28ebc8b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/ae2071bffb38f04847fc0864d730c94b9cb8ab74",
-                "reference": "ae2071bffb38f04847fc0864d730c94b9cb8ab74",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/597c12ed286fb9d1701a36684ce6e0cbe28ebc8b",
+                "reference": "597c12ed286fb9d1701a36684ce6e0cbe28ebc8b",
                 "shasum": ""
             },
             "require": {
@@ -4719,7 +4719,7 @@
             ],
             "support": {
                 "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v3.27.1"
+                "source": "https://github.com/twigphp/Twig/tree/v3.28.0"
             },
             "funding": [
                 {
@@ -4731,22 +4731,22 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-05-30T17:09:26+00:00"
+            "time": "2026-07-03T20:44:34+00:00"
         }
     ],
     "packages-dev": [
         {
             "name": "nowo-tech/twig-inspector-bundle",
-            "version": "v1.0.32",
+            "version": "v1.0.33",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nowo-tech/TwigInspectorBundle.git",
-                "reference": "70c6e166820aa1eccb146d40a9f7bcd04f56e719"
+                "reference": "4c681ef6f8d17e50cd1b6417b63f6a6bbbf7032b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nowo-tech/TwigInspectorBundle/zipball/70c6e166820aa1eccb146d40a9f7bcd04f56e719",
-                "reference": "70c6e166820aa1eccb146d40a9f7bcd04f56e719",
+                "url": "https://api.github.com/repos/nowo-tech/TwigInspectorBundle/zipball/4c681ef6f8d17e50cd1b6417b63f6a6bbbf7032b",
+                "reference": "4c681ef6f8d17e50cd1b6417b63f6a6bbbf7032b",
                 "shasum": ""
             },
             "require": {
@@ -4799,7 +4799,7 @@
                 }
             ],
             "description": "Debug Twig templates in the browser: visual overlay, click-to-open in IDE, Web Profiler. Symfony 6|7|8.",
-            "homepage": "https://github.com/nowo-tech/twig-inspector-bundle",
+            "homepage": "https://github.com/nowo-tech/TwigInspectorBundle",
             "keywords": [
                 "block-inspector",
                 "bundle",
@@ -4824,10 +4824,10 @@
                 "web-profiler"
             ],
             "support": {
-                "changelog": "https://github.com/nowo-tech/twig-inspector-bundle/blob/main/docs/CHANGELOG.md",
-                "docs": "https://github.com/nowo-tech/twig-inspector-bundle/tree/main/docs",
-                "issues": "https://github.com/nowo-tech/twig-inspector-bundle/issues",
-                "source": "https://github.com/nowo-tech/twig-inspector-bundle"
+                "changelog": "https://github.com/nowo-tech/TwigInspectorBundle/blob/main/docs/CHANGELOG.md",
+                "docs": "https://github.com/nowo-tech/TwigInspectorBundle/tree/main/docs",
+                "issues": "https://github.com/nowo-tech/TwigInspectorBundle/issues",
+                "source": "https://github.com/nowo-tech/TwigInspectorBundle"
             },
             "funding": [
                 {
@@ -4835,7 +4835,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-15T07:21:44+00:00"
+            "time": "2026-06-30T09:51:13+00:00"
         },
         {
             "name": "symfony/debug-bundle",

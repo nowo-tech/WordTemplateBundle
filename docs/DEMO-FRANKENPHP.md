@@ -9,6 +9,17 @@ The repository includes **optional Symfony demo apps** under `demo/symfony7` and
 
 See [`demo/README.md`](../demo/README.md) for quick start and aggregate `make` targets.
 
+## Development vs production (FrankenPHP worker mode)
+
+Each demo ships two Caddy configurations under `docker/frankenphp/`:
+
+| File | FrankenPHP worker | Typical use |
+|------|-------------------|-------------|
+| `Caddyfile.dev` | **Off** (one PHP process per request) | Local demo (`APP_ENV=dev`, default in `docker-compose.yml`) |
+| `Caddyfile` | **On** (`worker /app/public/index.php`) | Production-style (`APP_ENV=prod`, `APP_DEBUG=0`) |
+
+The container entrypoint copies `Caddyfile.dev` over the default Caddyfile when `APP_ENV=dev`, so **`make up` runs without worker mode**. For production-style behaviour, set `APP_ENV=prod` in `.env` and rebuild/restart the demo container so FrankenPHP keeps workers in memory.
+
 ### Demo page
 
 Each demo exposes a single form at `/` that:

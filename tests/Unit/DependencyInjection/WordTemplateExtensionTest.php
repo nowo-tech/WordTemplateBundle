@@ -25,4 +25,9 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame('[[', $container->getParameter(Configuration::ALIAS . '.macro_opening'));
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.macro_closing'));
     }
+
+    public function testGetAlias(): void
+    {
+        self::assertSame(Configuration::ALIAS, (new WordTemplateExtension())->getAlias());
+    }
 }

@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.0.2
+
+Patch release. **No configuration or interface changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0.2
+```
+
+`WordTemplateProcessor` is no longer `final` and exposes a `protected persistTemplate()` hook. You do not need to change application code unless you intentionally subclass the processor.
+
 ## 1.0.1
 
 Bugfix release. **No configuration or API changes.**

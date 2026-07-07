@@ -7,7 +7,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net)
 [![Symfony](https://img.shields.io/badge/Symfony-6.4%20%7C%207.4%2B%20%7C%208.0%20%7C%208.1%2B-000000?logo=symfony)](https://symfony.com)
 [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle)
-[![Coverage](https://img.shields.io/badge/Coverage-~94%25-green)](#tests-and-coverage)
+[![Coverage](https://img.shields.io/badge/Coverage-~100%25-green)](#tests-and-coverage)
 
 > **Found this useful?** Install from Packagist (`composer require nowo-tech/word-template-bundle`) and consider starring [WordTemplateBundle on GitHub](https://github.com/nowo-tech/WordTemplateBundle).
 
@@ -71,7 +71,7 @@ $doc->dispose(); // if the processor used a temp file
 | Scope | Detail |
 |-------|--------|
 | **PHPUnit** | `composer test` — unit + integration (minimal kernel in `tests/Fixtures/AppKernel.php`). |
-| **Lines** | `composer coverage-check` enforces **≥ 93%** (PCOV). Última medición global: **~94%**. |
+| **Lines** | `composer coverage-check` enforces **≥ 99%** (PCOV). Latest global measurement: **~100%**. |
 
 ## Development
 
@@ -82,6 +82,8 @@ make release-check
 ```
 
 ### Demos (FrankenPHP)
+
+Demos run with **FrankenPHP** (Caddy + PHP in Docker). **`docker-compose`** defaults to **`APP_ENV=dev`**, so the entrypoint uses **Caddyfile.dev** (no PHP worker), and Twig/PHP changes are visible on refresh. **Worker mode** applies to a production-style setup — see [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md).
 
 From the repository root:
 

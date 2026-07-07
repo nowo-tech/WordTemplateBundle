@@ -74,8 +74,8 @@
     },
     "scripts": {
         "test": "@php vendor/bin/phpunit --colors=always",
-        "test-coverage": "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text --coverage-clover=coverage/clover.xml | tee coverage-php.txt && sh .scripts/php-coverage-percent.sh coverage-php.txt",
-        "coverage-check": "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text=coverage-output.txt --coverage-clover=coverage/clover.xml && sh .scripts/coverage-fail-under.sh coverage-output.txt 93",
+        "test-coverage": "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text --coverage-clover=coverage.xml | tee coverage-php.txt && sh .scripts/php-coverage-percent.sh coverage-php.txt",
+        "coverage-check": "@php -d pcov.enabled=1 vendor/bin/phpunit --colors=always --coverage-text=coverage-output.txt --coverage-clover=coverage.xml && sh .scripts/coverage-fail-under.sh coverage-output.txt 99",
         "cs-check": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
         "cs-fix": "@php vendor/bin/php-cs-fixer fix",
         "phpstan": "@php vendor/bin/phpstan analyse --memory-limit=512M",
