@@ -4,6 +4,30 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.0.2 — 2026-07-07
+
+### Changed
+
+- **`WordTemplateProcessor`** — extract `persistTemplate()` as a `protected` hook around `TemplateProcessor::saveAs()`; class is no longer `final` (enables focused unit tests and optional subclassing). Public API unchanged.
+
+### Added
+
+- Tests for boolean/null scalar replacement, `persistTemplate()` failure cleanup, and `WordTemplateExtension::getAlias()`.
+
+### Documentation
+
+- **FrankenPHP demos** — document dev (`Caddyfile.dev`, no worker) vs production (`Caddyfile`, worker mode) in [`README.md`](../README.md) and [`DEMO-FRANKENPHP.md`](DEMO-FRANKENPHP.md).
+
+### Demos
+
+- Aggregate `demo/Makefile`: `DEMO=symfony7|symfony8` for `up`, `down`, and `update-bundle`; demo `composer.lock` files reference `nowo-tech/word-template-bundle` **^1.0**.
+
+### CI / tooling
+
+- Raise PHPUnit line-coverage floor from **93%** to **99%** (`composer.json`, CI workflow, README badge).
+- Coverage Clover output: `coverage/clover.xml` → `coverage.xml`.
+- Bump `actions/checkout` to **v7**.
+
 ## 1.0.1 — 2026-06-29
 
 ### Fixed

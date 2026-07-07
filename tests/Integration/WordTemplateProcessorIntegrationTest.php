@@ -19,6 +19,29 @@ use function is_string;
 
 final class WordTemplateProcessorIntegrationTest extends TestCase
 {
+    public function testReplacesBooleanAndNullScalars(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('Flag=${flag} Empty=${empty}');
+        });
+
+        $processor = new WordTemplateProcessor();
+        $out       = $processor->process($tpl, [
+            'flag'  => true,
+            'empty' => null,
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Flag=1', $xml);
+            self::assertStringContainsString('Empty=', $xml);
+            self::assertStringNotContainsString('${flag}', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
     public function testReplacesScalarPlaceholders(): void
     {
         $tpl = $this->createTemplate(static function (PhpWord $pw): void {

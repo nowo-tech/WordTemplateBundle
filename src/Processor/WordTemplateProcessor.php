@@ -23,7 +23,7 @@ use function sprintf;
 
 use const DIRECTORY_SEPARATOR;
 
-final readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
+readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 {
     public function __construct(
         private string $macroOpening = '${',
@@ -75,7 +75,7 @@ final readonly class WordTemplateProcessor implements WordTemplateProcessorInter
         $temporary = $outputPath === null;
 
         try {
-            $processor->saveAs($target);
+            $this->persistTemplate($processor, $target);
         } catch (Throwable $e) {
             if ($temporary && is_file($target)) {
                 @unlink($target);
@@ -137,6 +137,11 @@ final readonly class WordTemplateProcessor implements WordTemplateProcessorInter
         }
 
         return (string) $value;
+    }
+
+    protected function persistTemplate(TemplateProcessor $processor, string $target): void
+    {
+        $processor->saveAs($target);
     }
 
     private function openTemplate(string $templatePath): TemplateProcessor

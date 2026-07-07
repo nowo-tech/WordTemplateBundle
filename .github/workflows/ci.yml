@@ -80,5 +80,5 @@ jobs:
       - name: PHPUnit
         run: composer test
 
-      - name: PHPUnit coverage gate (min 93% lines)
+      - name: PHPUnit coverage gate (min 99% lines)
         run: composer coverage-check
