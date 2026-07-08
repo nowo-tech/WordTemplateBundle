@@ -4,6 +4,24 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.0.3 — 2026-07-08
+
+Documentation and repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.
+
+### Added
+
+- **GitHub Spec Kit** — baseline under `specs/001-baseline/` (`spec.md`, `code-inventory.md` mapping 100% of `src/`), `.specify/` scaffolding, and Cursor Agent skills (`.cursor/skills/speckit-*`).
+- **[`docs/SPEC-KIT.md`](SPEC-KIT.md)** — operator manual (install, init, usage, maintainer checklist).
+
+### Documentation
+
+- **[`SPEC-DRIVEN-DEVELOPMENT.md`](SPEC-DRIVEN-DEVELOPMENT.md)** — three-layer model (Spec Kit baseline, product behavior, `REQ-*` traceability); link to SPEC-KIT.
+- **[`README.md`](../README.md)** — link to SPEC-KIT in documentation index.
+
+### Demos
+
+- Refresh demo `composer.lock` path references and dev dependency pins.
+
 ## 1.0.2 — 2026-07-07
 
 ### Changed

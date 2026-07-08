@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.0.3
+
+Documentation and Spec Kit tooling only. **No application or configuration changes** when upgrading from `1.0.2`.
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0.3
+```
+
+Maintainers: see [`SPEC-KIT.md`](SPEC-KIT.md) for baseline specs and Cursor Agent workflow.
+
 ## 1.0.2
 
 Patch release. **No configuration or interface changes.**
