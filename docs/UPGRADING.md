@@ -1,5 +1,13 @@
 # Upgrading
 
+## 1.0.4
+
+Repository tooling only. **No application or configuration changes** when upgrading from `1.0.3`.
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0.4
+```
+
 ## 1.0.3
 
 Documentation and Spec Kit tooling only. **No application or configuration changes** when upgrading from `1.0.2`.

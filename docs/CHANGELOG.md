@@ -4,6 +4,18 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.0.4 — 2026-07-13
+
+Repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.
+
+### Changed
+
+- **`make test-coverage`** — pipe PHPUnit output to `coverage-php.txt` and run `.scripts/php-coverage-percent.sh` (aligned with **REQ-TEST-008** contract documented in the script).
+
+### Development
+
+- **`.gitignore`** — ignore `.cursor/sandbox.json` (machine-specific Cursor sandbox config).
+
 ## 1.0.3 — 2026-07-08
 
 Documentation and repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.

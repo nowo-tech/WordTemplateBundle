@@ -48,7 +48,8 @@ test: ensure-up
 
 test-coverage: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer install --no-interaction
-	$(COMPOSE) exec -T $(SERVICE_PHP) composer test-coverage
+	$(COMPOSE) exec -T $(SERVICE_PHP) composer test-coverage | tee coverage-php.txt
+	./.scripts/php-coverage-percent.sh coverage-php.txt
 
 coverage-check: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer install --no-interaction
