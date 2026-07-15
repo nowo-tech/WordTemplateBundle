@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.0.5
+
+Repository tooling and documentation only. **No application or configuration changes** when upgrading from `1.0.4`.
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0.5
+```
+
+Maintainers: run `make setup-hooks` once per clone (REQ-GIT-001).
+
 ## 1.0.4
 
 Repository tooling only. **No application or configuration changes** when upgrading from `1.0.3`.

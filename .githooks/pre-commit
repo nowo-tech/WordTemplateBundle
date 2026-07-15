@@ -4,16 +4,20 @@ set -e
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 cd "$ROOT" || exit 0
 
-if [ -x vendor/bin/php-cs-fixer ]; then
-  composer cs-check
-  exit $?
-fi
-
 if command -v docker >/dev/null 2>&1 && [ -f docker-compose.yml ]; then
   if docker compose ps --status running --services 2>/dev/null | grep -q .; then
     docker compose exec -T php composer cs-check
     exit $?
   fi
+fi
+
+if [ -x vendor/bin/php-cs-fixer ] && command -v php >/dev/null 2>&1; then
+  if command -v composer >/dev/null 2>&1; then
+    composer cs-check
+  else
+    vendor/bin/php-cs-fixer fix --dry-run --diff
+  fi
+  exit $?
 fi
 
 echo "pre-commit: skip (run \`composer install\` or \`make up\` to enable CS checks)."

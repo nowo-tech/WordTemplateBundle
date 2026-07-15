@@ -1,5 +1,5 @@
 # WordTemplateBundle — Docker-driven development (REQ-MAKE-001)
-.PHONY: help up down build shell ensure-up install test test-coverage coverage-check cs-check cs-fix qa clean composer-sync release-check phpstan rector rector-dry update validate setup-hooks
+.PHONY: help up down build shell ensure-up install test test-coverage coverage-check cs-check cs-fix qa clean composer-sync release-check phpstan rector rector-dry update validate setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history
 
 COMPOSE_FILE ?= docker-compose.yml
 COMPOSE      ?= docker-compose -f $(COMPOSE_FILE)
@@ -77,7 +77,7 @@ composer-sync: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer validate --strict
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer update --no-install
 
-release-check:
+release-check: check-no-cursor-coauthor
 	@$(MAKE) ensure-up
 	@$(MAKE) composer-sync
 	@$(MAKE) cs-fix
@@ -95,12 +95,28 @@ update: ensure-up
 validate: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer validate --strict
 
+check-no-cursor-coauthor:
+	@chmod +x .scripts/check-no-cursor-coauthor.sh
+	@./.scripts/check-no-cursor-coauthor.sh HEAD
+
 setup-hooks:
 	@mkdir -p .git/hooks
-	@cp -f .githooks/pre-commit .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
+	@if [ -f .githooks/pre-commit ]; then \
+		cp -f .githooks/pre-commit .git/hooks/pre-commit; \
+		chmod +x .git/hooks/pre-commit; \
+		echo "✅ pre-commit hook installed."; \
+	fi
+	@if [ -f .githooks/commit-msg ]; then \
+		cp -f .githooks/commit-msg .git/hooks/commit-msg; \
+		chmod +x .git/hooks/commit-msg; \
+		echo "✅ commit-msg hook installed (REQ-GIT-001)."; \
+	fi
 
 
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk
+
+strip-cursor-coauthor-from-history:
+	@chmod +x .scripts/strip-cursor-coauthor-from-history.sh
+	@./.scripts/strip-cursor-coauthor-from-history.sh main
