@@ -11,3 +11,5 @@ Maintainers:
 5. Create an annotated tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`.
 6. Push commits and the tag: `git push origin main` and `git push origin vX.Y.Z`.
 7. On GitHub, open **Releases → Draft** from the tag and paste the changelog section as release notes (helps consumers and Packagist users).
+
+After creating the release commit and tag, run `make check-no-cursor-coauthor` again **before** `git push` (REQ-GIT-001). The release commit itself is not covered by an earlier `release-check` run.

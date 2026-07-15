@@ -4,6 +4,29 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.0.5 — 2026-07-15
+
+Repository tooling and documentation only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.
+
+### Added
+
+- **REQ-GIT-001** — block `Co-authored-by: Cursor` trailers: `.scripts/check-no-cursor-coauthor.sh`, `.scripts/strip-cursor-coauthor-from-history.sh`, `.githooks/commit-msg`, `make check-no-cursor-coauthor`, `make strip-cursor-coauthor-from-history`.
+- **CI job `git-hygiene`** — runs the co-author check on every push/PR (GitHub Actions).
+- **[`docs/GITLAB_CI.md`](GITLAB_CI.md)** — CI requirements for GitLab mirrors (REQ-GIT-001 and related gates).
+- **[`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md)** — Contributor Covenant.
+
+### Changed
+
+- **`make release-check`** — includes `check-no-cursor-coauthor` before QA.
+- **`make setup-hooks`** — installs `commit-msg` hook when present.
+- **`.githooks/pre-commit`** — prefer Docker when the container is running; fall back to local `php-cs-fixer` when PHP is on `PATH` (WSL bind-mount setups).
+- **[`CONTRIBUTING.md`](CONTRIBUTING.md)**, **[`RELEASE.md`](RELEASE.md)**, **[`README.md`](../README.md)** — Code of Conduct, git hooks, and GitLab CI links.
+- **`ContextFlattener`** — Rector PHPDoc cleanup (no behavior change).
+
+### Demos
+
+- Refresh demo `composer.lock` path references for `word-template-bundle`.
+
 ## 1.0.4 — 2026-07-13
 
 Repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.

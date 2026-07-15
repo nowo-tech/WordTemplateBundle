@@ -64,9 +64,6 @@ final class ContextFlattener
         return $out;
     }
 
-    /**
-     * @param array-key $key
-     */
     private static function stringKey(string|int $key): string
     {
         return is_int($key) ? (string) $key : $key;
