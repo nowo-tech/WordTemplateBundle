@@ -6,6 +6,7 @@ namespace Nowo\WordTemplateBundle\Tests\Integration;
 
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Exception\TemplateNotFoundException;
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
@@ -104,6 +105,149 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
             self::assertStringContainsString('Bold', $xml);
             self::assertStringContainsString('italic', $xml);
             self::assertStringContainsString('Second paragraph.', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testConditionalBlockKeepsContentWhenVisible(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#if vip_section}');
+            $section->addText('VIP: ${vip_label}');
+            $section->addText('${#endif vip_section}');
+            $section->addText('Always here.');
+        });
+
+        $processor = new WordTemplateProcessor();
+        $out       = $processor->process($tpl, [
+            'vip'       => new ConditionalBlock('vip_section', true),
+            'vip_label' => 'Gold',
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('VIP:', $xml);
+            self::assertStringContainsString('Gold', $xml);
+            self::assertStringContainsString('Always here.', $xml);
+            self::assertStringNotContainsString('#if vip_section', $xml);
+            self::assertStringNotContainsString('#endif vip_section', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testConditionalBlockRemovesContentWhenHidden(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#if vip_section}');
+            $section->addText('VIP only ${vip_label}');
+            $section->addText('${#endif vip_section}');
+            $section->addText('Always here.');
+        });
+
+        $processor = new WordTemplateProcessor();
+        $out       = $processor->process($tpl, [
+            'vip'       => new ConditionalBlock('vip_section', false),
+            'vip_label' => 'Gold',
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringNotContainsString('VIP only', $xml);
+            self::assertStringNotContainsString('Gold', $xml);
+            self::assertStringContainsString('Always here.', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testConditionalBlockRespectsCustomMacroDelimiters(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('{{#if annex}}');
+            $section->addText('Annex {{annex_title}}');
+            $section->addText('{{#endif annex}}');
+        });
+
+        $processor = new WordTemplateProcessor(
+            macroOpening: '{{',
+            macroClosing: '}}',
+            conditionalIfOpening: '{{#if',
+            conditionalIfClosing: '}}',
+            conditionalEndifOpening: '{{#endif',
+            conditionalEndifClosing: '}}',
+        );
+        $out = $processor->process($tpl, [
+            'annex_block' => new ConditionalBlock('annex', true),
+            'annex_title' => 'A1',
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Annex', $xml);
+            self::assertStringContainsString('A1', $xml);
+            self::assertStringNotContainsString('#if annex', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testListVariablesIgnoresConditionalMarkers(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#if vip_section}');
+            $section->addText('${vip_label}');
+            $section->addText('${#endif vip_section}');
+        });
+
+        try {
+            $variables = (new WordTemplateProcessor())->listVariables($tpl);
+            sort($variables);
+
+            self::assertSame(['vip_label'], $variables);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testNestedConditionalBlocksResolveInsideOut(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#if outer_section}');
+            $section->addText('Outer start ${outer_label}');
+            $section->addText('${#if inner_section}');
+            $section->addText('Inner ${inner_label}');
+            $section->addText('${#endif inner_section}');
+            $section->addText('Outer end');
+            $section->addText('${#endif outer_section}');
+            $section->addText('Always here.');
+        });
+
+        $processor = new WordTemplateProcessor();
+        $out       = $processor->process($tpl, [
+            'outer'       => new ConditionalBlock('outer_section', true),
+            'inner'       => new ConditionalBlock('inner_section', false),
+            'outer_label' => 'O',
+            'inner_label' => 'I',
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Outer start', $xml);
+            self::assertStringContainsString('Outer end', $xml);
+            self::assertStringContainsString('Always here.', $xml);
+            self::assertStringNotContainsString('Inner', $xml);
+            self::assertStringNotContainsString('#if inner_section', $xml);
         } finally {
             $out->dispose();
             @unlink($tpl);

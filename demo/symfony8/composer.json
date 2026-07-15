@@ -4,7 +4,7 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": ">=8.4",
+        "php": ">=8.2",
         "dompdf/dompdf": "^3.0",
         "nowo-tech/word-template-bundle": "@dev",
         "symfony/asset": "8.1.*",

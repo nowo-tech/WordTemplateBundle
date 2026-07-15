@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\WordTemplateBundle\Util;
 
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
@@ -16,16 +17,17 @@ use function is_object;
 use function sprintf;
 
 /**
- * Flattens nested scalar arrays into dot keys; preserves {@see HtmlContent}, {@see TableRows}, {@see ImageSource}.
+ * Flattens nested scalar arrays into dot keys; preserves {@see ConditionalBlock}, {@see HtmlContent},
+ * {@see TableRows}, {@see ImageSource}.
  *
- * @phpstan-return array<string, scalar|Stringable|HtmlContent|TableRows|ImageSource|null>
+ * @phpstan-return array<string, scalar|Stringable|ConditionalBlock|HtmlContent|TableRows|ImageSource|null>
  */
 final class ContextFlattener
 {
     /**
      * @param array<string, mixed> $context
      *
-     * @return array<string, HtmlContent|ImageSource|scalar|Stringable|TableRows|null>
+     * @return array<string, ConditionalBlock|HtmlContent|ImageSource|scalar|Stringable|TableRows|null>
      */
     public static function flatten(array $context, string $prefix = ''): array
     {
@@ -34,7 +36,7 @@ final class ContextFlattener
             $segment = self::stringKey($key);
             $fullKey = $prefix === '' ? $segment : $prefix . '.' . $segment;
 
-            if ($value instanceof HtmlContent || $value instanceof TableRows || $value instanceof ImageSource) {
+            if ($value instanceof ConditionalBlock || $value instanceof HtmlContent || $value instanceof TableRows || $value instanceof ImageSource) {
                 $out[$fullKey] = $value;
 
                 continue;
@@ -47,7 +49,7 @@ final class ContextFlattener
                     continue;
                 }
 
-                throw new InvalidContextValueException(sprintf('Unsupported context value at key "%s": use scalars, Stringable, or HtmlContent / TableRows / ImageSource.', $fullKey));
+                throw new InvalidContextValueException(sprintf('Unsupported context value at key "%s": use scalars, Stringable, or ConditionalBlock / HtmlContent / TableRows / ImageSource.', $fullKey));
             }
 
             if (is_array($value)) {

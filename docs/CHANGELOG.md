@@ -4,6 +4,37 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.1.0 — 2026-07-15
+
+### Added
+
+- **`ConditionalBlock`** — Twig-style `${#if blockName}` … `${#endif blockName}` regions in `.docx` templates; show or remove content from PHP. **Nested blocks** with distinct names are resolved inside-out (deepest first).
+- **Configuration** — `conditional_if_opening`, `conditional_if_closing`, `conditional_endif_opening`, `conditional_endif_closing` under `nowo_word_template` (defaults `${#if` / `${#endif` with `}` closers).
+- **`ConditionalBlockApplicator`** and **`TemplateProcessorBridge`** — apply conditional transforms on WordprocessingML (main document, headers, footers) before scalar/table/HTML/image replacement.
+- **`listVariables()`** — omits conditional marker names (`#if …`, `#endif …`).
+- **Tests** — unit and integration coverage for conditionals, nested blocks, custom delimiters, and DI wiring; line coverage **≥ 99%**.
+- **Demo (`demo/symfony8`)** — dynamic form exercises scalars, inline computed scalar, `HtmlContent`, `TableRows`, `ConditionalBlock` (including nested `funding_detail`), `ImageSource` (`demo_logo`), and commented `config/packages/nowo_word_template.yaml`.
+- **Spec Kit** — baseline spec and code inventory updated (US-08, US-09; 18/18 production files mapped).
+
+### Changed
+
+- **Compatibility** — PHP **8.2+** and Symfony **7.x / 8.x** only (`composer.json` no longer allows Symfony **6.4**). Applications on Symfony 6.4 should stay on **`1.0.x`** (see [UPGRADING.md](UPGRADING.md)).
+- **Demo** — removed `demo/symfony7`; FrankenPHP demo image targets PHP **8.2** (was 8.4 in the demo container).
+
+### Documentation
+
+- **[`USAGE.md`](USAGE.md)**, **[`CONFIGURATION.md`](CONFIGURATION.md)**, **[`INSTALLATION.md`](INSTALLATION.md)**, **[`SPEC-DRIVEN-DEVELOPMENT.md`](SPEC-DRIVEN-DEVELOPMENT.md)**, **[`README.md`](../README.md)** — conditional blocks, `conditional_*` keys, compatibility, and demo scope.
+
+### Upgrade
+
+Symfony **7.x / 8.x** on `^1.0`:
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.1
+```
+
+No code changes required unless you adopt `ConditionalBlock` or customize conditional delimiters. See [UPGRADING.md](UPGRADING.md).
+
 ## 1.0.5 — 2026-07-15
 
 Repository tooling and documentation only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.

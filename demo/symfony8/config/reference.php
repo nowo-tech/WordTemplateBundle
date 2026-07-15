@@ -751,6 +751,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * @psalm-type NowoWordTemplateConfig = array{
  *     macro_opening?: scalar|Param|null, // Opening delimiter for placeholders in the DOCX (PHPWord TemplateProcessor). // Default: "${"
  *     macro_closing?: scalar|Param|null, // Closing delimiter for placeholders in the DOCX. // Default: "}"
+ *     conditional_if_opening?: scalar|Param|null, // Opening delimiter for conditional blocks (before the block name). // Default: "${#if"
+ *     conditional_if_closing?: scalar|Param|null, // Closing delimiter for conditional opening markers. // Default: "}"
+ *     conditional_endif_opening?: scalar|Param|null, // Opening delimiter for conditional end markers (before the block name). // Default: "${#endif"
+ *     conditional_endif_closing?: scalar|Param|null, // Closing delimiter for conditional end markers. // Default: "}"
  * }
  * @psalm-type NowoTwigInspectorConfig = array{
  *     enabled_extensions?: list<scalar|Param|null>,

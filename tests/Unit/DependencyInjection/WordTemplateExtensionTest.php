@@ -24,6 +24,29 @@ final class WordTemplateExtensionTest extends TestCase
 
         self::assertSame('[[', $container->getParameter(Configuration::ALIAS . '.macro_opening'));
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.macro_closing'));
+        self::assertSame('${#if', $container->getParameter(Configuration::ALIAS . '.conditional_if_opening'));
+        self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.conditional_if_closing'));
+        self::assertSame('${#endif', $container->getParameter(Configuration::ALIAS . '.conditional_endif_opening'));
+        self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.conditional_endif_closing'));
+    }
+
+    public function testLoadSetsConditionalParameters(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new WordTemplateExtension();
+        $extension->load([
+            [
+                'conditional_if_opening'    => '[[#if',
+                'conditional_if_closing'    => ']]',
+                'conditional_endif_opening' => '[[#endif',
+                'conditional_endif_closing' => ']]',
+            ],
+        ], $container);
+
+        self::assertSame('[[#if', $container->getParameter(Configuration::ALIAS . '.conditional_if_opening'));
+        self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.conditional_if_closing'));
+        self::assertSame('[[#endif', $container->getParameter(Configuration::ALIAS . '.conditional_endif_opening'));
+        self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.conditional_endif_closing'));
     }
 
     public function testGetAlias(): void

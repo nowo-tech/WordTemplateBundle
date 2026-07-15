@@ -29,6 +29,22 @@ final class Configuration implements ConfigurationInterface
                     ->defaultValue('}')
                     ->info('Closing delimiter for placeholders in the DOCX.')
                 ->end()
+                ->scalarNode('conditional_if_opening')
+                    ->defaultValue('${#if')
+                    ->info('Opening delimiter for conditional blocks (before the block name).')
+                ->end()
+                ->scalarNode('conditional_if_closing')
+                    ->defaultValue('}')
+                    ->info('Closing delimiter for conditional opening markers.')
+                ->end()
+                ->scalarNode('conditional_endif_opening')
+                    ->defaultValue('${#endif')
+                    ->info('Opening delimiter for conditional end markers (before the block name).')
+                ->end()
+                ->scalarNode('conditional_endif_closing')
+                    ->defaultValue('}')
+                    ->info('Closing delimiter for conditional end markers.')
+                ->end()
             ->end();
 
         return $treeBuilder;

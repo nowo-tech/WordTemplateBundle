@@ -6,10 +6,12 @@ namespace Nowo\WordTemplateBundle\Processor;
 
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Exception\TemplateNotFoundException;
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
+use Nowo\WordTemplateBundle\Util\ConditionalBlockApplicator;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
 use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\Shared\Html;
@@ -28,20 +30,31 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
     public function __construct(
         private string $macroOpening = '${',
         private string $macroClosing = '}',
+        private string $conditionalIfOpening = '${#if',
+        private string $conditionalIfClosing = '}',
+        private string $conditionalEndifOpening = '${#endif',
+        private string $conditionalEndifClosing = '}',
     ) {
     }
 
     public function listVariables(string $templatePath): array
     {
-        return array_values($this->openTemplate($templatePath)->getVariables());
+        $variables = $this->openTemplate($templatePath)->getVariables();
+
+        return array_values(array_filter(
+            $variables,
+            static fn (string $name): bool => !str_starts_with($name, '#if ') && !str_starts_with($name, '#endif '),
+        ));
     }
 
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument
     {
-        /** @var array<string, HtmlContent|ImageSource|scalar|Stringable|TableRows|null> $flat */
+        /** @var array<string, ConditionalBlock|HtmlContent|ImageSource|scalar|Stringable|TableRows|null> $flat */
         $flat = ContextFlattener::flatten($context);
 
         $processor = $this->openTemplate($templatePath);
+
+        $this->applyConditionalBlocks($processor, $flat);
 
         foreach ($flat as $value) {
             if ($value instanceof TableRows) {
@@ -52,7 +65,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         }
 
         foreach ($flat as $key => $value) {
-            if ($value instanceof TableRows) {
+            if ($value instanceof ConditionalBlock || $value instanceof TableRows) {
                 continue;
             }
 
@@ -85,6 +98,36 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         }
 
         return new ProcessedDocument($target, $temporary);
+    }
+
+    /**
+     * @param array<string, ConditionalBlock|HtmlContent|ImageSource|scalar|Stringable|TableRows|null> $flat
+     */
+    private function applyConditionalBlocks(TemplateProcessorBridge $processor, array $flat): void
+    {
+        $blocks = [];
+        foreach ($flat as $value) {
+            if ($value instanceof ConditionalBlock) {
+                $blocks[] = $value;
+            }
+        }
+
+        if ($blocks === []) {
+            return;
+        }
+
+        $applicator = $this->createConditionalApplicator();
+        $processor->transformDocumentParts(static fn (string $xml): string => $applicator->applyAll($xml, $blocks));
+    }
+
+    private function createConditionalApplicator(): ConditionalBlockApplicator
+    {
+        return new ConditionalBlockApplicator(
+            $this->conditionalIfOpening,
+            $this->conditionalIfClosing,
+            $this->conditionalEndifOpening,
+            $this->conditionalEndifClosing,
+        );
     }
 
     private function applyTableRows(TemplateProcessor $processor, TableRows $rows): void
@@ -144,13 +187,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         $processor->saveAs($target);
     }
 
-    private function openTemplate(string $templatePath): TemplateProcessor
+    private function openTemplate(string $templatePath): TemplateProcessorBridge
     {
         if (!is_file($templatePath) || !is_readable($templatePath)) {
             throw new TemplateNotFoundException(sprintf('DOCX template not found or not readable: "%s".', $templatePath));
         }
 
-        $processor = new TemplateProcessor($templatePath);
+        $processor = new TemplateProcessorBridge($templatePath);
         $processor->setMacroChars($this->macroOpening, $this->macroClosing);
 
         return $processor;

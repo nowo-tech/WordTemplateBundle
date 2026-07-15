@@ -23,8 +23,10 @@ The sections above/below state **behavior**; this subsection states **intent** i
 | US-05 | **As a** integrator, **I want** to pass `HtmlContent` for a block placeholder **so that** rich fragments from HTML render inside the document via PHPWord (within PHPWord limits). |
 | US-06 | **As a** integrator, **I want** to pass `ImageSource` with optional width/height **so that** logos or signatures replace image placeholders. |
 | US-07 | **As a** platform maintainer, **I want** `nowo_word_template.macro_opening` / `macro_closing` configurable **so that** they match what template authors typed in Word (defaults `${` / `}`). |
+| US-08 | **As a** integrator, **I want** to pass `ConditionalBlock` for `${#if name}` … `${#endif name}` regions **so that** whole paragraphs or sections appear or disappear from PHP. |
+| US-09 | **As a** integrator, **I want** nested conditional blocks and separate `conditional_*` delimiters **so that** inner regions resolve before outer ones and markers can differ from scalar placeholders. |
 
-**Out of scope for these stories:** running Word VBA, or guaranteeing full Word layout/HTML fidelity (see non-goals below).
+**Out of scope for these stories:** running Word VBA; inline `#if` inside a single paragraph (use a computed scalar instead); `elseif` / `else` in template syntax (v1).
 
 ---
 
@@ -44,17 +46,20 @@ The sections above/below state **behavior**; this subsection states **intent** i
 | Nested arrays | Flattened before `setValue` (dot keys). |
 | `Stringable` | Cast to string, then `setValue`. |
 | `TableRows` | `cloneRow` on an anchor column, then `setValue` for `placeholder#N` per row/cell. |
+| `ConditionalBlock` | Show or remove `${#if block}` … `${#endif block}` regions (nested, inside-out); markers use `conditional_*` config keys. |
 | `HtmlContent` | `setComplexBlock` with HTML rendered via PHPWord (`Html::addHtml`). |
 | `ImageSource` | `setImageValue` with optional width/height. |
 
-- **Symfony integration:** the bundle registers the **`nowo_word_template`** extension; options include `macro_opening` and `macro_closing` (must match what template authors type in Word). See [`CONFIGURATION.md`](CONFIGURATION.md).
+- **Symfony integration:** the bundle registers the **`nowo_word_template`** extension. Placeholder delimiters: `macro_opening`, `macro_closing`. Conditional delimiters: `conditional_if_opening`, `conditional_if_closing`, `conditional_endif_opening`, `conditional_endif_closing`. See [`CONFIGURATION.md`](CONFIGURATION.md).
+
+- **Compatibility:** PHP **8.2+**, Symfony **7.x / 8.x** (`composer.json`).
 
 **Explicit non-goals**
 
 - Executing or embedding **Word VBA**.
 - **Guaranteeing** pixel-perfect or full Word feature parity (headers/footers, advanced numbering, etc. depend on PHPWord and template design; rich HTML has the usual PHPWord limits noted in [`README.md`](../README.md) and [`USAGE.md`](USAGE.md)).
 
-**Demos** (`demo/symfony7`, `demo/symfony8`) illustrate integration (forms, filled `.docx` / PDF download, blank template download); they are **not** part of the Packagist package API — the contract for consumers is the processor, models, and extension above.
+**Demos** (`demo/symfony8`, FrankenPHP) illustrate integration: dynamic form from `listVariables()`, scalars (dot keys), PHP-computed inline scalar (`client_tier_label`), `HtmlContent`, `TableRows`, `ConditionalBlock` (including nested `funding_detail`), `ImageSource` (`demo_logo`), filled `.docx` / PDF download, blank template download, and commented `config/packages/nowo_word_template.yaml`. Demos are **not** part of the Packagist package API.
 
 ---
 
@@ -73,8 +78,8 @@ The sections above/below state **behavior**; this subsection states **intent** i
 | ID | Where | What it marks |
 | --- | --- | --- |
 | `REQ-MAKE-001` | Root [`Makefile`](../Makefile) | Docker-driven development workflow for the bundle |
-| `REQ-DEMO-005` | [`demo/symfony7/Makefile`](../demo/symfony7/Makefile), [`demo/symfony8/Makefile`](../demo/symfony8/Makefile) | Canonical `make up` behavior (wait, `composer install`, “Demo started at: …” message) |
-| `REQ-DEMO-007` | Same demo Makefiles | `make update-bundle`: sync mounted bundle, autoload, cache |
+| `REQ-DEMO-005` | [`demo/symfony8/Makefile`](../demo/symfony8/Makefile) | Canonical `make up` behavior (wait, `composer install`, “Demo started at: …” message) |
+| `REQ-DEMO-007` | [`demo/symfony8/Makefile`](../demo/symfony8/Makefile) | `make update-bundle`: sync mounted bundle, autoload, cache |
 
 When you change scripted behavior, **update the existing `REQ-*` comment** if the requirement ID still describes the rule, or **introduce a new `REQ-*`** and reference it from the PR description and any affected docs.
 
