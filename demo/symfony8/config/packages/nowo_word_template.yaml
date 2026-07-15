@@ -1,6 +1,5 @@
-# Example: copy to config/packages/nowo_word_template.yaml in your Symfony application.
-# Delimiter settings for .docx template placeholders and conditional blocks.
-# Values must match what template authors type in Microsoft Word (see docs/USAGE.md).
+# WordTemplateBundle — delimiter settings for .docx template placeholders and conditional blocks.
+# Values must match what template authors type in Microsoft Word (see bundle docs/USAGE.md).
 
 nowo_word_template:
     # Opening delimiter for scalar, nested, HTML, image, and table-row placeholders.

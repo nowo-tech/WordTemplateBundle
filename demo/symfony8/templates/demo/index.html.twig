@@ -20,6 +20,20 @@
   </div>
 
   <details class="mb-3 small">
+    <summary>Bundle features covered by this demo</summary>
+    <ul class="mt-2 mb-0">
+      <li><span class="badge bg-secondary">Scalar</span> — text fields (e.g. <code>${chapter.title}</code>, dot keys).</li>
+      <li><span class="badge bg-secondary">Inline scalar</span> — <code>${client_tier_label}</code> in one paragraph; VIP checkbox picks <em>Gold</em> or <em>Standard</em> in PHP (not a block conditional).</li>
+      <li><span class="badge bg-secondary">HtmlContent</span> — rich HTML fields (abstract, *.body, …).</li>
+      <li><span class="badge bg-secondary">TableRows</span> — repeating table rows (<code>row_code</code>, <code>ref_text</code>).</li>
+      <li><span class="badge bg-secondary">ConditionalBlock</span> — <code>${{ '{' }}#if optional_funding}</code> … <code>${{ '{' }}#endif optional_funding}</code>.</li>
+      <li><span class="badge bg-secondary">Nested conditional</span> — <code>${{ '{' }}#if funding_detail}</code> inside <code>optional_funding</code>.</li>
+      <li><span class="badge bg-secondary">ImageSource</span> — <code>${demo_logo}</code> from a filesystem path.</li>
+      <li><span class="badge bg-secondary">Config</span> — <code>config/packages/nowo_word_template.yaml</code> (macro and conditional delimiters).</li>
+    </ul>
+  </details>
+
+  <details class="mb-3 small">
     <summary>HTML supported in <span class="badge bg-secondary">HtmlContent</span> fields</summary>
     <ul class="mt-2">
       <li>Inline: <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code>, <code>&lt;u&gt;</code>, line breaks.</li>
@@ -91,6 +105,60 @@
         </table>
       </fieldset>
     {% endfor %}
+
+    {% if conditional_blocks is not empty %}
+      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
+        <legend class="float-none w-auto px-2 fs-6">
+          Conditional blocks <span class="badge bg-secondary ms-1">ConditionalBlock</span>
+        </legend>
+        <p class="small text-muted">
+          Twig-style regions in the template:
+          {% for block, _label in conditional_blocks %}
+            <code class="me-2">${{ '{' }}#if {{ block }}{{ '}' }}</code>…<code>${{ '{' }}#endif {{ block }}{{ '}' }}</code>{% if not loop.last %},{% endif %}
+          {% endfor %}
+        </p>
+        <div class="vstack gap-2">
+          {% for block, label in conditional_blocks %}
+            {% set field = form.conditionals[block|replace({'.': DOT})] %}
+            <div class="form-check">
+              {{ form_widget(field) }}
+              {{ form_label(field, label, {label_attr: {class: 'form-check-label'}}) }}
+              <code class="small text-muted ms-1">${{ '{' }}#if {{ block }}{{ '}' }}</code>
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+    {% endif %}
+
+    <fieldset class="border rounded p-3 mb-3 demo-fieldset">
+      <legend class="float-none w-auto px-2 fs-6">
+        Inline scalar <span class="badge bg-secondary ms-1">computed in PHP</span>
+      </legend>
+      <p class="small text-muted mb-2">
+        Same paragraph as normal text — template has <code>${client_tier_label}</code>; the checkbox below sets
+        <em>Gold</em> or <em>Standard</em> (no <code>${{ '{' }}#if}</code> markers in the line).
+      </p>
+      <div class="form-check">
+        {{ form_widget(form.scalar_choices.client_is_vip) }}
+        {{ form_label(form.scalar_choices.client_is_vip, 'VIP client', {label_attr: {class: 'form-check-label'}}) }}
+      </div>
+    </fieldset>
+
+    {% if image_placeholders is not empty %}
+      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
+        <legend class="float-none w-auto px-2 fs-6">
+          Images <span class="badge bg-secondary ms-1">ImageSource</span>
+        </legend>
+        <p class="small text-muted mb-2">Absolute path on the demo container/host (default: bundled <code>demo-logo.png</code>).</p>
+        {% for imageVar in image_placeholders %}
+          {% set field = form.images[imageVar|replace({'.': DOT})] %}
+          <div class="mb-2">
+            {{ form_label(field) }}
+            {{ form_widget(field) }}
+          </div>
+        {% endfor %}
+      </fieldset>
+    {% endif %}
 
     <div class="d-flex flex-wrap gap-2 align-items-center">
       <a href="{{ path('demo_template') }}" class="btn btn-outline-primary">Download blank template</a>

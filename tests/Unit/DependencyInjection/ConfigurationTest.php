@@ -17,6 +17,10 @@ final class ConfigurationTest extends TestCase
 
         self::assertSame('${', $config['macro_opening']);
         self::assertSame('}', $config['macro_closing']);
+        self::assertSame('${#if', $config['conditional_if_opening']);
+        self::assertSame('}', $config['conditional_if_closing']);
+        self::assertSame('${#endif', $config['conditional_endif_opening']);
+        self::assertSame('}', $config['conditional_endif_closing']);
     }
 
     public function testCustomMacroDelimiters(): void
@@ -28,5 +32,23 @@ final class ConfigurationTest extends TestCase
 
         self::assertSame('[[', $config['macro_opening']);
         self::assertSame(']]', $config['macro_closing']);
+    }
+
+    public function testCustomConditionalDelimiters(): void
+    {
+        $processor = new Processor();
+        $config    = $processor->processConfiguration(new Configuration(), [
+            [
+                'conditional_if_opening'    => '[[#if',
+                'conditional_if_closing'    => ']]',
+                'conditional_endif_opening' => '[[#endif',
+                'conditional_endif_closing' => ']]',
+            ],
+        ]);
+
+        self::assertSame('[[#if', $config['conditional_if_opening']);
+        self::assertSame(']]', $config['conditional_if_closing']);
+        self::assertSame('[[#endif', $config['conditional_endif_opening']);
+        self::assertSame(']]', $config['conditional_endif_closing']);
     }
 }

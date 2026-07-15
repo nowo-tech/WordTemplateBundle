@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\WordTemplateBundle\Tests\Unit\Util;
 
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
@@ -30,18 +31,21 @@ final class ContextFlattenerTest extends TestCase
 
     public function testPreservesModelObjects(): void
     {
-        $rows = new TableRows('line', [['line' => '1', 'x' => 'y']]);
-        $html = new HtmlContent('<p>Hi</p>');
-        $img  = new ImageSource('/tmp/x.png');
+        $conditional = new ConditionalBlock('vip_section', true);
+        $rows        = new TableRows('line', [['line' => '1', 'x' => 'y']]);
+        $html        = new HtmlContent('<p>Hi</p>');
+        $img         = new ImageSource('/tmp/x.png');
 
         $flat = ContextFlattener::flatten([
             'nested' => [
                 'rows' => $rows,
             ],
+            'vip'  => $conditional,
             'body' => $html,
             'logo' => $img,
         ]);
 
+        self::assertSame($conditional, $flat['vip']);
         self::assertSame($rows, $flat['nested.rows']);
         self::assertSame($html, $flat['body']);
         self::assertSame($img, $flat['logo']);

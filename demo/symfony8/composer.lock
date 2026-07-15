@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8276c644b824805d0aa2a63a1a72e022",
+    "content-hash": "13b0311102a6b98b207c55d39bdf62bb",
     "packages": [
         {
             "name": "dompdf/dompdf",
@@ -234,7 +234,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/word-template-bundle",
-                "reference": "fb41f0424e724d0e5b088a0592209bd90e2d1e5b"
+                "reference": "3999d51934cc2f5b2a2ce92abaf92d2d1a9c5021"
             },
             "require": {
                 "ext-dom": "*",
@@ -243,9 +243,9 @@
                 "ext-zip": "*",
                 "php": ">=8.2 <8.6",
                 "phpoffice/phpword": "^1.3",
-                "symfony/config": "^6.4 || ^7.0 || ^8.0",
-                "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
-                "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0"
+                "symfony/config": "^7.0 || ^8.0",
+                "symfony/dependency-injection": "^7.0 || ^8.0",
+                "symfony/http-kernel": "^7.0 || ^8.0"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.0",
@@ -255,8 +255,8 @@
                 "phpstan/phpstan-symfony": "^2.0",
                 "phpunit/phpunit": "^11.0",
                 "rector/rector": "^2.0",
-                "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
-                "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
+                "symfony/framework-bundle": "^7.0 || ^8.0",
+                "symfony/yaml": "^7.0 || ^8.0"
             },
             "suggest": {
                 "nowo-tech/html-to-word-bundle": "Optional: build .docx from full HTML when you do not use a Word template (WYSIWYG → DOCX pipeline)."
@@ -5006,7 +5006,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.4"
+        "php": ">=8.2"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

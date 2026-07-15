@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Form\WordTemplateFormType;
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
+use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
@@ -45,6 +47,10 @@ use const PATHINFO_FILENAME;
  *   {@code cloneRow}) and rendered as multi-row sections.
  * - Variables matched by {@see HTML_FIELD_PATTERNS} are wrapped in {@see HtmlContent}
  *   so the user can paste rich HTML.
+ * - Variables in {@see CONDITIONAL_BLOCKS} are passed as {@see ConditionalBlock} to show or
+ *   hide Twig-style {@code ${#if block}} … {@code ${#endif block}} regions in the template.
+ * - {@see IMAGE_PLACEHOLDERS} are filled with {@see ImageSource}; {@see COMPUTED_SCALAR_VARS}
+ *   demonstrate inline “word A or B” via a scalar computed in PHP (not {@see ConditionalBlock}).
  */
 final class WordTemplateDemoController extends AbstractController
 {
@@ -76,6 +82,34 @@ final class WordTemplateDemoController extends AbstractController
         '/\.quote$/',
     ];
 
+    /**
+     * Conditional block name => short label for the demo form.
+     *
+     * @var array<string, string>
+     */
+    private const CONDITIONAL_BLOCKS = [
+        'optional_funding' => 'Show funding section',
+        'funding_detail'   => 'Show funding note (nested inside optional_funding)',
+    ];
+
+    /**
+     * Placeholders filled with {@see ImageSource} (filesystem path in the demo form).
+     *
+     * @var list<string>
+     */
+    private const IMAGE_PLACEHOLDERS = [
+        'demo_logo',
+    ];
+
+    /**
+     * Scalars computed in PHP for inline “one word or another” (same paragraph, no block markers).
+     *
+     * @var list<string>
+     */
+    private const COMPUTED_SCALAR_VARS = [
+        'client_tier_label',
+    ];
+
     #[Route('/', name: 'demo_home', methods: ['GET', 'POST'])]
     public function home(Request $request, WordTemplateProcessorInterface $processor): Response
     {
@@ -87,17 +121,25 @@ final class WordTemplateDemoController extends AbstractController
         sort($variables);
 
         $rowVars    = $this->collectRowVariables();
-        $simpleVars = array_values(array_diff($variables, $rowVars));
+        $managed    = array_merge(self::IMAGE_PLACEHOLDERS, self::COMPUTED_SCALAR_VARS);
+        $simpleVars = array_values(array_diff($variables, $rowVars, $managed));
         $htmlVars   = array_values(array_filter($simpleVars, fn (string $v): bool => $this->isHtmlField($v)));
 
+        $demoLogoPath = $projectDir . '/public/demo/demo-logo.png';
+
         $form = $this->createForm(WordTemplateFormType::class, null, [
-            'simple_vars'  => $simpleVars,
-            'html_vars'    => $htmlVars,
-            'row_groups'   => self::ROW_GROUPS,
-            'defaults'     => $this->defaults(),
-            'default_rows' => $this->defaultRows(),
-            'action'       => $this->generateUrl('demo_home'),
-            'method'       => 'POST',
+            'simple_vars'            => $simpleVars,
+            'html_vars'              => $htmlVars,
+            'row_groups'             => self::ROW_GROUPS,
+            'conditional_blocks'     => self::CONDITIONAL_BLOCKS,
+            'image_placeholders'     => self::IMAGE_PLACEHOLDERS,
+            'default_images'         => ['demo_logo' => $demoLogoPath],
+            'default_scalar_choices' => ['client_is_vip' => true],
+            'defaults'               => $this->defaults(),
+            'default_rows'           => $this->defaultRows(),
+            'default_conditionals'   => $this->defaultConditionals(),
+            'action'                 => $this->generateUrl('demo_home'),
+            'method'                 => 'POST',
         ]);
 
         $form->handleRequest($request);
@@ -121,12 +163,15 @@ final class WordTemplateDemoController extends AbstractController
         }
 
         return $this->render('demo/index.html.twig', [
-            'template_filename' => self::TEMPLATE_FILENAME,
-            'all_variables'     => $variables,
-            'simple_vars'       => $simpleVars,
-            'html_vars'         => $htmlVars,
-            'row_groups'        => self::ROW_GROUPS,
-            'form'              => $form,
+            'template_filename'    => self::TEMPLATE_FILENAME,
+            'all_variables'        => $variables,
+            'simple_vars'          => $simpleVars,
+            'html_vars'            => $htmlVars,
+            'row_groups'           => self::ROW_GROUPS,
+            'conditional_blocks'   => self::CONDITIONAL_BLOCKS,
+            'image_placeholders'   => self::IMAGE_PLACEHOLDERS,
+            'computed_scalar_vars' => self::COMPUTED_SCALAR_VARS,
+            'form'                 => $form,
         ]);
     }
 
@@ -199,10 +244,10 @@ final class WordTemplateDemoController extends AbstractController
     }
 
     /**
-     * @param array{placeholders?: array<string, string|null>, rows?: array<string, list<array<string, string|null>>>} $data
+     * @param array{placeholders?: array<string, string|null>, rows?: array<string, list<array<string, string|null>>>, conditionals?: array<string, bool|null>, scalar_choices?: array<string, bool|null>, images?: array<string, string|null>} $data
      * @param list<string> $simpleVars
      *
-     * @return array<string, HtmlContent|string|TableRows>
+     * @return array<string, ConditionalBlock|HtmlContent|ImageSource|string|TableRows>
      */
     private function buildContextFromForm(array $data, array $simpleVars): array
     {
@@ -248,6 +293,30 @@ final class WordTemplateDemoController extends AbstractController
             }
 
             $context[$anchor] = new TableRows($anchor, $rows);
+        }
+
+        $conditionalsRaw = $data['conditionals'] ?? [];
+        foreach (self::CONDITIONAL_BLOCKS as $blockName => $_label) {
+            $field               = WordTemplateFormType::sanitize($blockName);
+            $context[$blockName] = new ConditionalBlock(
+                $blockName,
+                (bool) ($conditionalsRaw[$field] ?? false),
+            );
+        }
+
+        $scalarChoices                = $data['scalar_choices'] ?? [];
+        $isVip                        = (bool) ($scalarChoices['client_is_vip'] ?? false);
+        $context['client_tier_label'] = $isVip ? 'Gold' : 'Standard';
+
+        $imagesRaw = $data['images'] ?? [];
+        foreach (self::IMAGE_PLACEHOLDERS as $imageVar) {
+            $field = WordTemplateFormType::sanitize($imageVar);
+            $path  = (string) ($imagesRaw[$field] ?? '');
+            if ($path !== '' && is_file($path)) {
+                $context[$imageVar] = new ImageSource($path, 80, 40);
+            } else {
+                $context[$imageVar] = '';
+            }
         }
 
         return $context;
@@ -334,6 +403,7 @@ final class WordTemplateDemoController extends AbstractController
                 . '<p>2. Nested keys remove form boilerplate.</p>'
                 . '<p>3. <code>TableRows</code> covers true repeating rows in the template.</p>',
             'acknowledgements.body' => '<p>Funded by <strong>Nowo.tech</strong>.</p>',
+            'optional_funding.note' => 'This work was supported by the Nowo.tech research grant #2026-DEMO.',
             'figure1.caption'       => 'Aggregated demo metrics over 2026.',
             'figure1.source'        => 'Own elaboration',
             'table1.caption'        => 'Sample dataset.',
@@ -368,6 +438,17 @@ final class WordTemplateDemoController extends AbstractController
         }
 
         return $html . '</table>';
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function defaultConditionals(): array
+    {
+        return [
+            'optional_funding' => true,
+            'funding_detail'   => true,
+        ];
     }
 
     /**

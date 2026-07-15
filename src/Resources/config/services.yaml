@@ -10,6 +10,10 @@ services:
         arguments:
             $macroOpening: '%nowo_word_template.macro_opening%'
             $macroClosing: '%nowo_word_template.macro_closing%'
+            $conditionalIfOpening: '%nowo_word_template.conditional_if_opening%'
+            $conditionalIfClosing: '%nowo_word_template.conditional_if_closing%'
+            $conditionalEndifOpening: '%nowo_word_template.conditional_endif_opening%'
+            $conditionalEndifClosing: '%nowo_word_template.conditional_endif_closing%'
 
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
         alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor

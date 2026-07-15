@@ -1,5 +1,44 @@
 # Upgrading
 
+## 1.1.0
+
+**New feature:** `ConditionalBlock` for `${#if blockName}` … `${#endif blockName}` regions (nested blocks supported). **Platform change:** Symfony **6.4** is no longer supported — require PHP **8.2+** and Symfony **7.x** or **8.x**.
+
+### Symfony 7.x / 8.x (recommended)
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.1
+```
+
+**No breaking API changes** for existing integrations. Scalars, `TableRows`, `HtmlContent`, and `ImageSource` behave as in `1.0.x`.
+
+**Optional — conditional blocks**
+
+1. Add markers in Word (one marker per paragraph), e.g. `${#if optional_funding}` … `${#endif optional_funding}`.
+2. Pass `ConditionalBlock` in the context:
+
+```php
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
+
+'optional_funding' => new ConditionalBlock('optional_funding', $order->hasPublicFunding()),
+```
+
+3. If your templates use non-default delimiters, copy the new `conditional_*` keys from `src/Resources/config/nowo_word_template.yaml` (defaults match `${#if` / `${#endif`).
+
+`listVariables()` now omits `#if` / `#endif` marker names; only data placeholders are returned.
+
+**Inline “word A or B”** in a single paragraph is not a block conditional — compute a scalar in PHP (see demo `${client_tier_label}`).
+
+### Symfony 6.4
+
+Stay on **`1.0.x`** until you upgrade the framework:
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.0.5
+```
+
+Then move to `^1.1` after Symfony 7 or 8.
+
 ## 1.0.5
 
 Repository tooling and documentation only. **No application or configuration changes** when upgrading from `1.0.4`.

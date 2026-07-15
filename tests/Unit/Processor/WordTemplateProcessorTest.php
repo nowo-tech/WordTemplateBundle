@@ -19,13 +19,11 @@ final class WordTemplateProcessorTest extends TestCase
             $pw->addSection()->addText('Value=${v}');
         });
 
-        $target = sys_get_temp_dir() . '/nowo_word_out_' . bin2hex(random_bytes(6)) . '.docx';
-
         try {
             $this->expectException(RuntimeException::class);
             $this->expectExceptionMessage('Simulated save failure');
 
-            (new ThrowingWordTemplateProcessor())->process($tpl, ['v' => 'blocked'], $target);
+            (new ThrowingWordTemplateProcessor())->process($tpl, ['v' => 'blocked']);
         } finally {
             @unlink($tpl);
         }
@@ -49,6 +47,8 @@ readonly class ThrowingWordTemplateProcessor extends WordTemplateProcessor
 {
     protected function persistTemplate(TemplateProcessor $processor, string $target): void
     {
+        touch($target);
+
         throw new RuntimeException('Simulated save failure');
     }
 }

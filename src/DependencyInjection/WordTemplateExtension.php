@@ -20,6 +20,10 @@ final class WordTemplateExtension extends Extension
 
         $container->setParameter(Configuration::ALIAS . '.macro_opening', $config['macro_opening']);
         $container->setParameter(Configuration::ALIAS . '.macro_closing', $config['macro_closing']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_if_opening', $config['conditional_if_opening']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_if_closing', $config['conditional_if_closing']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_endif_opening', $config['conditional_endif_opening']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_endif_closing', $config['conditional_endif_closing']);
     }
 
     public function getAlias(): string

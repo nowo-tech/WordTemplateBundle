@@ -1,6 +1,6 @@
 # FrankenPHP (Dunglas) - PHP 8.2 Alpine
 # https://frankenphp.dev/docs/docker/
-FROM dunglas/frankenphp:1-php8.4-alpine
+FROM dunglas/frankenphp:1-php8.2-alpine
 
 RUN apk add --no-cache git unzip bash nodejs npm
 # gd: required by phpoffice/phpword ^1.4
