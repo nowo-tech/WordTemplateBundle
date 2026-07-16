@@ -24,7 +24,7 @@ This bundle does **not** execute Word VBA macros; “macros” here means **temp
 
 ## Documentation
 
-- [GitLab CI requirements](docs/GITLAB_CI.md)
+- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)
