@@ -3,6 +3,12 @@
 # Values must match what template authors type in Microsoft Word (see docs/USAGE.md).
 
 nowo_word_template:
+    # Wall-clock timeout (seconds) for WordTemplateProcessor::process().
+    # Applied as a cooperative deadline between merge phases plus set_time_limit.
+    # Prefer '%env(int:PROCESS_TIMEOUT)%' (shared Nowo default 180). Keep below PHP
+    # max_execution_time and the reverse-proxy write timeout (FrankenPHP / REQ-RUNTIME-001).
+    timeout: 180
+
     # Opening delimiter for scalar, nested, HTML, image, and table-row placeholders.
     # Used by PHPWord TemplateProcessor (setValue, setImageValue, cloneRow, etc.).
     macro_opening: '${'

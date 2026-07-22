@@ -14,6 +14,7 @@ services:
             $conditionalIfClosing: '%nowo_word_template.conditional_if_closing%'
             $conditionalEndifOpening: '%nowo_word_template.conditional_endif_opening%'
             $conditionalEndifClosing: '%nowo_word_template.conditional_endif_closing%'
+            $timeout: '%nowo_word_template.timeout%'
 
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
         alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor

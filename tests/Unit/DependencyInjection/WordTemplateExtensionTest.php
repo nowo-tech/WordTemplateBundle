@@ -22,12 +22,24 @@ final class WordTemplateExtensionTest extends TestCase
             ],
         ], $container);
 
+        self::assertSame(180, $container->getParameter(Configuration::ALIAS . '.timeout'));
         self::assertSame('[[', $container->getParameter(Configuration::ALIAS . '.macro_opening'));
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.macro_closing'));
         self::assertSame('${#if', $container->getParameter(Configuration::ALIAS . '.conditional_if_opening'));
         self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.conditional_if_closing'));
         self::assertSame('${#endif', $container->getParameter(Configuration::ALIAS . '.conditional_endif_opening'));
         self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.conditional_endif_closing'));
+    }
+
+    public function testLoadSetsTimeoutParameter(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new WordTemplateExtension();
+        $extension->load([
+            ['timeout' => 90],
+        ], $container);
+
+        self::assertSame(90, $container->getParameter(Configuration::ALIAS . '.timeout'));
     }
 
     public function testLoadSetsConditionalParameters(): void

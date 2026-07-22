@@ -11,6 +11,7 @@ use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
+use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 use Nowo\WordTemplateBundle\Util\ConditionalBlockApplicator;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
 use PhpOffice\PhpWord\Element\Table;
@@ -20,6 +21,7 @@ use Stringable;
 use Throwable;
 
 use function count;
+use function ini_get;
 use function is_bool;
 use function sprintf;
 
@@ -34,6 +36,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         private string $conditionalIfClosing = '}',
         private string $conditionalEndifOpening = '${#endif',
         private string $conditionalEndifClosing = '}',
+        private int $timeout = 180,
     ) {
     }
 
@@ -49,55 +52,78 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument
     {
-        /** @var array<string, ConditionalBlock|HtmlContent|ImageSource|scalar|Stringable|TableRows|null> $flat */
-        $flat = ContextFlattener::flatten($context);
-
-        $processor = $this->openTemplate($templatePath);
-
-        $this->applyConditionalBlocks($processor, $flat);
-
-        foreach ($flat as $value) {
-            if ($value instanceof TableRows) {
-                $this->applyTableRows($processor, $value);
-
-                continue;
-            }
-        }
-
-        foreach ($flat as $key => $value) {
-            if ($value instanceof ConditionalBlock || $value instanceof TableRows) {
-                continue;
-            }
-
-            if ($value instanceof HtmlContent) {
-                $this->applyHtml($processor, $key, $value);
-
-                continue;
-            }
-
-            if ($value instanceof ImageSource) {
-                $this->applyImage($processor, $key, $value);
-
-                continue;
-            }
-
-            $processor->setValue($key, $this->stringify($value));
-        }
-
-        $target    = $outputPath ?? $this->makeTempOutputPath();
-        $temporary = $outputPath === null;
+        $previousMaxExecution = (int) ini_get('max_execution_time');
+        set_time_limit($this->timeout);
 
         try {
-            $this->persistTemplate($processor, $target);
-        } catch (Throwable $e) {
-            if ($temporary && is_file($target)) {
-                @unlink($target);
+            $deadline = $this->createDeadline();
+
+            /** @var array<string, ConditionalBlock|HtmlContent|ImageSource|scalar|Stringable|TableRows|null> $flat */
+            $flat = ContextFlattener::flatten($context);
+
+            $processor = $this->openTemplate($templatePath);
+            $deadline->assertNotTimedOut();
+
+            $this->applyConditionalBlocks($processor, $flat);
+            $deadline->assertNotTimedOut();
+
+            foreach ($flat as $value) {
+                if ($value instanceof TableRows) {
+                    $this->applyTableRows($processor, $value);
+                    $deadline->assertNotTimedOut();
+                }
             }
 
-            throw $e;
-        }
+            foreach ($flat as $key => $value) {
+                if ($value instanceof ConditionalBlock || $value instanceof TableRows) {
+                    continue;
+                }
 
-        return new ProcessedDocument($target, $temporary);
+                if ($value instanceof HtmlContent) {
+                    $this->applyHtml($processor, $key, $value);
+                    $deadline->assertNotTimedOut();
+
+                    continue;
+                }
+
+                if ($value instanceof ImageSource) {
+                    $this->applyImage($processor, $key, $value);
+                    $deadline->assertNotTimedOut();
+
+                    continue;
+                }
+
+                $processor->setValue($key, $this->stringify($value));
+                $deadline->assertNotTimedOut();
+            }
+
+            $target    = $outputPath ?? $this->makeTempOutputPath();
+            $temporary = $outputPath === null;
+
+            $deadline->assertNotTimedOut();
+
+            try {
+                $this->persistTemplate($processor, $target);
+            } catch (Throwable $e) {
+                if ($temporary && is_file($target)) {
+                    @unlink($target);
+                }
+
+                throw $e;
+            }
+
+            return new ProcessedDocument($target, $temporary);
+        } finally {
+            set_time_limit($previousMaxExecution);
+        }
+    }
+
+    /**
+     * @internal hook for unit tests that force an already-expired deadline
+     */
+    protected function createDeadline(): ProcessDeadline
+    {
+        return new ProcessDeadline($this->timeout);
     }
 
     /**

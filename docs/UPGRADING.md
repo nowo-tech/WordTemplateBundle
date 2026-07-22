@@ -1,5 +1,24 @@
 # Upgrading
 
+## 1.2.0
+
+**New feature:** configurable merge **`timeout`** (**REQ-RUNTIME-001**, FrankenPHP-safe). **No breaking API changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2
+```
+
+### Optional — configure merge timeout
+
+New config key **`timeout`** (default **180** seconds). Existing apps need no code changes; the default applies automatically.
+
+```yaml
+nowo_word_template:
+    timeout: '%env(int:PROCESS_TIMEOUT)%'   # PROCESS_TIMEOUT=180 in .env
+```
+
+On expiry, `process()` throws `Nowo\WordTemplateBundle\Exception\ProcessingTimedOutException`. Keep PHP `max_execution_time` and reverse-proxy write deadlines **above** this value under FrankenPHP — see [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md) and [CONFIGURATION.md](CONFIGURATION.md).
+
 ## 1.1.0
 
 **New feature:** `ConditionalBlock` for `${#if blockName}` … `${#endif blockName}` regions (nested blocks supported). **Platform change:** Symfony **6.4** is no longer supported — require PHP **8.2+** and Symfony **7.x** or **8.x**.

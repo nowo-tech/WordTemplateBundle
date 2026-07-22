@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Single entry inside a {@see \Symfony\Component\Form\Extension\Core\Type\CollectionType}.
+ * Single entry inside a {@see CollectionType}.
  *
  * Renders one input per cell from the {@code cell_map} option (sanitized field name → original placeholder name).
  */

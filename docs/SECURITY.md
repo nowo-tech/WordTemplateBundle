@@ -31,7 +31,12 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 ### Untrusted context / XXE and XML
 
 - **Risk**: Extremely large strings or crafted payloads stressing PHPWord.
-- **Mitigation**: Enforce size limits at the application layer; keep dependencies updated (`composer audit`).
+- **Mitigation**: Enforce size limits at the application layer; keep dependencies updated (`composer audit`). Configure `nowo_word_template.timeout` (default **180s**) so a pathological merge cannot pin a FrankenPHP worker indefinitely (**REQ-RUNTIME-001**).
+
+### Resource exhaustion / long merges
+
+- **Risk**: Large templates, heavy HTML, or many `TableRows` occupy a PHP thread until completion.
+- **Mitigation**: Bundle `timeout` applies a cooperative deadline between merge phases and `set_time_limit`. Keep PHP `max_execution_time` and reverse-proxy write deadlines **above** this value (see [CONFIGURATION.md](CONFIGURATION.md) and [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md)).
 
 ### Image path abuse
 
@@ -66,5 +71,5 @@ Before each tagged release, maintainers confirm (tick in the release PR or tag n
 | Inputs validated at application boundary where untrusted | ☐ |
 | `composer audit` clean or exceptions documented | ☐ |
 | No sensitive data in logs | ☐ |
+| Resource limits (`timeout`) for large templates/HTML considered | ☐ |
 | Permissions / exposure of generated files acceptable | ☐ |
-| Resource limits for large templates/HTML considered | ☐ |

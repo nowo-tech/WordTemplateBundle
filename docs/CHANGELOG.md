@@ -4,6 +4,31 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.2.0 — 2026-07-22
+
+### Added
+
+- **`timeout`** config (`nowo_word_template.timeout`, default **180**) — wall-clock limit for `WordTemplateProcessor::process()` via cooperative deadline between merge phases and PHP `set_time_limit` (**REQ-RUNTIME-001**). Prefer `%env(int:PROCESS_TIMEOUT)%`.
+- **`ProcessingTimedOutException`** when the merge deadline expires.
+- **`ProcessDeadline`** — internal cooperative wall-clock checks during merge.
+- **Demo** — FrankenPHP timeout hierarchy (merge **180** &lt; PHP **240** &lt; Caddy write **250**, `max_wait_time` **30s**); `PROCESS_TIMEOUT` in `.env` / `.env.example`; extracted `docker/entrypoint.sh` for `FRANKENPHP_MODE`.
+
+### Changed
+
+- **PHP-CS-Fixer** — `fully_qualified_strict_types.import_symbols` enabled (import style for FQCN in docs/`@see`).
+
+### Documentation
+
+- **[`CONFIGURATION.md`](CONFIGURATION.md)**, **[`DEMO-FRANKENPHP.md`](DEMO-FRANKENPHP.md)**, **[`SECURITY.md`](SECURITY.md)**, **[`UPGRADING.md`](UPGRADING.md)**, **[`README.md`](../README.md)**, Spec Kit inventory — timeout hierarchy and FrankenPHP worker guidance.
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2
+```
+
+No breaking API changes. Optional: set `timeout` / `PROCESS_TIMEOUT` and align PHP / Caddy deadlines. See [UPGRADING.md](UPGRADING.md).
+
 ## 1.1.0 — 2026-07-15
 
 ### Added

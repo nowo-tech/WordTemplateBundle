@@ -2,6 +2,10 @@
 # Values must match what template authors type in Microsoft Word (see bundle docs/USAGE.md).
 
 nowo_word_template:
+    # Shared Nowo operation limit (PROCESS_TIMEOUT). Keep below PHP max_execution_time (240)
+    # and Caddy write timeout (250s) — see docs/DEMO-FRANKENPHP.md (REQ-RUNTIME-001).
+    timeout: '%env(int:PROCESS_TIMEOUT)%'
+
     # Opening delimiter for scalar, nested, HTML, image, and table-row placeholders.
     # Used by PHPWord TemplateProcessor (setValue, setImageValue, cloneRow, etc.).
     macro_opening: '${'

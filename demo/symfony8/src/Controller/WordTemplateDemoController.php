@@ -11,6 +11,7 @@ use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
+use Nowo\WordTemplateBundle\Util\ContextFlattener;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
 use RuntimeException;
@@ -42,7 +43,7 @@ use const PATHINFO_FILENAME;
  * {@see WordTemplateProcessorInterface::listVariables()} and renders a dynamic form
  * so any user can fill them in and download the resulting `.docx`.
  * - Variable names containing "." (e.g. {@code chapter.number}) are kept flat — the
- *   {@see \Nowo\WordTemplateBundle\Util\ContextFlattener} accepts them as-is.
+ *   {@see ContextFlattener} accepts them as-is.
  * - Variables in {@see ROW_GROUPS} are treated as repeating-row anchors (PHPWord
  *   {@code cloneRow}) and rendered as multi-row sections.
  * - Variables matched by {@see HTML_FIELD_PATTERNS} are wrapped in {@see HtmlContent}

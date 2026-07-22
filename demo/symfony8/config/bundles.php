@@ -1,12 +1,18 @@
 <?php
 
 declare(strict_types=1);
+use Nowo\TwigInspectorBundle\NowoTwigInspectorBundle;
+use Nowo\WordTemplateBundle\WordTemplateBundle;
+use Symfony\Bundle\DebugBundle\DebugBundle;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Bundle\TwigBundle\TwigBundle;
+use Symfony\Bundle\WebProfilerBundle\WebProfilerBundle;
 
 return [
-    Symfony\Bundle\FrameworkBundle\FrameworkBundle::class     => ['all' => true],
-    Symfony\Bundle\TwigBundle\TwigBundle::class               => ['all' => true],
-    Symfony\Bundle\DebugBundle\DebugBundle::class             => ['dev' => true],
-    Symfony\Bundle\WebProfilerBundle\WebProfilerBundle::class => ['dev' => true],
-    Nowo\WordTemplateBundle\WordTemplateBundle::class         => ['all' => true],
-    Nowo\TwigInspectorBundle\NowoTwigInspectorBundle::class   => ['dev' => true, 'test' => true],
+    FrameworkBundle::class         => ['all' => true],
+    TwigBundle::class              => ['all' => true],
+    DebugBundle::class             => ['dev' => true],
+    WebProfilerBundle::class       => ['dev' => true],
+    WordTemplateBundle::class      => ['all' => true],
+    NowoTwigInspectorBundle::class => ['dev' => true, 'test' => true],
 ];

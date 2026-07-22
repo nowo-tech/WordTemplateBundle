@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\Tests\Unit\Processor;
 
+use Nowo\WordTemplateBundle\Exception\ProcessingTimedOutException;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessor;
+use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -24,6 +26,22 @@ final class WordTemplateProcessorTest extends TestCase
             $this->expectExceptionMessage('Simulated save failure');
 
             (new ThrowingWordTemplateProcessor())->process($tpl, ['v' => 'blocked']);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testThrowsWhenProcessingDeadlineExpires(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('Value=${v}');
+        });
+
+        try {
+            $this->expectException(ProcessingTimedOutException::class);
+            $this->expectExceptionMessage('Word template processing timed out after 1 seconds.');
+
+            (new ExpiredDeadlineWordTemplateProcessor(timeout: 1))->process($tpl, ['v' => 'late']);
         } finally {
             @unlink($tpl);
         }
@@ -50,5 +68,14 @@ readonly class ThrowingWordTemplateProcessor extends WordTemplateProcessor
         touch($target);
 
         throw new RuntimeException('Simulated save failure');
+    }
+}
+
+readonly class ExpiredDeadlineWordTemplateProcessor extends WordTemplateProcessor
+{
+    protected function createDeadline(): ProcessDeadline
+    {
+        // Start time far in the past so the first checkpoint fails immediately.
+        return new ProcessDeadline(1, hrtime(true) - 2_000_000_000.0);
     }
 }

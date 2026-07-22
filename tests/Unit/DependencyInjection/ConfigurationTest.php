@@ -15,12 +15,23 @@ final class ConfigurationTest extends TestCase
         $processor = new Processor();
         $config    = $processor->processConfiguration(new Configuration(), []);
 
+        self::assertSame(180, $config['timeout']);
         self::assertSame('${', $config['macro_opening']);
         self::assertSame('}', $config['macro_closing']);
         self::assertSame('${#if', $config['conditional_if_opening']);
         self::assertSame('}', $config['conditional_if_closing']);
         self::assertSame('${#endif', $config['conditional_endif_opening']);
         self::assertSame('}', $config['conditional_endif_closing']);
+    }
+
+    public function testCustomTimeout(): void
+    {
+        $processor = new Processor();
+        $config    = $processor->processConfiguration(new Configuration(), [
+            ['timeout' => 60],
+        ]);
+
+        self::assertSame(60, $config['timeout']);
     }
 
     public function testCustomMacroDelimiters(): void

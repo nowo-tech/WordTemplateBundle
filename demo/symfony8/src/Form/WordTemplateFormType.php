@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Form;
 
+use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
@@ -29,7 +30,7 @@ use function str_replace;
  * Symfony Form field names cannot contain dots, so each variable name read from the {@code .docx}
  * is sanitized via {@see sanitize()} (e.g. {@code chapter.number} → {@code chapter_DOT_number}).
  * The controller restores the dotted keys via {@see unsanitize()} when building the context array
- * passed to {@see \Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface::process()}.
+ * passed to {@see WordTemplateProcessorInterface::process()}.
  *
  * Children:
  *  - {@code placeholders}: one text/textarea per simple variable (textarea when in {@code html_vars}).

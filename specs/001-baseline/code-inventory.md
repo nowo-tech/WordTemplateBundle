@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/word-template-bundle`  
-**Last audited**: 2026-07-15
+**Last audited**: 2026-07-22
 
 This file proves that **every production source artifact** under `src/` is referenced by the baseline specification. Test-only files under `tests/` and `*.test.ts` under `src/` are out of Packagist scope. Built assets under `Resources/public/` are documented as Vite/build outputs.
 
@@ -10,7 +10,7 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `DependencyInjection/Configuration.php` | Config tree | FR-CFG-001, FR-CFG-002 |
+| `DependencyInjection/Configuration.php` | Config tree | FR-CFG-001, FR-CFG-002, FR-CFG-004 |
 | `DependencyInjection/WordTemplateExtension.php` | DI extension | FR-CFG-003 |
 | `WordTemplateBundle.php` | Bundle entry | FR-BUNDLE-001 |
 
@@ -30,11 +30,18 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Util/ContextFlattener.php` | Support utility | FR-UTIL-001 |
 | `Util/ConditionalBlockApplicator.php` | Conditional regions | FR-UTIL-001 |
 
+## Runtime
+
+| Source file | Spec section | Requirement IDs |
+| --- | --- | --- |
+| `Runtime/ProcessDeadline.php` | Merge timeout | FR-PROC-005, FR-CFG-004 |
+
 ## Exceptions
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
 | `Exception/InvalidContextValueException.php` | Domain exception | FR-ERR-001 |
+| `Exception/ProcessingTimedOutException.php` | Domain exception | FR-ERR-001 |
 | `Exception/TemplateNotFoundException.php` | Domain exception | FR-ERR-001 |
 | `Exception/WordTemplateExceptionInterface.php` | Domain exception | FR-ERR-001 |
 
@@ -42,7 +49,7 @@ This file proves that **every production source artifact** under `src/` is refer
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `Processor/WordTemplateProcessor.php` | Template processor | FR-PROC-002, FR-PROC-004 |
+| `Processor/WordTemplateProcessor.php` | Template processor | FR-PROC-002, FR-PROC-004, FR-PROC-005 |
 | `Processor/TemplateProcessorBridge.php` | Template processor (internal) | FR-PROC-002 |
 | `Processor/WordTemplateProcessorInterface.php` | Processor contract | FR-PROC-001 |
 | `Result/ProcessedDocument.php` | Processed document result | FR-PROC-003 |
@@ -61,9 +68,10 @@ This file proves that **every production source artifact** under `src/` is refer
 | Bundle & DI | 3 | 3 |
 | Domain models | 4 | 4 |
 | Support utilities | 2 | 2 |
-| Exceptions | 3 | 3 |
+| Runtime | 1 | 1 |
+| Exceptions | 4 | 4 |
 | Document processing | 4 | 4 |
 | Symfony config | 2 | 2 |
-| **Total production sources** | **18** | **18** |
+| **Total production sources** | **20** | **20** |
 
 Audit: `find src -type f ! -path '*/assets/dist/*' ! -name '*.test.ts' | wc -l`

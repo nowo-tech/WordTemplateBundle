@@ -1,5 +1,20 @@
 {
 	skip_install_trust
+	# Same timeout hierarchy as Caddyfile — keep workers from holding a merge forever.
+	#   process() timeout (PROCESS_TIMEOUT)  <  PHP max_execution_time  <  Caddy write timeout
+	servers {
+		timeouts {
+			read_body 60s
+			read_header 30s
+			write 250s
+			idle 5m
+		}
+	}
+	frankenphp {
+		php_ini max_execution_time 240
+		php_ini max_input_time 240
+		max_wait_time 30s
+	}
 }
 
 :80 {

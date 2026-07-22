@@ -749,6 +749,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     excluded_ajax_paths?: scalar|Param|null, // Default: "^/((index|app(_[\\w]+)?)\\.php/)?_wdt"
  * }
  * @psalm-type NowoWordTemplateConfig = array{
+ *     timeout?: int|Param, // Wall-clock timeout in seconds for WordTemplateProcessor::process() (cooperative deadline + set_time_limit). Shared Nowo default: PROCESS_TIMEOUT=180. Keep below PHP max_execution_time / FrankenPHP write timeout. // Default: 180
  *     macro_opening?: scalar|Param|null, // Opening delimiter for placeholders in the DOCX (PHPWord TemplateProcessor). // Default: "${"
  *     macro_closing?: scalar|Param|null, // Closing delimiter for placeholders in the DOCX. // Default: "}"
  *     conditional_if_opening?: scalar|Param|null, // Opening delimiter for conditional blocks (before the block name). // Default: "${#if"

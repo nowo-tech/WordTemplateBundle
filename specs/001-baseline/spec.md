@@ -3,7 +3,7 @@
 **Feature Branch**: `001-baseline`  
 **Created**: 2026-07-07  
 **Status**: Active  
-**Last updated**: 2026-07-15  
+**Last updated**: 2026-07-22  
 **Input**: Backfill GitHub Spec Kit baseline documenting 100% of production code in `src/`.
 
 **Related docs**: [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPMENT.md), [`docs/CONFIGURATION.md`](../../docs/CONFIGURATION.md), [`docs/USAGE.md`](../../docs/USAGE.md)  
@@ -57,13 +57,15 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 - **FR-CFG-001**: Config tree root `nowo_word_template` with placeholder delimiters `macro_opening` (default `${`), `macro_closing` (default `}`).
 - **FR-CFG-002**: Conditional delimiters `conditional_if_opening` (default `${#if`), `conditional_if_closing` (default `}`), `conditional_endif_opening` (default `${#endif`), `conditional_endif_closing` (default `}`).
 - **FR-CFG-003**: Parameters wired to `WordTemplateProcessor` via `services.yaml`.
+- **FR-CFG-004**: `timeout` (default **180**) — wall-clock limit for `process()` (cooperative deadline + `set_time_limit`); FrankenPHP hierarchy documented (**REQ-RUNTIME-001**).
 
 ### Processing
 
 - **FR-PROC-001**: `WordTemplateProcessorInterface` — `process()`, `listVariables()`.
-- **FR-PROC-002**: `WordTemplateProcessor` — opens template with configured delimiters; applies **conditional blocks first** (inside-out), then `TableRows`, then scalars / `HtmlContent` / `ImageSource`.
+- **FR-PROC-002**: `WordTemplateProcessor` — opens template with configured delimiters; applies **conditional blocks first** (inside-out), then `TableRows`, then scalars / `HtmlContent` / `ImageSource`; enforces configured `timeout`.
 - **FR-PROC-003**: `ProcessedDocument` — path/stream accessors and `dispose()`.
 - **FR-PROC-004**: `listVariables()` omits conditional marker names (`#if …`, `#endif …`).
+- **FR-PROC-005**: `ProcessDeadline` — cooperative wall-clock checks during `process()`.
 
 ### Domain models (**FR-MDL-002**)
 
@@ -82,7 +84,7 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 
 ### Errors (**FR-ERR-001**)
 
-- `TemplateNotFoundException`, `InvalidContextValueException`, `WordTemplateExceptionInterface`.
+- `TemplateNotFoundException`, `InvalidContextValueException`, `ProcessingTimedOutException`, `WordTemplateExceptionInterface`.
 
 ### DI (**FR-DI-001**)
 

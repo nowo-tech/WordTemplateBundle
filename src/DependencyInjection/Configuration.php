@@ -21,6 +21,11 @@ final class Configuration implements ConfigurationInterface
 
         $root
             ->children()
+                ->integerNode('timeout')
+                    ->defaultValue(180)
+                    ->min(1)
+                    ->info('Wall-clock timeout in seconds for WordTemplateProcessor::process() (cooperative deadline + set_time_limit). Shared Nowo default: PROCESS_TIMEOUT=180. Keep below PHP max_execution_time / FrankenPHP write timeout.')
+                ->end()
                 ->scalarNode('macro_opening')
                     ->defaultValue('${')
                     ->info('Opening delimiter for placeholders in the DOCX (PHPWord TemplateProcessor).')

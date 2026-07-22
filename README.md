@@ -22,6 +22,8 @@ Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`Templa
 
 This bundle does **not** execute Word VBA macros; “macros” here means **template placeholders** in the `.docx` compatible with PHPWord.
 
+Under FrankenPHP (especially **worker** mode), `process()` is bounded by a configurable **`timeout`** (default **180s**, cooperative deadline + `set_time_limit`) so a long merge cannot pin a worker forever. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) (**REQ-RUNTIME-001**).
+
 ## Documentation
 
 - [GitHub Actions CI requirements](docs/GITHUB_CI.md)
@@ -51,7 +53,7 @@ This bundle does **not** execute Word VBA macros; “macros” here means **temp
 ## Quick start
 
 ```bash
-composer require nowo-tech/word-template-bundle:^1.1
+composer require nowo-tech/word-template-bundle:^1.2
 ```
 
 Register `Nowo\WordTemplateBundle\WordTemplateBundle` if needed, then wire your templates and inject `WordTemplateProcessorInterface`:

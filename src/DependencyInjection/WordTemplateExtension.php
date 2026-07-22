@@ -18,6 +18,7 @@ final class WordTemplateExtension extends Extension
 
         $config = $this->processConfiguration(new Configuration(), $configs);
 
+        $container->setParameter(Configuration::ALIAS . '.timeout', $config['timeout']);
         $container->setParameter(Configuration::ALIAS . '.macro_opening', $config['macro_opening']);
         $container->setParameter(Configuration::ALIAS . '.macro_closing', $config['macro_closing']);
         $container->setParameter(Configuration::ALIAS . '.conditional_if_opening', $config['conditional_if_opening']);
