@@ -4,6 +4,24 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.2.1 — 2026-07-24
+
+### Changed
+
+- **Dev / QA** — require-dev [`nowo-tech/phpstan-frankenphp`](https://github.com/nowo-tech/PhpStanFrankenPhp) `^1.0` and include classic + worker rulesets in `phpstan.neon.dist` (FrankenPHP-safe static analysis for contributors).
+
+### Documentation
+
+- **[`CHANGELOG.md`](CHANGELOG.md)**, **[`UPGRADING.md`](UPGRADING.md)** — patch release notes.
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.1
+```
+
+No runtime or config API changes. Contributors: `composer update` (dev) so PHPStan loads the FrankenPHP rulesets.
+
 ## 1.2.0 — 2026-07-22
 
 ### Added

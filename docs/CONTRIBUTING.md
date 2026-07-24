@@ -4,7 +4,7 @@ For how this repository uses requirement IDs (`REQ-*`) and a spec-first habit ar
 
 1. Open an issue or draft PR to describe the change.
 2. Follow PSR-12 + Symfony rules (`composer cs-fix` / `composer cs-check`).
-3. Run static analysis and tests: `composer qa` (or `make qa` in Docker).
+3. Run static analysis and tests: `composer qa` (or `make qa` in Docker). PHPStan includes [`nowo-tech/phpstan-frankenphp`](https://github.com/nowo-tech/PhpStanFrankenPhp) classic + worker rulesets via `phpstan.neon.dist`.
 4. Keep line coverage at or above the project minimum (`composer coverage-check`).
 
 See repository workflows under `.github/workflows/` for CI expectations.

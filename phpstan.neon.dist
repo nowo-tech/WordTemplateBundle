@@ -6,3 +6,7 @@ parameters:
     bootstrapFiles:
         - vendor/autoload.php
     reportUnmatchedIgnoredErrors: false
+
+includes:
+  - vendor/nowo-tech/phpstan-frankenphp/ruleset-classic.neon
+  - vendor/nowo-tech/phpstan-frankenphp/ruleset-worker.neon

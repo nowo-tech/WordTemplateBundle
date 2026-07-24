@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.2.1
+
+**Tooling only** (require-dev PHPStan FrankenPHP rulesets). **No breaking API or config changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.1
+```
+
+Integrators: no application changes. Bundle contributors: ensure `nowo-tech/phpstan-frankenphp` is installed so `composer phpstan` / `make phpstan` loads `ruleset-classic.neon` and `ruleset-worker.neon`.
+
 ## 1.2.0
 
 **New feature:** configurable merge **`timeout`** (**REQ-RUNTIME-001**, FrankenPHP-safe). **No breaking API changes.**
