@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.2.2
+
+**Repository automation only** (Copilot instructions, semantic PR lint, stale bot). **No breaking API or config changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.2
+```
+
+Integrators: no application changes.
+
 ## 1.2.1
 
 **Tooling only** (require-dev PHPStan FrankenPHP rulesets). **No breaking API or config changes.**

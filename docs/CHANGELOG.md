@@ -4,6 +4,24 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.2.2 — 2026-07-24
+
+### Added
+
+- **GitHub automation (REQ-GH)** — `.github/copilot-instructions.md` (REQ-GH-001), `workflows/pr-lint.yml` semantic PR titles (REQ-GH-004), `workflows/stale.yml` inactive issues/PRs (REQ-GH-005).
+
+### Documentation
+
+- **[`CHANGELOG.md`](CHANGELOG.md)**, **[`UPGRADING.md`](UPGRADING.md)** — patch release notes.
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.2
+```
+
+No runtime or config API changes.
+
 ## 1.2.1 — 2026-07-24
 
 ### Changed
