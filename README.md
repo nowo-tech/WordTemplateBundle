@@ -1,54 +1,26 @@
 # WordTemplateBundle
 
-[![CI](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml)
-[![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle)
-[![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net)
-[![Symfony](https://img.shields.io/badge/Symfony-7.x%20%7C%208.x-000000?logo=symfony)](https://symfony.com)
-[![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle)
-[![Coverage](https://img.shields.io/badge/Coverage-~100%25-green)](#tests-and-coverage)
+[![CI](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.x%20%7C%208.x-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle) [![Coverage](https://img.shields.io/badge/Coverage-~100%25-green)](#tests-and-coverage)
 
 > **Found this useful?** Install from Packagist (`composer require nowo-tech/word-template-bundle`) and consider starring [WordTemplateBundle on GitHub](https://github.com/nowo-tech/WordTemplateBundle).
 
 Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`TemplateProcessor`](https://phpoffice.github.io/PHPWord/docs/classes/PhpOffice-PhpWord-TemplateProcessor.html)) using a **PHP context array**:
-
 - **Scalars** (strings, numbers, booleans, null) → `setValue` on placeholders such as `${client_name}` or `${client.city}` when you nest arrays (flattened to dot keys).
 - **`ConditionalBlock`** → `${#if block}` … `${#endif block}` regions (nested blocks supported); show or remove from PHP.
 - **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines.
 - **`HtmlContent`** → rich fragments (paragraphs, bold/italic, tables inside HTML, etc.) via PHPWord `Html::addHtml` embedded as a complex block (lists `<ul>`/`<ol>` may require extra numbering setup in PHPWord; prefer plain paragraphs or combine with [HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle) for full HTML pipelines).
 - **`ImageSource`** → `setImageValue` with optional width/height.
 - **`listVariables()`** → read a template and list unique placeholder names (respects configured delimiters).
-
 This bundle does **not** execute Word VBA macros; “macros” here means **template placeholders** in the `.docx` compatible with PHPWord.
-
 Under FrankenPHP (especially **worker** mode), `process()` is bounded by a configurable **`timeout`** (default **180s**, cooperative deadline + `set_time_limit`) so a long merge cannot pin a worker forever. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) (**REQ-RUNTIME-001**).
 
-## Documentation
+![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
 
-- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
-- [Installation](docs/INSTALLATION.md)
-- [Configuration](docs/CONFIGURATION.md)
-- [Usage](docs/USAGE.md)
-- [Contributing](docs/CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Changelog](docs/CHANGELOG.md)
-- [Upgrading](docs/UPGRADING.md)
-- [Release](docs/RELEASE.md)
-- [Security](docs/SECURITY.md)
-- [Engram](docs/ENGRAM.md)
-- [Spec-driven development](docs/SPEC-DRIVEN-DEVELOPMENT.md)
-- [GitHub Spec Kit](docs/SPEC-KIT.md)
+This bundle is **FrankenPHP worker mode friendly**.
 
-### Additional documentation
+## Versioning
 
-- [FrankenPHP / Docker demo](docs/DEMO-FRANKENPHP.md) — `demo/symfony8` (see [`demo/README.md`](demo/README.md))
-
-## Requirements
-
-- PHP **8.2+**
-- Symfony **7.x / 8.x** (as in `composer.json`)
-- Extensions: `dom`, `json`, `libxml`, `zip`
+[Semantic Versioning](https://semver.org/).
 
 ## Quick start
 
@@ -72,12 +44,11 @@ $bytes = $doc->readContents();
 $doc->dispose(); // if the processor used a temp file
 ```
 
-## Tests and coverage
+## Requirements
 
-| Scope | Detail |
-|-------|--------|
-| **PHPUnit** | `composer test` — unit + integration (minimal kernel in `tests/Fixtures/AppKernel.php`). |
-| **Lines** | `composer coverage-check` enforces **≥ 99%** (PCOV). Latest global measurement: **~100%**. |
+- PHP **8.2+**
+- Symfony **7.x / 8.x** (as in `composer.json`)
+- Extensions: `dom`, `json`, `libxml`, `zip`
 
 ## Development
 
@@ -99,9 +70,32 @@ cd demo/symfony8 && cp .env.example .env && make up   # Symfony 8, port 8021
 
 Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 
-## Versioning
+## Documentation
 
-[Semantic Versioning](https://semver.org/).
+- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
+- [Installation](docs/INSTALLATION.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Usage](docs/USAGE.md)
+- [Contributing](docs/CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Upgrading](docs/UPGRADING.md)
+- [Release](docs/RELEASE.md)
+- [Security](docs/SECURITY.md)
+- [Engram](docs/ENGRAM.md)
+- [Spec-driven development](docs/SPEC-DRIVEN-DEVELOPMENT.md)
+- [GitHub Spec Kit](docs/SPEC-KIT.md)
+
+### Additional documentation
+
+- [FrankenPHP / Docker demo](docs/DEMO-FRANKENPHP.md) — `demo/symfony8` (see [`demo/README.md`](demo/README.md))
+
+## Tests and coverage
+
+| Scope | Detail |
+|-------|--------|
+| **PHPUnit** | `composer test` — unit + integration (minimal kernel in `tests/Fixtures/AppKernel.php`). |
+| **Lines** | `composer coverage-check` enforces **≥ 99%** (PCOV). Latest global measurement: **~100%**. |
 
 ## License
 

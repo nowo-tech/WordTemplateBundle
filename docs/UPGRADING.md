@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.2.3
+
+**Maintainer tooling, docs, and demo image only.** **No breaking API or config changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.3
+```
+
+Integrators: no application changes. Demo contributors: Symfony 8 image is `dunglas/frankenphp:1-php8.5-alpine`; recreate the container after pull.
+
 ## 1.2.2
 
 **Repository automation only** (Copilot instructions, semantic PR lint, stale bot). **No breaking API or config changes.**

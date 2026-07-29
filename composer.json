@@ -1,6 +1,6 @@
 {
     "name": "nowo-tech/word-template-bundle",
-    "description": "Symfony bundle: fill .docx Word templates (PHPWord TemplateProcessor) from a context array — scalars, rich HTML, table rows, images.",
+    "description": "Symfony bundle: fill .docx Word templates (PHPWord TemplateProcessor) from a context array \u2014 scalars, rich HTML, table rows, images.",
     "type": "symfony-bundle",
     "license": "MIT",
     "keywords": [
@@ -10,12 +10,14 @@
         "docx",
         "phpword",
         "template",
-        "mail-merge"
+        "mail-merge",
+        "php",
+        "frankenphp"
     ],
-    "homepage": "https://github.com/nowo-tech/WordTemplateBundle",
+    "homepage": "https://packagist.org/packages/nowo-tech/word-template-bundle",
     "authors": [
         {
-            "name": "Héctor Franco Aceituno",
+            "name": "H\u00e9ctor Franco Aceituno",
             "email": "hectorfranco@nowo.tech"
         },
         {
@@ -57,7 +59,7 @@
         }
     },
     "suggest": {
-        "nowo-tech/html-to-word-bundle": "Optional: build .docx from full HTML when you do not use a Word template (WYSIWYG → DOCX pipeline)."
+        "nowo-tech/html-to-word-bundle": "Optional: build .docx from full HTML when you do not use a Word template (WYSIWYG \u2192 DOCX pipeline)."
     },
     "config": {
         "sort-packages": true,

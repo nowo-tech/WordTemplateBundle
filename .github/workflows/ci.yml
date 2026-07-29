@@ -61,6 +61,8 @@ jobs:
           composer require --dev symfony/framework-bundle:^${{ matrix.symfony }} symfony/yaml:^${{ matrix.symfony }} --no-interaction --prefer-dist --no-progress
 
       - name: PHPUnit (Symfony ${{ matrix.symfony }})
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
         run: composer test
 
   tests:
@@ -92,7 +94,11 @@ jobs:
         run: composer phpstan
 
       - name: PHPUnit
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
         run: composer test
 
       - name: PHPUnit coverage gate (min 99% lines)
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
         run: composer coverage-check

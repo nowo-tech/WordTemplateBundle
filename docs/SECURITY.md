@@ -73,3 +73,4 @@ Before each tagged release, maintainers confirm (tick in the release PR or tag n
 | No sensitive data in logs | ☐ |
 | Resource limits (`timeout`) for large templates/HTML considered | ☐ |
 | Permissions / exposure of generated files acceptable | ☐ |
+| **AI security audit (REQ-SEC-004)** | Pass (conditional) recorded in monorepo `BUNDLES_SECURITY_ANALYSIS.md` |

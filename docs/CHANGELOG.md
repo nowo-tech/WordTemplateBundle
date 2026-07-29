@@ -4,6 +4,33 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.2.3 — 2026-07-29
+
+### Added
+
+- `make check-open-prs`, `demo-smoke`, `down-dev`, `release-check-demos` (REQ-MAKE-002 / 007).
+- `SYMFONY_DEPRECATIONS_HELPER=max[direct]=0` (REQ-SF-005).
+- FrankenPHP Friendly banner (`docs/images/frankenphp-friendly.png`) — REQ-DOCS-017.
+- `docs/SECURITY.md` 12.4.1 row for REQ-SEC-004 Pass (conditional).
+
+### Changed
+
+- Demo Symfony 8 image `dunglas/frankenphp:1-php8.5-alpine` (REQ-DEMO-010).
+- Packagist homepage + GitHub About topics (REQ-DOCS-018).
+- `release-check` no longer runs `cs-fix`; includes `check-open-prs` + demo release-check.
+
+### Documentation
+
+- **[`CHANGELOG.md`](CHANGELOG.md)**, **[`UPGRADING.md`](UPGRADING.md)** — patch release notes.
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.3
+```
+
+No runtime or config API changes.
+
 ## 1.2.2 — 2026-07-24
 
 ### Added
