@@ -254,6 +254,37 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
         }
     }
 
+    public function testMultipleSiblingConditionalBlocksInOneDocument(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#if annex}');
+            $section->addText('Annex body');
+            $section->addText('${#endif annex}');
+            $section->addText('${#if vip_section}');
+            $section->addText('VIP body');
+            $section->addText('${#endif vip_section}');
+            $section->addText('Footer always');
+        });
+
+        $out = (new WordTemplateProcessor())->process($tpl, [
+            'annex' => new ConditionalBlock('annex', true),
+            'vip'   => new ConditionalBlock('vip_section', false),
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Annex body', $xml);
+            self::assertStringContainsString('Footer always', $xml);
+            self::assertStringNotContainsString('VIP body', $xml);
+            self::assertStringNotContainsString('#if annex', $xml);
+            self::assertStringNotContainsString('#if vip_section', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
     public function testTableRowsCloneAndFill(): void
     {
         $tpl = $this->createTemplate(static function (PhpWord $pw): void {
@@ -278,6 +309,51 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
             self::assertStringContainsString('Beta', $xml);
             self::assertStringContainsString('10', $xml);
             self::assertStringContainsString('20', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testMultipleIndependentTableRowsInOneDocument(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+
+            $garantias = $section->addTable();
+            $garantias->addRow();
+            $garantias->addCell(2000)->addText('${GARANTIAARRAY}');
+            $garantias->addCell(2000)->addText('${LIMITE_ARRAY}');
+
+            $covers = $section->addTable();
+            $covers->addRow();
+            $covers->addCell(2000)->addText('${COVER_CODE}');
+            $covers->addCell(2000)->addText('${COVER_LABEL}');
+        });
+
+        $out = (new WordTemplateProcessor())->process($tpl, [
+            'garantias' => new TableRows('GARANTIAARRAY', [
+                ['GARANTIAARRAY' => 'Acopios', 'LIMITE_ARRAY' => '1000'],
+                ['GARANTIAARRAY' => 'Aduanas', 'LIMITE_ARRAY' => '20000'],
+            ]),
+            'coberturas' => new TableRows('COVER_CODE', [
+                ['COVER_CODE' => 'C1', 'COVER_LABEL' => 'Fire'],
+                ['COVER_CODE' => 'C2', 'COVER_LABEL' => 'Theft'],
+                ['COVER_CODE' => 'C3', 'COVER_LABEL' => 'Flood'],
+            ]),
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Acopios', $xml);
+            self::assertStringContainsString('Aduanas', $xml);
+            self::assertStringContainsString('1000', $xml);
+            self::assertStringContainsString('20000', $xml);
+            self::assertStringContainsString('Fire', $xml);
+            self::assertStringContainsString('Theft', $xml);
+            self::assertStringContainsString('Flood', $xml);
+            self::assertStringContainsString('C1', $xml);
+            self::assertStringContainsString('C3', $xml);
         } finally {
             $out->dispose();
             @unlink($tpl);

@@ -234,7 +234,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/word-template-bundle",
-                "reference": "fe9ea19e017cb3ea73fd09fa04ad0839582aa0eb"
+                "reference": "803f5972f9aedb81fc831ff4417c58a34637e173"
             },
             "require": {
                 "ext-dom": "*",
@@ -324,10 +324,12 @@
                 }
             ],
             "description": "Symfony bundle: fill .docx Word templates (PHPWord TemplateProcessor) from a context array — scalars, rich HTML, table rows, images.",
-            "homepage": "https://github.com/nowo-tech/WordTemplateBundle",
+            "homepage": "https://packagist.org/packages/nowo-tech/word-template-bundle",
             "keywords": [
                 "docx",
+                "frankenphp",
                 "mail-merge",
+                "php",
                 "phpword",
                 "symfony",
                 "symfony-bundle",

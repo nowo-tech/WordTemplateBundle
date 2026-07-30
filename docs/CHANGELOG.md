@@ -4,6 +4,28 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.2.4 — 2026-07-30
+
+### Documentation
+
+- **[`USAGE.md`](USAGE.md)** / **[`README.md`](../README.md)** — end-to-end Word + YAML + PHP examples for multiple independent `TableRows` and sibling / nested `ConditionalBlock`s; anti-pattern of two `cloneRow`s on the same physical row.
+
+### Tests
+
+- Integration: two independent tables + sibling conditionals in one document; unit: sibling `ConditionalBlockApplicator` regions.
+
+### Fixed
+
+- Demo / root Makefiles resolve `docker` via absolute path so an empty `PATH` entry (`::` → `.`) cannot pick the local `docker/` directory (`Permission denied` during `release-check-demos`).
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.4
+```
+
+No runtime or config API changes. See [UPGRADING.md](UPGRADING.md).
+
 ## 1.2.3 — 2026-07-29
 
 ### Added

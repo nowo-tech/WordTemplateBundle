@@ -3,7 +3,10 @@
 
 COMPOSE_FILE := docker-compose.yml
 # Prefer Compose V2 plugin (GitHub Actions / modern Docker Desktop); fall back to docker-compose V1 (REQ-MAKE-010).
-COMPOSE_BIN := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
+# Use an absolute docker path: an empty PATH entry ("::") resolves to "." and would pick the local
+# `docker/` directory (Permission denied) instead of the CLI binary.
+DOCKER      := $(shell command -v docker 2>/dev/null || echo /usr/bin/docker)
+COMPOSE_BIN := $(shell "$(DOCKER)" compose version >/dev/null 2>&1 && echo "$(DOCKER) compose" || echo "docker-compose")
 COMPOSE     := $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP := php
 

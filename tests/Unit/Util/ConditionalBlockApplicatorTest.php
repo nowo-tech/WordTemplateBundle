@@ -69,6 +69,28 @@ final class ConditionalBlockApplicatorTest extends TestCase
         self::assertStringNotContainsString('#endif outer', $result);
     }
 
+    public function testResolvesMultipleSiblingBlocksIndependently(): void
+    {
+        $xml = $this->paragraph('${#if annex}')
+            . $this->paragraph('Annex body')
+            . $this->paragraph('${#endif annex}')
+            . $this->paragraph('${#if vip_section}')
+            . $this->paragraph('VIP body')
+            . $this->paragraph('${#endif vip_section}')
+            . $this->paragraph('Footer');
+
+        $result = $this->applicator()->applyAll($xml, [
+            new ConditionalBlock('annex', true),
+            new ConditionalBlock('vip_section', false),
+        ]);
+
+        self::assertStringContainsString('Annex body', $result);
+        self::assertStringContainsString('Footer', $result);
+        self::assertStringNotContainsString('VIP body', $result);
+        self::assertStringNotContainsString('#if annex', $result);
+        self::assertStringNotContainsString('#if vip_section', $result);
+    }
+
     public function testApplyAllReturnsXmlUnchangedWhenBlocksEmpty(): void
     {
         $xml = $this->paragraph('unchanged');

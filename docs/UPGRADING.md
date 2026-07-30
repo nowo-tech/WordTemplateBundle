@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.2.4
+
+**Documentation and tests only** (multi-table / multi-conditional USAGE examples). **No breaking API or config changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.2.4
+```
+
+Integrators: no application changes. See [USAGE.md](USAGE.md) for Word + YAML + PHP examples of several independent `TableRows` and sibling / nested `ConditionalBlock`s in one `.docx`.
+
 ## 1.2.3
 
 **Maintainer tooling, docs, and demo image only.** **No breaking API or config changes.**

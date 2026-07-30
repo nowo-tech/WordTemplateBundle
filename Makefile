@@ -4,7 +4,9 @@ SHELL := /bin/bash
 
 COMPOSE_FILE ?= docker-compose.yml
 # Prefer Compose V2 plugin (GitHub Actions / modern Docker Desktop); fall back to docker-compose V1 (REQ-MAKE-010).
-COMPOSE_BIN ?= $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
+# Absolute docker path avoids empty PATH entries ("::" → ".") resolving to a local `docker/` dir.
+DOCKER      ?= $(shell command -v docker 2>/dev/null || echo /usr/bin/docker)
+COMPOSE_BIN ?= $(shell "$(DOCKER)" compose version >/dev/null 2>&1 && echo "$(DOCKER) compose" || echo "docker-compose")
 COMPOSE     ?= $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP  ?= php
 COMPOSER_INSTALL = $(COMPOSE) exec -T $(SERVICE_PHP) sh -c 'composer install --no-interaction || { rm -rf vendor; composer clear-cache; composer install --no-interaction; }'

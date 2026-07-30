@@ -6,8 +6,8 @@
 
 Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`TemplateProcessor`](https://phpoffice.github.io/PHPWord/docs/classes/PhpOffice-PhpWord-TemplateProcessor.html)) using a **PHP context array**:
 - **Scalars** (strings, numbers, booleans, null) → `setValue` on placeholders such as `${client_name}` or `${client.city}` when you nest arrays (flattened to dot keys).
-- **`ConditionalBlock`** → `${#if block}` … `${#endif block}` regions (nested blocks supported); show or remove from PHP.
-- **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines.
+- **`ConditionalBlock`** → `${#if block}` … `${#endif block}` regions (**several** sibling and **nested** blocks supported); show or remove from PHP.
+- **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines (**several independent tables** in one `.docx` via distinct anchors; one `TableRows` per table row).
 - **`HtmlContent`** → rich fragments (paragraphs, bold/italic, tables inside HTML, etc.) via PHPWord `Html::addHtml` embedded as a complex block (lists `<ul>`/`<ol>` may require extra numbering setup in PHPWord; prefer plain paragraphs or combine with [HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle) for full HTML pipelines).
 - **`ImageSource`** → `setImageValue` with optional width/height.
 - **`listVariables()`** → read a template and list unique placeholder names (respects configured delimiters).
