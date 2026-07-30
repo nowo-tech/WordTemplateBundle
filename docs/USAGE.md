@@ -300,15 +300,37 @@ $result->dispose();
 
 ---
 
-## Listing placeholders
+## Listing placeholders and conditional blocks
+
+**Paint variables** (including those inside conditional regions). Markers `${#if …}` / `${#endif …}` are omitted:
 
 ```php
 /** @var list<string> $variables */
 $variables = $processor->listVariables('/srv/templates/offer.docx');
-// e.g. ['client.name', 'GARANTIAARRAY', 'LIMITE_ARRAY', 'COVER_CODE', 'offer_title']
+// e.g. ['client.name', 'annex_title', 'GARANTIAARRAY', 'offer_title']
 ```
 
-Scans the main document plus headers/footers. Uses `macro_opening` / `macro_closing`. Table anchors appear as base names (not `#1` / `#2`). Conditional markers (`#if …`, `#endif …`) are omitted.
+**Conditional block names** (from opening markers such as `${#if annex}` → `annex`), using `conditional_*` delimiters:
+
+```php
+/** @var list<string> $blocks */
+$blocks = $processor->listConditionalBlocks('/srv/templates/offer.docx');
+// e.g. ['annex', 'vip_section', 'optional_funding']
+```
+
+Both scan the main document plus headers/footers. Table anchors appear in `listVariables()` as base names (not `#1` / `#2`). Use `listConditionalBlocks()` to know which `ConditionalBlock('name', $visible)` entries you must supply.
+
+**In Word:**
+
+```text
+${#if annex}
+Annex title: ${annex_title}
+${#endif annex}
+```
+
+**Listed as:**
+- `listVariables()` → `annex_title` (and any other paint fields)
+- `listConditionalBlocks()` → `annex`
 
 ---
 

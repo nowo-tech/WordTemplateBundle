@@ -21,8 +21,19 @@ interface WordTemplateProcessorInterface
 
     /**
      * Returns unique placeholder names in the template (main part, headers, footers).
+     * Omits conditional markers ({@code #if …} / {@code #endif …}); paint fields inside
+     * conditional regions are included.
      *
      * @return list<string>
      */
     public function listVariables(string $templatePath): array;
+
+    /**
+     * Returns unique conditional block names found via opening markers
+     * (e.g. {@code annex} from {@code ${#if annex}}), using configured {@code conditional_*} delimiters.
+     * Scans the main document part plus headers and footers.
+     *
+     * @return list<string>
+     */
+    public function listConditionalBlocks(string $templatePath): array;
 }

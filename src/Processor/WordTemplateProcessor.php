@@ -50,6 +50,24 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         ));
     }
 
+    public function listConditionalBlocks(string $templatePath): array
+    {
+        $processor  = $this->openTemplate($templatePath);
+        $applicator = $this->createConditionalApplicator();
+        $names      = [];
+
+        foreach ($processor->documentPartXmls() as $xml) {
+            foreach ($applicator->discoverBlockNames($xml) as $blockName) {
+                if (isset($names[$blockName])) {
+                    continue;
+                }
+                $names[$blockName] = true;
+            }
+        }
+
+        return array_keys($names);
+    }
+
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument
     {
         $previousMaxExecution = (int) ini_get('max_execution_time');

@@ -26,4 +26,22 @@ final class TemplateProcessorBridge extends TemplateProcessor
             $this->tempDocumentFooters[$index] = $transform($footer);
         }
     }
+
+    /**
+     * @return list<string>
+     */
+    public function documentPartXmls(): array
+    {
+        $parts = [$this->tempDocumentMainPart];
+
+        foreach ($this->tempDocumentHeaders as $header) {
+            $parts[] = $header;
+        }
+
+        foreach ($this->tempDocumentFooters as $footer) {
+            $parts[] = $footer;
+        }
+
+        return $parts;
+    }
 }

@@ -1,5 +1,22 @@
 # Upgrading
 
+## 1.3.0
+
+**New API:** `listConditionalBlocks()`. **No config breaking changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.3
+```
+
+```php
+$blocks = $processor->listConditionalBlocks('/path/to/template.docx');
+// e.g. ['annex', 'vip_section']
+```
+
+- `listVariables()` still returns paint placeholders (including those inside conditionals); it does **not** return block names.
+- Custom implementations of `WordTemplateProcessorInterface` **must** implement `listConditionalBlocks()`.
+- See [USAGE.md](USAGE.md).
+
 ## 1.2.4
 
 **Documentation and tests only** (multi-table / multi-conditional USAGE examples). **No breaking API or config changes.**

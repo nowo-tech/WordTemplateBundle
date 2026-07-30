@@ -18,6 +18,24 @@ final class ConditionalBlockApplicatorTest extends TestCase
         self::assertSame('{{#endif vip_section}}', $applicator->closingMarker('vip_section'));
     }
 
+    public function testDiscoverBlockNamesFindsUniqueOpeningsInOrder(): void
+    {
+        $xml = $this->paragraph('${#if annex}')
+            . $this->paragraph('body')
+            . $this->paragraph('${#endif annex}')
+            . $this->paragraph('${#if vip_section}')
+            . $this->paragraph('${#if annex}')
+            . $this->paragraph('${#endif annex}')
+            . $this->paragraph('${#endif vip_section}');
+
+        self::assertSame(['annex', 'vip_section'], $this->applicator()->discoverBlockNames($xml));
+    }
+
+    public function testDiscoverBlockNamesReturnsEmptyWhenNoMarkers(): void
+    {
+        self::assertSame([], $this->applicator()->discoverBlockNames($this->paragraph('plain')));
+    }
+
     public function testKeepsInnerContentWhenVisible(): void
     {
         $xml = $this->sampleXml('${#if vip_section}', 'VIP content', '${#endif vip_section}');

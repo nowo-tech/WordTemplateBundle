@@ -39,6 +39,24 @@ final class TemplateProcessorBridgeTest extends TestCase
         }
     }
 
+    public function testDocumentPartXmlsReturnsMainHeadersAndFooters(): void
+    {
+        $path = $this->createTemplate();
+
+        try {
+            $bridge = new TemplateProcessorBridge($path);
+            $ref    = new ReflectionClass($bridge);
+
+            $ref->getProperty('tempDocumentMainPart')->setValue($bridge, '<main/>');
+            $ref->getProperty('tempDocumentHeaders')->setValue($bridge, [1 => '<header/>']);
+            $ref->getProperty('tempDocumentFooters')->setValue($bridge, [1 => '<footer/>']);
+
+            self::assertSame(['<main/>', '<header/>', '<footer/>'], $bridge->documentPartXmls());
+        } finally {
+            @unlink($path);
+        }
+    }
+
     private function createTemplate(): string
     {
         $path = sys_get_temp_dir() . '/nowo_word_tpl_' . bin2hex(random_bytes(8)) . '.docx';

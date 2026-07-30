@@ -219,6 +219,62 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
         }
     }
 
+    public function testListConditionalBlocksReturnsUniqueBlockNames(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#if annex}');
+            $section->addText('Annex ${annex_title}');
+            $section->addText('${#endif annex}');
+            $section->addText('${#if vip_section}');
+            $section->addText('VIP');
+            $section->addText('${#endif vip_section}');
+            $section->addText('${#if annex}');
+            $section->addText('Second annex region');
+            $section->addText('${#endif annex}');
+        });
+
+        try {
+            $blocks = (new WordTemplateProcessor())->listConditionalBlocks($tpl);
+
+            self::assertSame(['annex', 'vip_section'], $blocks);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testListConditionalBlocksRespectsCustomDelimiters(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('[[#if legal]]');
+            $section->addText('Legal text');
+            $section->addText('[[#endif legal]]');
+        });
+
+        try {
+            $blocks = (new WordTemplateProcessor(
+                '${',
+                '}',
+                '[[#if',
+                ']]',
+                '[[#endif',
+                ']]',
+            ))->listConditionalBlocks($tpl);
+
+            self::assertSame(['legal'], $blocks);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testListConditionalBlocksThrowsWhenTemplateMissing(): void
+    {
+        $this->expectException(TemplateNotFoundException::class);
+
+        (new WordTemplateProcessor())->listConditionalBlocks('/nonexistent/path/template.docx');
+    }
+
     public function testNestedConditionalBlocksResolveInsideOut(): void
     {
         $tpl = $this->createTemplate(static function (PhpWord $pw): void {

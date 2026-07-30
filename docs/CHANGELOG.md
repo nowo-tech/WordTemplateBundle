@@ -4,6 +4,30 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.3.0 — 2026-07-30
+
+### Added
+
+- **`WordTemplateProcessorInterface::listConditionalBlocks()`** — unique conditional block names from opening markers (`${#if annex}` → `annex`), using configured `conditional_*` delimiters (main document, headers, footers).
+- **`ConditionalBlockApplicator::discoverBlockNames()`** — scans WordprocessingML for opening markers.
+- **`TemplateProcessorBridge::documentPartXmls()`** — exposes main/header/footer XML for discovery.
+
+### Documentation
+
+- **[`USAGE.md`](USAGE.md)** / **[`README.md`](../README.md)** / **[`UPGRADING.md`](UPGRADING.md)** — `listVariables()` vs `listConditionalBlocks()` with Word examples.
+
+### Tests
+
+- Integration and unit coverage for `listConditionalBlocks()`, custom delimiters, and `discoverBlockNames()`.
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.3
+```
+
+Backward compatible for DI consumers of `WordTemplateProcessor`. Custom implementations of `WordTemplateProcessorInterface` must add `listConditionalBlocks()`. See [UPGRADING.md](UPGRADING.md).
+
 ## 1.2.4 — 2026-07-30
 
 ### Documentation

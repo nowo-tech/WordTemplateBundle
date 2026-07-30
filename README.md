@@ -10,7 +10,8 @@ Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`Templa
 - **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines (**several independent tables** in one `.docx` via distinct anchors; one `TableRows` per table row).
 - **`HtmlContent`** → rich fragments (paragraphs, bold/italic, tables inside HTML, etc.) via PHPWord `Html::addHtml` embedded as a complex block (lists `<ul>`/`<ol>` may require extra numbering setup in PHPWord; prefer plain paragraphs or combine with [HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle) for full HTML pipelines).
 - **`ImageSource`** → `setImageValue` with optional width/height.
-- **`listVariables()`** → read a template and list unique placeholder names (respects configured delimiters).
+- **`listVariables()`** → unique paint placeholder names (includes fields inside conditionals; omits `#if` / `#endif` markers).
+- **`listConditionalBlocks()`** → unique conditional block names (e.g. `annex` from `${#if annex}`).
 This bundle does **not** execute Word VBA macros; “macros” here means **template placeholders** in the `.docx` compatible with PHPWord.
 Under FrankenPHP (especially **worker** mode), `process()` is bounded by a configurable **`timeout`** (default **180s**, cooperative deadline + `set_time_limit`) so a long merge cannot pin a worker forever. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) (**REQ-RUNTIME-001**).
 
@@ -25,7 +26,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 ## Quick start
 
 ```bash
-composer require nowo-tech/word-template-bundle:^1.2
+composer require nowo-tech/word-template-bundle:^1.3
 ```
 
 Register `Nowo\WordTemplateBundle\WordTemplateBundle` if needed, then wire your templates and inject `WordTemplateProcessorInterface`:

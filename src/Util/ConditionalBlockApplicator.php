@@ -35,6 +35,33 @@ final readonly class ConditionalBlockApplicator
     }
 
     /**
+     * Discovers unique conditional block names from opening markers in WordprocessingML.
+     *
+     * @return list<string>
+     */
+    public function discoverBlockNames(string $xml): array
+    {
+        $open    = preg_quote($this->ifOpening, '/');
+        $close   = preg_quote($this->ifClosing, '/');
+        $pattern = '/' . $open . '\s+(.+?)' . $close . '/s';
+
+        if (!preg_match_all($pattern, $xml, $matches)) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($matches[1] as $rawName) {
+            $name = trim($rawName);
+            if ($name === '' || isset($names[$name])) {
+                continue;
+            }
+            $names[$name] = true;
+        }
+
+        return array_keys($names);
+    }
+
+    /**
      * @param list<ConditionalBlock> $blocks
      */
     public function applyAll(string $xml, array $blocks): string

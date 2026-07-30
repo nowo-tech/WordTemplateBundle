@@ -61,11 +61,12 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 
 ### Processing
 
-- **FR-PROC-001**: `WordTemplateProcessorInterface` — `process()`, `listVariables()`.
+- **FR-PROC-001**: `WordTemplateProcessorInterface` — `process()`, `listVariables()`, `listConditionalBlocks()`.
 - **FR-PROC-002**: `WordTemplateProcessor` — opens template with configured delimiters; applies **conditional blocks first** (inside-out), then `TableRows`, then scalars / `HtmlContent` / `ImageSource`; enforces configured `timeout`.
 - **FR-PROC-003**: `ProcessedDocument` — path/stream accessors and `dispose()`.
-- **FR-PROC-004**: `listVariables()` omits conditional marker names (`#if …`, `#endif …`).
+- **FR-PROC-004**: `listVariables()` omits conditional marker names (`#if …`, `#endif …`); paint fields inside conditionals are included.
 - **FR-PROC-005**: `ProcessDeadline` — cooperative wall-clock checks during `process()`.
+- **FR-PROC-006**: `listConditionalBlocks()` returns unique block names from opening markers using `conditional_*` delimiters.
 
 ### Domain models (**FR-MDL-002**)
 
