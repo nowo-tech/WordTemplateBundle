@@ -1,5 +1,17 @@
 # Upgrading
 
+## Unreleased
+
+## 1.3.1
+
+**Fixed:** Word-split `${#if …}` / `${#endif …}` markers (fragmented `<w:t>` runs) are healed before conditional discover/apply via `BrokenMacroNormalizer`. **No API or config changes.**
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.3.1
+```
+
+Integrators: no application changes. Prefer pasting each conditional marker in one plain-text run; the heal covers common Word fragmentation. See [USAGE.md](USAGE.md).
+
 ## 1.3.0
 
 **New API:** `listConditionalBlocks()`. **No config breaking changes.**

@@ -136,6 +136,49 @@ final class ConditionalBlockApplicatorTest extends TestCase
         self::assertStringContainsString('tail', $result);
     }
 
+    public function testDiscoversBlockNamesWhenWordSplitsMarkerAcrossRuns(): void
+    {
+        $xml = $this->splitMarkerParagraph(['${', '#', 'if', ' CONDICION_MOSTRAR}'])
+            . $this->paragraph('body')
+            . $this->splitMarkerParagraph(['${#', 'endif', ' CONDICION_MOSTRAR}']);
+
+        self::assertSame(['CONDICION_MOSTRAR'], $this->applicator()->discoverBlockNames($xml));
+    }
+
+    public function testRemovesRegionWhenWordSplitsIfEndifMarkersAcrossRuns(): void
+    {
+        $xml = $this->splitMarkerParagraph(['${', '#', 'if', ' CONDICION_MOSTRAR}'])
+            . $this->paragraph('Texto a mostrar si la condición es true.')
+            . $this->splitMarkerParagraph(['${#', 'endif', ' CONDICION_MOSTRAR}'])
+            . $this->paragraph('Footer');
+
+        $result = $this->applicator()->apply(
+            $xml,
+            new ConditionalBlock('CONDICION_MOSTRAR', false),
+        );
+
+        self::assertStringNotContainsString('Texto a mostrar si la condición es true.', $result);
+        self::assertStringContainsString('Footer', $result);
+        self::assertStringNotContainsString('#if', $result);
+        self::assertStringNotContainsString('#endif', $result);
+    }
+
+    public function testKeepsRegionWhenWordSplitsMarkersAndBlockIsVisible(): void
+    {
+        $xml = $this->splitMarkerParagraph(['${', '#', 'if', ' CONDICION_MOSTRAR}'])
+            . $this->paragraph('Texto a mostrar si la condición es true.')
+            . $this->splitMarkerParagraph(['${#', 'endif', ' CONDICION_MOSTRAR}']);
+
+        $result = $this->applicator()->apply(
+            $xml,
+            new ConditionalBlock('CONDICION_MOSTRAR', true),
+        );
+
+        self::assertStringContainsString('Texto a mostrar si la condición es true.', $result);
+        self::assertStringNotContainsString('#if', $result);
+        self::assertStringNotContainsString('#endif', $result);
+    }
+
     private function applicator(): ConditionalBlockApplicator
     {
         return new ConditionalBlockApplicator('${#if', '}', '${#endif', '}');
@@ -149,5 +192,19 @@ final class ConditionalBlockApplicatorTest extends TestCase
     private function paragraph(string $text): string
     {
         return '<w:p><w:r><w:t xml:space="preserve">' . $text . '</w:t></w:r></w:p>';
+    }
+
+    /**
+     * @param list<string> $runTexts
+     */
+    private function splitMarkerParagraph(array $runTexts): string
+    {
+        $runs = '';
+        foreach ($runTexts as $text) {
+            $space = str_contains($text, ' ') ? ' xml:space="preserve"' : '';
+            $runs .= '<w:r><w:t' . $space . '>' . $text . '</w:t></w:r>';
+        }
+
+        return '<w:p>' . $runs . '</w:p>';
     }
 }

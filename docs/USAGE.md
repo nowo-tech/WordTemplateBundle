@@ -131,6 +131,8 @@ $processor->process($templatePath, [
 
 **In Word** — each marker in its **own paragraph** (Enter between lines). Do not put `${#if …}` mid-sentence in the same paragraph as body text.
 
+Prefer pasting the whole marker in one go (plain text) so Word does not split it across font runs. If Word does split `${#if name}` across several runs, the bundle **heals** that fragmentation before applying conditionals (`BrokenMacroNormalizer`, same idea as PHPWord’s `fixBrokenMacros`).
+
 ```text
 Preamble always visible.
 

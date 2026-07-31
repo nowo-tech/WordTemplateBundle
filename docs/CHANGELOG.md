@@ -4,6 +4,28 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.3.1 — 2026-07-31
+
+### Fixed
+
+- **Word-split conditional markers** — `ConditionalBlockApplicator` now heals macros fragmented across `<w:r>/<w:t>` runs (common when Word spell-check or partial formatting splits `${#if name}` / `${#endif name}`) via `BrokenMacroNormalizer` before discover/apply. Discovery and show/hide no longer depend solely on PHPWord’s internal `fixBrokenMacros`.
+
+### Documentation
+
+- **[`USAGE.md`](USAGE.md)** / **[`UPGRADING.md`](UPGRADING.md)** — authoring tip (paste whole marker) + note that split `#if` / `#endif` markers are healed at runtime.
+
+### Tests
+
+- Unit coverage for `BrokenMacroNormalizer` and split-run `#if` / `#endif` regions (pattern from real Word templates).
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.3.1
+```
+
+No API or config changes. See [UPGRADING.md](UPGRADING.md).
+
 ## 1.3.0 — 2026-07-30
 
 ### Added

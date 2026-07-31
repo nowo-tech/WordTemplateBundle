@@ -13,6 +13,9 @@ use const PREG_OFFSET_CAPTURE;
 /**
  * Shows or removes Twig-style conditional regions in WordprocessingML using PHPWord paragraph boundaries.
  * Nested blocks are resolved inside-out (deepest {@see ConditionalBlock} first).
+ *
+ * Before discover/apply, Word-split markers (macro text fragmented across {@code <w:t>} runs)
+ * are healed via {@see BrokenMacroNormalizer} so `${#if name}` matches even when Word broke the string.
  */
 final readonly class ConditionalBlockApplicator
 {
@@ -41,6 +44,7 @@ final readonly class ConditionalBlockApplicator
      */
     public function discoverBlockNames(string $xml): array
     {
+        $xml     = $this->normalizeBrokenMarkers($xml);
         $open    = preg_quote($this->ifOpening, '/');
         $close   = preg_quote($this->ifClosing, '/');
         $pattern = '/' . $open . '\s+(.+?)' . $close . '/s';
@@ -69,6 +73,8 @@ final readonly class ConditionalBlockApplicator
         if ($blocks === []) {
             return $xml;
         }
+
+        $xml = $this->normalizeBrokenMarkers($xml);
 
         /** @var array<string, bool> $visibilityByName */
         $visibilityByName = [];
@@ -101,16 +107,10 @@ final readonly class ConditionalBlockApplicator
                 static fn (array $left, array $right): int => $right['fullStart'] <=> $left['fullStart'],
             );
 
-            $applied = false;
             foreach ($deepest as $region) {
                 $visible     = $visibilityByName[$region['blockName']];
                 $replacement = $visible ? $region['content'] : '';
                 $xml         = substr_replace($xml, $replacement, $region['fullStart'], $region['fullLength']);
-                $applied     = true;
-            }
-
-            if (!$applied) {
-                break;
             }
         }
 
@@ -179,5 +179,13 @@ final readonly class ConditionalBlockApplicator
         $closeMarker = preg_quote($this->closingMarker($blockName), '/');
 
         return '/(.*((?s)<w:p\b(?:(?!<w:p\b).)*?' . $openMarker . '<\/w:.*?p>))(.*)((?s)<w:p\b(?:(?!<w:p\b).)[^$]*?' . $closeMarker . '<\/w:.*?p>)/is';
+    }
+
+    private function normalizeBrokenMarkers(string $xml): string
+    {
+        return BrokenMacroNormalizer::forConditionalDelimiters(
+            $this->ifOpening,
+            $this->ifClosing,
+        )->normalize($xml);
     }
 }
