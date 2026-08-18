@@ -4,7 +4,7 @@
 
 ## 1.3.2 (Symfony 8 demos / Hot Reload 1.4)
 
-- **No application upgrade steps.** No application upgrade steps. **Demos only:** Hot Reload Bundle `^1.4` (FrankenPHP Mercure/`hot_reload`, `dev`/`test`).
+- **No application upgrade steps.** Demos only: Hot Reload Bundle `^1.4` (FrankenPHP Mercure/`hot_reload`, `dev`/`test`).
 
 ## 1.3.1
 
