@@ -1,4 +1,5 @@
 {
+	order mercure after encode
 	skip_install_trust
 	# Same timeout hierarchy as Caddyfile — keep workers from holding a merge forever.
 	#   process() timeout (PROCESS_TIMEOUT)  <  PHP max_execution_time  <  Caddy write timeout
@@ -22,5 +23,11 @@
 	encode zstd br gzip
 	header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
 	header Pragma "no-cache"
-	php_server
+	mercure {
+		anonymous
+	}
+
+	php_server {
+		hot_reload
+	}
 }

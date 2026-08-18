@@ -1,5 +1,7 @@
 # FrankenPHP demo
 
+**REQ-DEMO-001:** FrankenPHP demos must install **Nowo Twig Inspector** and **Nowo Hot Reload** together (`nowo-tech/twig-inspector-bundle` + `nowo-tech/hot-reload-bundle` in `require-dev`). Caddyfile: Mercure + `hot_reload` (and `worker { file …; watch }` in worker mode). Do not enable Hot Reload in production.
+
 The repository includes an **optional Symfony demo app** under `demo/symfony8` (FrankenPHP + Docker Compose). It is excluded from the Packagist package via `archive.exclude`.
 
 | Demo | PHP | Default HTTP port |

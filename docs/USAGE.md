@@ -96,7 +96,7 @@ Table 1 — Garantías
 
 Table 2 — Coberturas
 
-| CÓDIGO | DESCRIPCIÓN |
+| CODE | DESCRIPTION |
 |--------|-------------|
 | `${COVER_CODE}` | `${COVER_LABEL}` |
 

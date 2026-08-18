@@ -4,9 +4,9 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": ">=8.2",
         "dompdf/dompdf": "^3.0",
         "nowo-tech/word-template-bundle": "@dev",
+        "php": ">=8.2",
         "symfony/asset": "8.1.*",
         "symfony/console": "^8.0",
         "symfony/dotenv": "^8.0",
@@ -18,7 +18,9 @@
         "symfony/translation": "^8.0",
         "symfony/twig-bundle": "^8.0",
         "symfony/validator": "^8.0",
-        "symfony/yaml": "^8.0"
+        "symfony/yaml": "^8.0",
+        "twig/extra-bundle": "^3.12",
+        "twig/string-extra": "^3.12"
     },
     "config": {
         "allow-plugins": {
@@ -58,6 +60,7 @@
         }
     ],
     "require-dev": {
+        "nowo-tech/hot-reload-bundle": "^1.4",
         "nowo-tech/twig-inspector-bundle": "*",
         "symfony/debug-bundle": "^8.0",
         "symfony/var-dumper": "^8.0",
