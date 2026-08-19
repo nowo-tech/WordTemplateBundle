@@ -4,6 +4,12 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.3.3 — 2026-08-19
+
+### Security
+
+- **CI:** run `composer audit --locked` after dependency install (REQ-SEC / P3).
+
 ## 1.3.2 — 2026-08-18
 
 ### Changed
