@@ -16,7 +16,7 @@ return [
     DebugBundle::class             => ['dev' => true],
     WebProfilerBundle::class       => ['dev' => true],
     WordTemplateBundle::class      => ['all' => true],
-    NowoHotReloadBundle::class => ['dev' => true, 'test' => true],
+    NowoHotReloadBundle::class     => ['dev' => true, 'test' => true],
     NowoTwigInspectorBundle::class => ['dev' => true, 'test' => true],
-    TwigExtraBundle::class => ['all' => true],
+    TwigExtraBundle::class         => ['all' => true],
 ];
