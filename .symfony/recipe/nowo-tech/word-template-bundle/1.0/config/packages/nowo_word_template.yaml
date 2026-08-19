@@ -1,0 +1,6 @@
+nowo_word_template:
+    timeout: 180
+
+when@prod:
+    nowo_word_template:
+        timeout: 120

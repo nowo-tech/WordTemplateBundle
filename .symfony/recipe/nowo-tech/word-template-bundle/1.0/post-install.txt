@@ -1,0 +1,2 @@
+  * Restrict template/image paths to trusted directories under %kernel.project_dir% (see docs/SECURITY.md).
+  * Keep timeout below PHP max_execution_time and FrankenPHP write timeout.
