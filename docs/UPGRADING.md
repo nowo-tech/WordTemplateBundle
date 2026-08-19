@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.3.5 (Flex recipe files)
+
+Review recipe defaults (`timeout: 180`, prod `120`) after update.
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
+
 ## 1.3.4 (Flex recipe)
 
 Review the new Flex recipe defaults (`timeout: 180`, prod `120`). Merge with existing `nowo_word_template` config if you already customize timeouts.

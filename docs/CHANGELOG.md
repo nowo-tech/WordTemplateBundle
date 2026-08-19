@@ -4,6 +4,12 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.3.5 — 2026-08-19
+
+### Added
+
+- **Symfony Flex recipe:** ship `nowo_word_template.yaml`, manifest, and post-install text. Prefer **`^1.3.5`** over `v1.3.4`.
+
 ## 1.3.4 — 2026-08-19
 
 ### Added
