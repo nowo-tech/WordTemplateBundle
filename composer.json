@@ -15,6 +15,12 @@
         "frankenphp"
     ],
     "homepage": "https://packagist.org/packages/nowo-tech/word-template-bundle",
+    "support": {
+        "issues": "https://github.com/nowo-tech/WordTemplateBundle/issues",
+        "source": "https://github.com/nowo-tech/WordTemplateBundle",
+        "docs": "https://github.com/nowo-tech/WordTemplateBundle/tree/main/docs",
+        "changelog": "https://github.com/nowo-tech/WordTemplateBundle/blob/main/docs/CHANGELOG.md"
+    },
     "authors": [
         {
             "name": "H\u00e9ctor Franco Aceituno",
