@@ -1,5 +1,27 @@
 # Upgrading
 
+## Table of contents
+
+- [From 1.3.5 to 1.3.6](#from-135-to-136)
+
+## From 1.3.5 to 1.3.6
+
+No breaking changes. **No application upgrade steps.**
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
+
+## From 1.3.5 to 1.3.6
+
+No breaking changes. **No application upgrade steps.**
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
+
+# Upgrading
+
 ## Unreleased
 
 ## 1.3.5 (Flex recipe files)

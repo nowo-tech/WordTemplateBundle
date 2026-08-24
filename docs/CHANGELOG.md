@@ -363,3 +363,23 @@ Drop-in replacement for `0.1.x`. Set `composer require nowo-tech/word-template-b
 
 - Initial tagged release: `WordTemplateProcessor`, context flattening, `HtmlContent`, `TableRows`, `ImageSource`, Symfony extension `nowo_word_template`.
 - FrankenPHP demos for Symfony 7 and 8 (`demo/symfony7`, `demo/symfony8`); optional download of the filled `.docx` as **PDF** (PhpWord PDF writer + DomPDF, internally `docx → html → pdf`; fidelity limits are noted in the demo UI).
+
+
+### Changed
+
+- **Docs:** Flex recipe installation notes (REQ-RECIPE-001).
+- **Docs:** PHP-FIG PSR evaluation (REQ-CS-007).
+
+### Notes
+
+- **No API or configuration changes** for integrators unless noted above.
+
+### Changed
+
+- **Docs:** Flex recipe installation notes (REQ-RECIPE-001).
+- **Docs:** PHP-FIG PSR evaluation (REQ-CS-007).
+
+### Notes
+
+- **No API or configuration changes** for integrators unless noted above.
+
