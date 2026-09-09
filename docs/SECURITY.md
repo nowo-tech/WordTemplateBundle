@@ -17,7 +17,7 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 | Input | Source | Notes |
 |-------|--------|-------|
 | Template path | Application | Must point to intended `.docx`; avoid user-controlled absolute paths without validation. |
-| Context values | Application / stored user data | Treated as merge fields; XML escaping follows PHPWord defaults when enabled. |
+| Context values | Application / stored user data | Escaped as OOXML text during `WordTemplateProcessor::process()` via PHPWord `Settings::setOutputEscapingEnabled(true)` (restored after merge). |
 | HTML in `HtmlContent` | Application | Parsed into OOXML; treat as untrusted if sourced from end users. |
 | Image paths in `ImageSource` | Application | Path traversal / sensitive file read if paths are user-controlled. |
 
@@ -30,8 +30,8 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 
 ### Untrusted context / XXE and XML
 
-- **Risk**: Extremely large strings or crafted payloads stressing PHPWord.
-- **Mitigation**: Enforce size limits at the application layer; keep dependencies updated (`composer audit`). Configure `nowo_word_template.timeout` (default **180s**) so a pathological merge cannot pin a FrankenPHP worker indefinitely (**REQ-RUNTIME-001**).
+- **Risk**: Extremely large strings or crafted payloads stressing PHPWord; unescaped `&` / `<` in scalar merges corrupting `document.xml`.
+- **Mitigation**: Enforce size limits at the application layer; keep dependencies updated (`composer audit`). Configure `nowo_word_template.timeout` (default **180s**) so a pathological merge cannot pin a FrankenPHP worker indefinitely (**REQ-RUNTIME-001**). Scalar and `TableRows` cell values are XML-escaped for the duration of `process()` (PHPWord output escaping).
 
 ### Resource exhaustion / long merges
 

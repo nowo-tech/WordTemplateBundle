@@ -4,6 +4,39 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.3.7 — 2026-09-09
+
+### Fixed
+
+- **XML escape scalar / table merge values** — `WordTemplateProcessor::process()` now enables PHPWord `Settings::setOutputEscapingEnabled(true)` for the duration of the merge (restored afterwards). Values containing `&`, `<`, etc. (e.g. partner names like `Ores & Bryan…`) no longer corrupt `word/document.xml`, which previously broke downstream LibreOffice Word→PDF conversion.
+
+### Security
+
+- **[`SECURITY.md`](SECURITY.md)** — context merge fields are escaped as OOXML text by default during `process()` (PHPWord output escaping).
+
+### Tests
+
+- Integration coverage for ampersand / angle-bracket scalars and `TableRows` cell values.
+
+### Upgrade
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.3.7
+```
+
+No API or config changes. See [UPGRADING.md](UPGRADING.md).
+
+## 1.3.6 — 2026-08-24
+
+### Changed
+
+- **Docs:** Flex recipe installation notes (REQ-RECIPE-001).
+- **Docs:** PHP-FIG PSR evaluation (REQ-CS-007).
+
+### Notes
+
+- **No API or configuration changes** for integrators unless noted above.
+
 ## 1.3.5 — 2026-08-19
 
 ### Added
@@ -363,23 +396,4 @@ Drop-in replacement for `0.1.x`. Set `composer require nowo-tech/word-template-b
 
 - Initial tagged release: `WordTemplateProcessor`, context flattening, `HtmlContent`, `TableRows`, `ImageSource`, Symfony extension `nowo_word_template`.
 - FrankenPHP demos for Symfony 7 and 8 (`demo/symfony7`, `demo/symfony8`); optional download of the filled `.docx` as **PDF** (PhpWord PDF writer + DomPDF, internally `docx → html → pdf`; fidelity limits are noted in the demo UI).
-
-
-### Changed
-
-- **Docs:** Flex recipe installation notes (REQ-RECIPE-001).
-- **Docs:** PHP-FIG PSR evaluation (REQ-CS-007).
-
-### Notes
-
-- **No API or configuration changes** for integrators unless noted above.
-
-### Changed
-
-- **Docs:** Flex recipe installation notes (REQ-RECIPE-001).
-- **Docs:** PHP-FIG PSR evaluation (REQ-CS-007).
-
-### Notes
-
-- **No API or configuration changes** for integrators unless noted above.
 

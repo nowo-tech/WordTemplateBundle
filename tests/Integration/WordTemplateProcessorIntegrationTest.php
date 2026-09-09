@@ -13,6 +13,7 @@ use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessor;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Settings;
 use PHPUnit\Framework\TestCase;
 use ZipArchive;
 
@@ -541,6 +542,65 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
         $this->expectException(TemplateNotFoundException::class);
 
         (new WordTemplateProcessor())->listVariables('/nonexistent/path/template.docx');
+    }
+
+    public function testEscapesXmlSpecialCharactersInScalarPlaceholders(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('Broker=${broker}');
+        });
+
+        $previousEscaping = Settings::isOutputEscapingEnabled();
+        Settings::setOutputEscapingEnabled(false);
+
+        $processor = new WordTemplateProcessor();
+        $out       = $processor->process($tpl, [
+            'broker' => 'Ores & Bryan Correduria de Seguros',
+        ]);
+
+        try {
+            self::assertFalse(Settings::isOutputEscapingEnabled());
+
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Ores &amp; Bryan Correduria de Seguros', $xml);
+            self::assertStringNotContainsString('Ores & Bryan', $xml);
+            self::assertNotFalse(
+                @simplexml_load_string($xml),
+                'Merged document.xml must remain well-formed OOXML',
+            );
+        } finally {
+            Settings::setOutputEscapingEnabled($previousEscaping);
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testEscapesXmlSpecialCharactersInTableRows(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $table   = $section->addTable();
+            $table->addRow();
+            $table->addCell(2000)->addText('${name}');
+        });
+
+        $processor = new WordTemplateProcessor();
+        $out       = $processor->process($tpl, [
+            'rows' => new TableRows('name', [
+                ['name' => 'A & B'],
+                ['name' => 'C < D'],
+            ]),
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('A &amp; B', $xml);
+            self::assertStringContainsString('C &lt; D', $xml);
+            self::assertNotFalse(@simplexml_load_string($xml));
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
     }
 
     public function testThrowsWhenTableRowsEmpty(): void

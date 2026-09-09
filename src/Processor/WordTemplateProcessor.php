@@ -15,6 +15,7 @@ use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 use Nowo\WordTemplateBundle\Util\ConditionalBlockApplicator;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
 use PhpOffice\PhpWord\Element\Table;
+use PhpOffice\PhpWord\Settings as PhpWordSettings;
 use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\TemplateProcessor;
 use Stringable;
@@ -71,7 +72,12 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument
     {
         $previousMaxExecution = (int) ini_get('max_execution_time');
+        $previousXmlEscaping  = PhpWordSettings::isOutputEscapingEnabled();
         set_time_limit($this->timeout);
+        // PHPWord TemplateProcessor writes merge values into OOXML. Without escaping,
+        // characters such as "&" / "<" (e.g. partner names "Ores & Bryan…") corrupt
+        // document.xml and downstream LibreOffice Word→PDF conversion fails.
+        PhpWordSettings::setOutputEscapingEnabled(true);
 
         try {
             $deadline = $this->createDeadline();
@@ -132,6 +138,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
             return new ProcessedDocument($target, $temporary);
         } finally {
+            PhpWordSettings::setOutputEscapingEnabled($previousXmlEscaping);
             set_time_limit($previousMaxExecution);
         }
     }

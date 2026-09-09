@@ -2,14 +2,17 @@
 
 ## Table of contents
 
+- [From 1.3.6 to 1.3.7](#from-136-to-137)
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
 
-## From 1.3.5 to 1.3.6
+## From 1.3.6 to 1.3.7
 
-No breaking changes. **No application upgrade steps.**
+**Fixed:** scalar / `TableRows` merge values are XML-escaped during `process()` (PHPWord output escaping). **No API or config changes.**
+
+If your application already escaped values before passing them to the processor (`htmlspecialchars` / `ENT_XML1`), remove that double-escaping to avoid `&amp;amp;` in the generated Word.
 
 ```bash
-composer update nowo-tech/word-template-bundle
+composer require nowo-tech/word-template-bundle:^1.3.7
 ```
 
 ## From 1.3.5 to 1.3.6
@@ -19,10 +22,6 @@ No breaking changes. **No application upgrade steps.**
 ```bash
 composer update nowo-tech/word-template-bundle
 ```
-
-# Upgrading
-
-## Unreleased
 
 ## 1.3.5 (Flex recipe files)
 
