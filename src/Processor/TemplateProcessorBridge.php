@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\Processor;
 
+use PhpOffice\PhpWord\Shared\ZipArchive;
 use PhpOffice\PhpWord\TemplateProcessor;
+use Throwable;
+
+use function is_file;
+use function unlink;
 
 /**
  * @internal exposes document XML parts for bundle-only transforms
@@ -24,6 +29,24 @@ final class TemplateProcessorBridge extends TemplateProcessor
 
         foreach ($this->tempDocumentFooters as $index => $footer) {
             $this->tempDocumentFooters[$index] = $transform($footer);
+        }
+    }
+
+    /**
+     * Deletes PHPWord's working copy of the template (only {@see saveAs()} removes it otherwise).
+     */
+    public function removeTemporaryDocument(): void
+    {
+        if ($this->zipClass instanceof ZipArchive) {
+            try {
+                $this->zipClass->close();
+            } catch (Throwable) {
+                // Already closed by save().
+            }
+        }
+
+        if (is_file($this->tempDocumentFilename)) {
+            @unlink($this->tempDocumentFilename);
         }
     }
 

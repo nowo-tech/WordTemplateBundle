@@ -13,11 +13,11 @@ Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`Templa
 - **`listVariables()`** → unique paint placeholder names (includes fields inside conditionals; omits `#if` / `#endif` markers).
 - **`listConditionalBlocks()`** → unique conditional block names (e.g. `annex` from `${#if annex}`).
 This bundle does **not** execute Word VBA macros; “macros” here means **template placeholders** in the `.docx` compatible with PHPWord.
-Under FrankenPHP (especially **worker** mode), `process()` is bounded by a configurable **`timeout`** (default **180s**, cooperative deadline + `set_time_limit`) so a long merge cannot pin a worker forever. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) (**REQ-RUNTIME-001**).
+Under FrankenPHP (especially **worker** mode), `process()` is bounded by a configurable **`timeout`** (default **180s**, cooperative deadline + `set_time_limit`) so a long merge cannot pin a worker forever. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md) (**REQ-RUNTIME-001**). PHPWord globals touched during a merge (`Html` statics, output escaping) are saved and restored so the processor stays safe when the kernel is **not** reset between requests — see [docs/FRANKENPHP-WORKER-AUDIT.md](docs/FRANKENPHP-WORKER-AUDIT.md).
 
 ![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
 
-This bundle is **FrankenPHP worker mode friendly**.
+This bundle is **FrankenPHP worker mode friendly** (including kernel-not-reset / scenario B).
 
 ## Versioning
 
@@ -91,6 +91,7 @@ Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 ### Additional documentation
 
 - [FrankenPHP / Docker demo](docs/DEMO-FRANKENPHP.md) — `demo/symfony8` (see [`demo/README.md`](demo/README.md))
+- [FrankenPHP worker audit (kernel not reset)](docs/FRANKENPHP-WORKER-AUDIT.md)
 
 ## Tests and coverage
 

@@ -23,7 +23,7 @@ Innermost → outermost:
 
 When raising `timeout`, raise PHP and Caddy write deadlines in the same change. See [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md).
 
-PHPWord uses **static** delimiter settings internally for `TemplateProcessor`; avoid mixing delimiter styles across concurrent long-lived workers if you change defaults.
+PHPWord uses **static** delimiter settings internally for `TemplateProcessor`; avoid mixing delimiter styles across concurrent long-lived workers if you change defaults. `process()` isolates PHPWord `Html` statics (`$css` / `$xpath` / `$options`) and restores `Settings::setOutputEscapingEnabled` so merges stay safe when FrankenPHP does **not** reset the kernel between requests — see [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md).
 
 `listVariables()` and `process()` both apply placeholder delimiters when opening a template. Conditional markers use the `conditional_*` keys and are independent from scalar placeholder delimiters.
 

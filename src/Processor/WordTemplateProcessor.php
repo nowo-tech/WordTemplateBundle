@@ -43,7 +43,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
     public function listVariables(string $templatePath): array
     {
-        $variables = $this->openTemplate($templatePath)->getVariables();
+        $processor = $this->openTemplate($templatePath);
+
+        try {
+            $variables = $processor->getVariables();
+        } finally {
+            $processor->removeTemporaryDocument();
+        }
 
         return array_values(array_filter(
             $variables,
@@ -57,13 +63,17 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         $applicator = $this->createConditionalApplicator();
         $names      = [];
 
-        foreach ($processor->documentPartXmls() as $xml) {
-            foreach ($applicator->discoverBlockNames($xml) as $blockName) {
-                if (isset($names[$blockName])) {
-                    continue;
+        try {
+            foreach ($processor->documentPartXmls() as $xml) {
+                foreach ($applicator->discoverBlockNames($xml) as $blockName) {
+                    if (isset($names[$blockName])) {
+                        continue;
+                    }
+                    $names[$blockName] = true;
                 }
-                $names[$blockName] = true;
             }
+        } finally {
+            $processor->removeTemporaryDocument();
         }
 
         return array_keys($names);
@@ -78,6 +88,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         // characters such as "&" / "<" (e.g. partner names "Ores & Bryan…") corrupt
         // document.xml and downstream LibreOffice Word→PDF conversion fails.
         PhpWordSettings::setOutputEscapingEnabled(true);
+        $previousHtmlState = PhpWordHtmlState::isolate();
+        $processor         = null;
 
         try {
             $deadline = $this->createDeadline();
@@ -138,6 +150,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
             return new ProcessedDocument($target, $temporary);
         } finally {
+            $processor?->removeTemporaryDocument();
+            PhpWordHtmlState::restore($previousHtmlState);
             PhpWordSettings::setOutputEscapingEnabled($previousXmlEscaping);
             set_time_limit($previousMaxExecution);
         }

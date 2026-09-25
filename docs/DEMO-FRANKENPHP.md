@@ -21,6 +21,17 @@ The demo ships two Caddy configurations under `docker/frankenphp/`:
 
 The container entrypoint copies `Caddyfile.dev` over the default Caddyfile when `APP_ENV=dev`, so **`make up` runs without worker mode**. For production-style behaviour, set `APP_ENV=prod` in `.env` and rebuild/restart the demo container so FrankenPHP keeps workers in memory.
 
+## Worker mode with kernel not reset (scenario B)
+
+FrankenPHP worker mode can keep the Symfony kernel (and PHP statics) across requests. This bundle is audited for the **strict** case where the kernel is **not** rebooted and `services_resetter` may not run:
+
+- `WordTemplateProcessor` is a readonly shared service with **no mutable request state**.
+- Each `process()` call saves/restores PHPWord `Settings` output escaping and clears PHPWord `Html` statics (`$css` / `$xpath` / `$options`) so a `<style>` block cannot style another user's later merge.
+- PHPWord working copies under the temp dir are deleted after `listVariables()`, `listConditionalBlocks()`, and every `process()` path (success or failure).
+- Always call `ProcessedDocument::dispose()` for temporary outputs.
+
+Full findings and remediation: [`FRANKENPHP-WORKER-AUDIT.md`](FRANKENPHP-WORKER-AUDIT.md).
+
 ## Timeouts (avoid stuck FrankenPHP workers)
 
 Template merge (`WordTemplateProcessor::process()`) is **blocking in-process work** (PHPWord). Under FrankenPHP a hung or very large merge can occupy a worker thread. Keep this hierarchy (**REQ-RUNTIME-001**):

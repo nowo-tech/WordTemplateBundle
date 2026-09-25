@@ -2,8 +2,24 @@
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
+- [From 1.3.7 to 1.3.8](#from-137-to-138)
 - [From 1.3.6 to 1.3.7](#from-136-to-137)
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
+
+## Unreleased
+
+## From 1.3.7 to 1.3.8
+
+**Fixed:** PHPWord `Html` static state is isolated per `process()` call; temporary template copies are deleted on every path. **No API or config changes.**
+
+A `<style>` element inside an `HtmlContent` value now only applies within the same `process()` call (later `HtmlContent` values of that merge still see it). It no longer leaks into later merges in the same PHP process, and CSS the application parsed with PHPWord's `Html` outside the bundle is not applied inside `process()` (it is restored afterwards). If you relied on a stylesheet from a previous merge, include the `<style>` block in the `HtmlContent` of each merge or use inline `style="..."` attributes.
+
+```bash
+composer require nowo-tech/word-template-bundle:^1.3.8
+```
+
+See [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md).
 
 ## From 1.3.6 to 1.3.7
 

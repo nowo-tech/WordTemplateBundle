@@ -234,7 +234,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/word-template-bundle",
-                "reference": "90e74049bf188720f42c79429d82706d0d6b27c6"
+                "reference": "d45b5f31fa1b6a531bfcecfdd4b561c5960276ef"
             },
             "require": {
                 "ext-dom": "*",
