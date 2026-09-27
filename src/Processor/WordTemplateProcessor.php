@@ -48,6 +48,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         try {
             $variables = $processor->getVariables();
         } finally {
+            // @igor-ignore - Not shared worker service state.
             $processor->removeTemporaryDocument();
         }
 
@@ -73,6 +74,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
                 }
             }
         } finally {
+            // @igor-ignore - Not shared worker service state.
             $processor->removeTemporaryDocument();
         }
 
@@ -129,6 +131,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
                     continue;
                 }
 
+                // @igor-ignore - Not shared worker service state.
                 $processor->setValue($key, $this->stringify($value));
                 $deadline->assertNotTimedOut();
             }

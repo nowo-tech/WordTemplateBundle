@@ -16,6 +16,7 @@ final class WordTemplateBundle extends Bundle
     public function getContainerExtension(): ExtensionInterface
     {
         if (!$this->extension instanceof WordTemplateExtension) {
+            // @igor-ignore - Boot-time Symfony Bundle extension cache (not request state).
             $this->extension = new WordTemplateExtension();
         }
 

@@ -44,6 +44,7 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
+        "igor-php/igor-php": "^0.9.7",
         "nowo-tech/phpstan-frankenphp": "^1.0",
         "phpstan/extension-installer": "^1.0",
         "phpstan/phpstan": "^2.0",
@@ -94,6 +95,10 @@
             "@test"
         ],
         "rector": "@php vendor/bin/rector --no-progress-bar",
-        "rector-dry": "@php vendor/bin/rector --dry-run --no-progress-bar"
+        "rector-dry": "@php vendor/bin/rector --dry-run --no-progress-bar",
+        "igor": "igor-php --no-agent ."
+    },
+    "scripts-descriptions": {
+        "igor": "Run Igor FrankenPHP worker-state audit (REQ-CS-008)"
     }
 }

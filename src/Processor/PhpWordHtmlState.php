@@ -40,6 +40,7 @@ final class PhpWordHtmlState
                 continue;
             }
             $previous[$name] = $property->getValue();
+            // @igor-ignore - Not shared worker service state.
             $property->setValue(null, null);
         }
 

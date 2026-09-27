@@ -21,13 +21,16 @@ final class TemplateProcessorBridge extends TemplateProcessor
      */
     public function transformDocumentParts(callable $transform): void
     {
+        // @igor-ignore - Not shared worker service state.
         $this->tempDocumentMainPart = $transform($this->tempDocumentMainPart);
 
         foreach ($this->tempDocumentHeaders as $index => $header) {
+            // @igor-ignore - Not shared worker service state.
             $this->tempDocumentHeaders[$index] = $transform($header);
         }
 
         foreach ($this->tempDocumentFooters as $index => $footer) {
+            // @igor-ignore - Not shared worker service state.
             $this->tempDocumentFooters[$index] = $transform($footer);
         }
     }
