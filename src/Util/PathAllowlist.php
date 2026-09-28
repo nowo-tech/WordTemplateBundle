@@ -9,7 +9,6 @@ use Nowo\WordTemplateBundle\Exception\PathNotAllowedException;
 use function basename;
 use function dirname;
 use function is_dir;
-use function is_string;
 use function realpath;
 use function sprintf;
 use function str_starts_with;
@@ -33,7 +32,7 @@ final class PathAllowlist
 
         $resolved = self::resolve($path, $mustExist);
         foreach ($roots as $root) {
-            if (!is_string($root) || $root === '') {
+            if ($root === '') {
                 continue;
             }
             $rootReal = realpath($root);
