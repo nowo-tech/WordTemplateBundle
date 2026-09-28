@@ -4,7 +4,16 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.4.1 — 2026-09-28
+
+### Fixed
+
+- PHPStan: drop redundant `is_string()` on `list<string>` allowlist roots.
+- Tests: expand `PathAllowlist` coverage for empty/invalid roots and `mustExist=false` output paths (CI 99% gate).
+- Style: PHP CS Fixer on path-allowlist related files.
+
 ## 1.4.0 — 2026-09-28
+
 
 ### Security
 

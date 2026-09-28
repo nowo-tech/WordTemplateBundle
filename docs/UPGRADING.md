@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.4.1](#to-141)
 - [To 1.4.0](#to-140)
 - [To 1.3.9](#to-139)
 - [From 1.3.7 to 1.3.8](#from-137-to-138)
@@ -11,7 +12,16 @@
 
 ## Unreleased
 
+## To 1.4.1
+
+From **1.4.0** — CI/tests/style only. **No application upgrade steps.**
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
+
 ## To 1.4.0
+
 
 From **1.3.9** — path allowlist.
 
