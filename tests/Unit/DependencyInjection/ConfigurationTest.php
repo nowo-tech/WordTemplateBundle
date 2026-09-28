@@ -6,6 +6,7 @@ namespace Nowo\WordTemplateBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\WordTemplateBundle\DependencyInjection\Configuration;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
 final class ConfigurationTest extends TestCase
@@ -73,7 +74,7 @@ final class ConfigurationTest extends TestCase
 
     public function testPathAllowlistRequiredWithoutRootsRejected(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         (new Processor())->processConfiguration(new Configuration(), [[
             'path_allowlist_required' => true,

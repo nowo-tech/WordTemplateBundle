@@ -22,7 +22,7 @@ use const DIRECTORY_SEPARATOR;
 final class PathAllowlist
 {
     /**
-     * @param list<string> $roots Absolute directory roots; empty list skips the check (BC).
+     * @param list<string> $roots absolute directory roots; empty list skips the check (BC)
      * @param bool $mustExist When true, the path itself must exist (templates/images). When false, the parent directory must exist (output files).
      */
     public static function assertUnderRoots(string $path, array $roots, bool $mustExist = true): void
@@ -45,10 +45,7 @@ final class PathAllowlist
             }
         }
 
-        throw new PathNotAllowedException(sprintf(
-            'Path "%s" is outside nowo_word_template.allowed_roots.',
-            $path,
-        ));
+        throw new PathNotAllowedException(sprintf('Path "%s" is outside nowo_word_template.allowed_roots.', $path));
     }
 
     private static function resolve(string $path, bool $mustExist): string

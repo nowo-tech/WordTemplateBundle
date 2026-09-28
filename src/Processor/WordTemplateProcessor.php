@@ -32,7 +32,7 @@ use const DIRECTORY_SEPARATOR;
 readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 {
     /**
-     * @param list<string> $allowedRoots Absolute directories that template/image/output paths must stay under (empty = unrestricted).
+     * @param list<string> $allowedRoots absolute directories that template/image/output paths must stay under (empty = unrestricted)
      */
     public function __construct(
         private string $macroOpening = '${',

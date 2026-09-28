@@ -64,9 +64,7 @@ final class Configuration implements ConfigurationInterface
             ->validate()
             ->always(static function (array $v): array {
                 if (($v['path_allowlist_required'] ?? false) === true && ($v['allowed_roots'] ?? []) === []) {
-                    throw new InvalidConfigurationException(
-                        'nowo_word_template.path_allowlist_required is true but allowed_roots is empty.',
-                    );
+                    throw new InvalidConfigurationException('nowo_word_template.path_allowlist_required is true but allowed_roots is empty.');
                 }
 
                 return $v;
