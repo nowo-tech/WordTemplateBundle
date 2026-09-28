@@ -44,4 +44,66 @@ final class PathAllowlistTest extends TestCase
             @rmdir($root);
         }
     }
+
+    public function testEmptyAndInvalidRootsAreSkippedThenRejected(): void
+    {
+        $outside = tempnam(sys_get_temp_dir(), 'wtp_skip_');
+        self::assertNotFalse($outside);
+
+        try {
+            $this->expectException(PathNotAllowedException::class);
+            PathAllowlist::assertUnderRoots($outside, [
+                '',
+                sys_get_temp_dir() . '/nowo_wtp_missing_' . bin2hex(random_bytes(4)),
+            ]);
+        } finally {
+            @unlink($outside);
+        }
+    }
+
+    public function testMustExistTrueRejectsMissingPath(): void
+    {
+        $root = sys_get_temp_dir();
+        $missing = $root . '/nowo_wtp_missing_' . bin2hex(random_bytes(4));
+
+        $this->expectException(PathNotAllowedException::class);
+        PathAllowlist::assertUnderRoots($missing, [$root], true);
+    }
+
+    public function testMustExistFalseAcceptsExistingPath(): void
+    {
+        $root = sys_get_temp_dir();
+        $file = tempnam($root, 'wtp_out_');
+        self::assertNotFalse($file);
+
+        try {
+            PathAllowlist::assertUnderRoots($file, [$root], false);
+            $this->addToAssertionCount(1);
+        } finally {
+            @unlink($file);
+        }
+    }
+
+    public function testMustExistFalseAcceptsNewFileUnderExistingParent(): void
+    {
+        $root = sys_get_temp_dir() . '/nowo_wtp_out_' . bin2hex(random_bytes(4));
+        mkdir($root);
+        $output = $root . '/new-output.docx';
+
+        try {
+            PathAllowlist::assertUnderRoots($output, [$root], false);
+            $this->addToAssertionCount(1);
+        } finally {
+            @rmdir($root);
+        }
+    }
+
+    public function testMustExistFalseRejectsMissingParent(): void
+    {
+        $root = sys_get_temp_dir();
+        $missingParent = $root . '/nowo_wtp_no_parent_' . bin2hex(random_bytes(4)) . '/out.docx';
+
+        $this->expectException(PathNotAllowedException::class);
+        PathAllowlist::assertUnderRoots($missingParent, [$root], false);
+    }
 }
