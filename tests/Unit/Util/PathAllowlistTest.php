@@ -63,7 +63,7 @@ final class PathAllowlistTest extends TestCase
 
     public function testMustExistTrueRejectsMissingPath(): void
     {
-        $root = sys_get_temp_dir();
+        $root    = sys_get_temp_dir();
         $missing = $root . '/nowo_wtp_missing_' . bin2hex(random_bytes(4));
 
         $this->expectException(PathNotAllowedException::class);
@@ -100,7 +100,7 @@ final class PathAllowlistTest extends TestCase
 
     public function testMustExistFalseRejectsMissingParent(): void
     {
-        $root = sys_get_temp_dir();
+        $root          = sys_get_temp_dir();
         $missingParent = $root . '/nowo_wtp_no_parent_' . bin2hex(random_bytes(4)) . '/out.docx';
 
         $this->expectException(PathNotAllowedException::class);
