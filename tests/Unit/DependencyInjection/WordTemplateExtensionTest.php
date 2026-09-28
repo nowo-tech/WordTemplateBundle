@@ -23,6 +23,8 @@ final class WordTemplateExtensionTest extends TestCase
         ], $container);
 
         self::assertSame(180, $container->getParameter(Configuration::ALIAS . '.timeout'));
+        self::assertSame([], $container->getParameter(Configuration::ALIAS . '.allowed_roots'));
+        self::assertFalse($container->getParameter(Configuration::ALIAS . '.path_allowlist_required'));
         self::assertSame('[[', $container->getParameter(Configuration::ALIAS . '.macro_opening'));
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.macro_closing'));
         self::assertSame('${#if', $container->getParameter(Configuration::ALIAS . '.conditional_if_opening'));

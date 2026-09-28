@@ -4,6 +4,12 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.4.0 — 2026-09-28
+
+### Security
+
+- Template/output paths are gated by `allowed_roots`; `path_allowlist_required` (Flex `when@prod`) rejects empty allowlists in production.
+
 ## 1.3.9 — 2026-09-27
 
 ### Added

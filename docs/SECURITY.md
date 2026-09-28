@@ -25,6 +25,8 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 
 ### Unsafe template or output paths
 
+- **Risk**: Path traversal or reading/writing outside intended directories.
+- **Mitigation**: Configure `nowo_word_template.allowed_roots` and set `path_allowlist_required: true` in production (Flex `when@prod`). `WordTemplateProcessor` refuses template, image, and output paths outside those roots.
 - **Risk**: Writing merged documents to predictable or world-readable locations.
 - **Mitigation**: Use random temp names (`ProcessedDocument`) or app-controlled storage; restrict filesystem permissions.
 
@@ -41,7 +43,7 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 ### Image path abuse
 
 - **Risk**: `ImageSource` pointing at sensitive local files.
-- **Mitigation**: Validate paths against an allowlist or storage root before merging.
+- **Mitigation**: Same `allowed_roots` gate as templates; validate paths before merging when allowlist is empty (BC).
 
 ### Dependency vulnerabilities
 

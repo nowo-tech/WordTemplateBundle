@@ -3,12 +3,24 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.4.0](#to-140)
 - [To 1.3.9](#to-139)
 - [From 1.3.7 to 1.3.8](#from-137-to-138)
 - [From 1.3.6 to 1.3.7](#from-136-to-137)
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
 
 ## Unreleased
+
+## To 1.4.0
+
+From **1.3.9** — path allowlist.
+
+```bash
+composer update nowo-tech/word-template-bundle
+php bin/console cache:clear
+```
+
+- Configure `allowed_roots` for template/output paths. With Flex `when@prod`, `path_allowlist_required: true` rejects an empty allowlist.
 
 ## To 1.3.9
 

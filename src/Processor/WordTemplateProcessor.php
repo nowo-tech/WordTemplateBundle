@@ -14,6 +14,7 @@ use Nowo\WordTemplateBundle\Result\ProcessedDocument;
 use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 use Nowo\WordTemplateBundle\Util\ConditionalBlockApplicator;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
+use Nowo\WordTemplateBundle\Util\PathAllowlist;
 use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\Settings as PhpWordSettings;
 use PhpOffice\PhpWord\Shared\Html;
@@ -30,6 +31,9 @@ use const DIRECTORY_SEPARATOR;
 
 readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 {
+    /**
+     * @param list<string> $allowedRoots Absolute directories that template/image/output paths must stay under (empty = unrestricted).
+     */
     public function __construct(
         private string $macroOpening = '${',
         private string $macroClosing = '}',
@@ -38,6 +42,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         private string $conditionalEndifOpening = '${#endif',
         private string $conditionalEndifClosing = '}',
         private int $timeout = 180,
+        private array $allowedRoots = [],
     ) {
     }
 
@@ -139,6 +144,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             $target    = $outputPath ?? $this->makeTempOutputPath();
             $temporary = $outputPath === null;
 
+            if ($outputPath !== null) {
+                PathAllowlist::assertUnderRoots($outputPath, $this->allowedRoots, false);
+            }
+
             $deadline->assertNotTimedOut();
 
             try {
@@ -225,6 +234,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
     private function applyImage(TemplateProcessor $processor, string $macroKey, ImageSource $image): void
     {
+        PathAllowlist::assertUnderRoots($image->path, $this->allowedRoots, true);
+
         $replace = $image->path;
         if ($image->width !== null || $image->height !== null) {
             $replace = [
@@ -260,6 +271,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         if (!is_file($templatePath) || !is_readable($templatePath)) {
             throw new TemplateNotFoundException(sprintf('DOCX template not found or not readable: "%s".', $templatePath));
         }
+
+        PathAllowlist::assertUnderRoots($templatePath, $this->allowedRoots, true);
 
         $processor = new TemplateProcessorBridge($templatePath);
         $processor->setMacroChars($this->macroOpening, $this->macroClosing);

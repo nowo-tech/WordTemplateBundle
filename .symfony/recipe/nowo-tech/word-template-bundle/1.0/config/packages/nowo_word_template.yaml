@@ -1,6 +1,14 @@
 nowo_word_template:
     timeout: 180
+    # Empty allowed_roots keeps BC locally; production requires an explicit allowlist.
+    allowed_roots: []
+    path_allowlist_required: false
 
 when@prod:
     nowo_word_template:
         timeout: 120
+        path_allowlist_required: true
+        allowed_roots:
+            - '%kernel.project_dir%/templates'
+            - '%kernel.project_dir%/var'
+            - '%kernel.project_dir%/public'

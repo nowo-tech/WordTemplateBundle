@@ -62,4 +62,33 @@ final class ConfigurationTest extends TestCase
         self::assertSame('[[#endif', $config['conditional_endif_opening']);
         self::assertSame(']]', $config['conditional_endif_closing']);
     }
+
+    public function testDefaultAllowedRootsEmpty(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), []);
+
+        self::assertSame([], $config['allowed_roots']);
+        self::assertFalse($config['path_allowlist_required']);
+    }
+
+    public function testPathAllowlistRequiredWithoutRootsRejected(): void
+    {
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+
+        (new Processor())->processConfiguration(new Configuration(), [[
+            'path_allowlist_required' => true,
+            'allowed_roots'           => [],
+        ]]);
+    }
+
+    public function testPathAllowlistRequiredWithRootsAccepted(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), [[
+            'path_allowlist_required' => true,
+            'allowed_roots'           => ['/tmp/templates'],
+        ]]);
+
+        self::assertTrue($config['path_allowlist_required']);
+        self::assertSame(['/tmp/templates'], $config['allowed_roots']);
+    }
 }
