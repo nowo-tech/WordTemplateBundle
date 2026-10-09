@@ -4,6 +4,10 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+### Changed
+
+- Development: `composer.json` pins `config.platform.php` to 8.2.0 so local `composer update` resolves dependencies installable on the minimum PHP (the lock is not committed); CI overrides the platform per matrix cell.
+
 ## 1.4.2 — 2026-10-09
 
 ### Dependencies
