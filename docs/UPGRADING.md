@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.4.2](#to-142)
 - [To 1.4.1](#to-141)
 - [To 1.4.0](#to-140)
 - [To 1.3.9](#to-139)
@@ -11,6 +12,14 @@
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
 
 ## Unreleased
+
+## To 1.4.2
+
+From **1.4.1** — require-dev / demo dependency refresh only. **No breaking changes. No application upgrade steps.**
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
 
 ## To 1.4.1
 

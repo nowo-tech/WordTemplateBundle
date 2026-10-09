@@ -4,6 +4,13 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.4.2 — 2026-10-09
+
+### Dependencies
+
+- `igor-php/igor-php` require-dev constraint bumped to `^0.10.1` (Dependabot). Dev tooling only.
+- Demo `symfony8`: Symfony 8.1.8, Twig 3.30.0, `sabberworm/php-css-parser` 9.5.0.
+
 ## 1.4.1 — 2026-09-28
 
 ### Fixed
