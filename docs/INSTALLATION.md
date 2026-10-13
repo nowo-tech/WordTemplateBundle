@@ -3,7 +3,7 @@
 ## Requirements
 
 - PHP 8.2+ with extensions: `dom`, `json`, `libxml`, `zip`
-- Symfony 7.x / 8.x (see `composer.json`)
+- Symfony 7.4+ / 8.x (see `composer.json`)
 - [PHPWord](https://github.com/PHPOffice/PHPWord) (installed via Composer)
 
 ## Composer

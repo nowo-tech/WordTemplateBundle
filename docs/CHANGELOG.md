@@ -4,6 +4,11 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+### Changed
+
+- Minimum Symfony version raised from 7.0 to **7.4** (the lowest version tested in CI).
+- `symfony/yaml` moved from `require-dev` to `require` (the extension loads `services.yaml` with `YamlFileLoader`).
+
 ## 1.5.0 — 2026-10-13
 
 ### Security

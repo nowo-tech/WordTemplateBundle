@@ -15,6 +15,8 @@
 
 ## Unreleased
 
+- **Symfony 7.4+** is now required (was 7.0+); 8.x unchanged. `symfony/yaml` is now a runtime dependency.
+
 ## To 1.5.0
 
 From **1.4.3** — security - HtmlContent images filtered before PHPWord (no SSRF / local file read / temp leak).

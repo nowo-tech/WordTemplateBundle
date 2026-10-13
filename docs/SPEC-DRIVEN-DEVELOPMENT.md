@@ -52,7 +52,7 @@ The sections above/below state **behavior**; this subsection states **intent** i
 
 - **Symfony integration:** the bundle registers the **`nowo_word_template`** extension. Placeholder delimiters: `macro_opening`, `macro_closing`. Conditional delimiters: `conditional_if_opening`, `conditional_if_closing`, `conditional_endif_opening`, `conditional_endif_closing`. Merge **`timeout`** (default **180**, **REQ-RUNTIME-001**). See [`CONFIGURATION.md`](CONFIGURATION.md).
 
-- **Compatibility:** PHP **8.2+**, Symfony **7.x / 8.x** (`composer.json`).
+- **Compatibility:** PHP **8.2+**, Symfony **7.4+ / 8.x** (`composer.json`).
 
 **Explicit non-goals**
 

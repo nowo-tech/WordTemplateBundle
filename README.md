@@ -1,6 +1,6 @@
 # WordTemplateBundle
 
-[![CI](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.x%20%7C%208.x-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle) [![Coverage](https://img.shields.io/badge/Coverage-~100%25-green)](#tests-and-coverage)
+[![CI](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%2B%20%7C%208.x-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle) [![Coverage](https://img.shields.io/badge/Coverage-~100%25-green)](#tests-and-coverage)
 
 > **Found this useful?** Install from Packagist (`composer require nowo-tech/word-template-bundle`) and consider starring [WordTemplateBundle on GitHub](https://github.com/nowo-tech/WordTemplateBundle).
 
@@ -48,7 +48,7 @@ $doc->dispose(); // if the processor used a temp file
 ## Requirements
 
 - PHP **8.2+**
-- Symfony **7.x / 8.x** (as in `composer.json`)
+- Symfony **7.4+ / 8.x** (as in `composer.json`)
 - Extensions: `dom`, `json`, `libxml`, `zip`
 
 ## Development
