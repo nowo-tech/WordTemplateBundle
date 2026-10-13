@@ -752,6 +752,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * @psalm-type NowoWordTemplateConfig = array{
  *     timeout?: int|Param, // Wall-clock timeout in seconds for WordTemplateProcessor::process() (cooperative deadline + set_time_limit). Shared Nowo default: PROCESS_TIMEOUT=180. Keep below PHP max_execution_time / FrankenPHP write timeout. // Default: 180
  *     allowed_roots?: list<scalar|Param|null>,
+ *     html_image_max_bytes?: int|Param, // Maximum decoded size (bytes) of one data: image inside HtmlContent. Larger images, remote URLs and local paths outside allowed_roots are dropped from the HTML. // Default: 5242880
  *     path_allowlist_required?: bool|Param, // When true, allowed_roots must be non-empty (fail-closed for production). // Default: false
  *     macro_opening?: scalar|Param|null, // Opening delimiter for placeholders in the DOCX (PHPWord TemplateProcessor). // Default: "${"
  *     macro_closing?: scalar|Param|null, // Closing delimiter for placeholders in the DOCX. // Default: "}"
