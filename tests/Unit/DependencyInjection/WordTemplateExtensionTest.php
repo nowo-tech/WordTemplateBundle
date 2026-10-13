@@ -25,6 +25,7 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame(180, $container->getParameter(Configuration::ALIAS . '.timeout'));
         self::assertSame([], $container->getParameter(Configuration::ALIAS . '.allowed_roots'));
         self::assertFalse($container->getParameter(Configuration::ALIAS . '.path_allowlist_required'));
+        self::assertSame(5_242_880, $container->getParameter(Configuration::ALIAS . '.html_image_max_bytes'));
         self::assertSame('[[', $container->getParameter(Configuration::ALIAS . '.macro_opening'));
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.macro_closing'));
         self::assertSame('${#if', $container->getParameter(Configuration::ALIAS . '.conditional_if_opening'));

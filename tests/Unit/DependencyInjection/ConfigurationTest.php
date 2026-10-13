@@ -70,6 +70,7 @@ final class ConfigurationTest extends TestCase
 
         self::assertSame([], $config['allowed_roots']);
         self::assertFalse($config['path_allowlist_required']);
+        self::assertSame(5_242_880, $config['html_image_max_bytes']);
     }
 
     public function testPathAllowlistRequiredWithoutRootsRejected(): void

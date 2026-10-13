@@ -17,6 +17,8 @@ use PhpOffice\PhpWord\Settings;
 use PHPUnit\Framework\TestCase;
 use ZipArchive;
 
+use function array_diff;
+use function dirname;
 use function is_string;
 
 final class WordTemplateProcessorIntegrationTest extends TestCase
@@ -108,6 +110,151 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
             self::assertStringContainsString('Second paragraph.', $xml);
         } finally {
             $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testHtmlContentDropsRemoteAndStreamWrapperImages(): void
+    {
+        $pngPath = sys_get_temp_dir() . '/nowo_word_ssrf_' . bin2hex(random_bytes(4)) . '.png';
+        file_put_contents($pngPath, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', true));
+        $root = sys_get_temp_dir() . '/nowo_word_ssrf_root_' . bin2hex(random_bytes(4));
+        mkdir($root);
+
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('${rich}');
+        });
+
+        // Before the fix PHPWord file_get_contents()'d every src: remote URL (SSRF), php:// wrapper and a
+        // local file outside allowed_roots were all read.
+        $html = '<p>Safe text</p>'
+            . '<p><img src="http://169.254.169.254/latest/meta-data/iam/security-credentials/"/></p>'
+            . '<p><img src="php://filter/resource=' . $pngPath . '"/></p>'
+            . '<p><img src="' . $pngPath . '"/></p>';
+
+        $rootTpl = $root . '/template.docx';
+        rename($tpl, $rootTpl);
+        $tpl = $rootTpl;
+
+        $out = (new WordTemplateProcessor(allowedRoots: [$root]))->process($tpl, [
+            'rich' => new HtmlContent($html),
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Safe text', $xml);
+            self::assertStringNotContainsString('v:imagedata', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+            @unlink($pngPath);
+            @rmdir($root);
+        }
+    }
+
+    public function testHtmlContentKeepsLocalImageUnderAllowedRoots(): void
+    {
+        $root = sys_get_temp_dir() . '/nowo_word_html_ok_' . bin2hex(random_bytes(4));
+        mkdir($root);
+        $pngPath = $root . '/logo.png';
+        file_put_contents($pngPath, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', true));
+
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('${rich}');
+        });
+
+        $out = (new WordTemplateProcessor(allowedRoots: [$root, dirname($tpl)]))->process($tpl, [
+            'rich' => new HtmlContent('<p><img src="' . $pngPath . '"/></p>'),
+        ]);
+
+        try {
+            self::assertStringContainsString('v:imagedata', $this->readMainDocumentXml($out->path()));
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+            @unlink($pngPath);
+            @rmdir($root);
+        }
+    }
+
+    public function testHtmlContentDataImageTempFilesAreRemovedAfterProcessing(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('${rich}');
+        });
+
+        $tempDir = Settings::getTempDir();
+        $before  = glob($tempDir . '/*') ?: [];
+
+        $out = (new WordTemplateProcessor())->process($tpl, [
+            'rich' => new HtmlContent('<p>Logo <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" width="4" height="4"/></p>'),
+        ]);
+        $xml = $this->readMainDocumentXml($out->path());
+        $out->dispose();
+        @unlink($tpl);
+
+        self::assertStringContainsString('v:imagedata', $xml);
+        $leaked = array_diff(glob($tempDir . '/*') ?: [], $before);
+        self::assertSame([], array_values($leaked), 'data: images must not leave temp files behind (worker mode).');
+    }
+
+    public function testHtmlContentOversizedDataImageIsDropped(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('${rich}');
+        });
+
+        $out = (new WordTemplateProcessor(htmlImageMaxBytes: 10))->process($tpl, [
+            'rich' => new HtmlContent('<p>Kept<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="/></p>'),
+        ]);
+
+        try {
+            $xml = $this->readMainDocumentXml($out->path());
+            self::assertStringContainsString('Kept', $xml);
+            self::assertStringNotContainsString('v:imagedata', $xml);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
+    public function testListVariablesIgnoresConditionalMarkersWithCustomDelimiters(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${?when promo}');
+            $section->addText('${promo_label} ${#if literal}');
+            $section->addText('${?end promo}');
+        });
+
+        try {
+            $variables = (new WordTemplateProcessor(
+                conditionalIfOpening: '${?when',
+                conditionalEndifOpening: '${?end',
+            ))->listVariables($tpl);
+            sort($variables);
+
+            self::assertSame(['#if literal', 'promo_label'], $variables);
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
+    public function testListVariablesKeepsAllNamesWhenConditionalsDoNotUseMacroDelimiters(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('${a} ${#if b}');
+        });
+
+        try {
+            $variables = (new WordTemplateProcessor(
+                conditionalIfOpening: '[[#if',
+                conditionalEndifOpening: '${',
+            ))->listVariables($tpl);
+            sort($variables);
+
+            self::assertSame(['#if b', 'a'], $variables);
+        } finally {
             @unlink($tpl);
         }
     }

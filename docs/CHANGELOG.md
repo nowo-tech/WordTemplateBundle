@@ -4,6 +4,23 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+### Security
+
+- `HtmlContent`: `<img src>` values are filtered before PHPWord parses the HTML. Remote URLs, stream wrappers (`php://`, `phar://`, `file://`, …) and local paths outside `allowed_roots` are dropped, closing SSRF and arbitrary local file reads. Only `data:image/(png|jpeg|gif|bmp);base64` images up to `html_image_max_bytes` (default 5 MiB) and, when `allowed_roots` is configured, existing local files under those roots are kept.
+- `HtmlContent`: temp files created for `data:` images are deleted after each merge (previously leaked one file per image, unbounded in FrankenPHP worker mode).
+
+### Added
+
+- Config `html_image_max_bytes` (default `5242880`): maximum decoded size of one `data:` image inside `HtmlContent`.
+
+### Fixed
+
+- `listVariables()` derives the conditional-marker filter from the configured `conditional_if_opening` / `conditional_endif_opening` (and `macro_opening`) instead of hard-coding `#if ` / `#endif `, so custom conditional delimiters no longer show up as variables.
+
+### Documentation
+
+- `docs/CONFIGURATION.md` and the reference/recipe YAML now document `allowed_roots`, `path_allowlist_required` and `html_image_max_bytes`.
+
 ## 1.4.3 — 2026-10-13
 
 ### Changed

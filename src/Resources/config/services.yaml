@@ -16,6 +16,7 @@ services:
             $conditionalEndifClosing: '%nowo_word_template.conditional_endif_closing%'
             $timeout: '%nowo_word_template.timeout%'
             $allowedRoots: '%nowo_word_template.allowed_roots%'
+            $htmlImageMaxBytes: '%nowo_word_template.html_image_max_bytes%'
 
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
         alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor

@@ -9,6 +9,22 @@ nowo_word_template:
     # max_execution_time and the reverse-proxy write timeout (FrankenPHP / REQ-RUNTIME-001).
     timeout: 180
 
+    # Absolute directories that templates, ImageSource paths, output paths and local
+    # <img src> paths inside HtmlContent must stay under (realpath-resolved).
+    # Empty = unrestricted for templates/images/output (BC) but local <img> paths in
+    # HtmlContent are dropped. Set this in production.
+    allowed_roots: []
+    # - '%kernel.project_dir%/templates'
+    # - '%kernel.project_dir%/var'
+
+    # When true, an empty allowed_roots is a configuration error (fail-closed).
+    # Recommended under when@prod.
+    path_allowlist_required: false
+
+    # Maximum decoded size (bytes) of one data: image inside HtmlContent. Remote URLs,
+    # stream wrappers and local paths outside allowed_roots are always dropped.
+    html_image_max_bytes: 5242880
+
     # Opening delimiter for scalar, nested, HTML, image, and table-row placeholders.
     # Used by PHPWord TemplateProcessor (setValue, setImageValue, cloneRow, etc.).
     macro_opening: '${'

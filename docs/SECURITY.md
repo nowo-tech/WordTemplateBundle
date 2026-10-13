@@ -18,7 +18,7 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 |-------|--------|-------|
 | Template path | Application | Must point to intended `.docx`; avoid user-controlled absolute paths without validation. |
 | Context values | Application / stored user data | Escaped as OOXML text during `WordTemplateProcessor::process()` via PHPWord `Settings::setOutputEscapingEnabled(true)` (restored after merge). |
-| HTML in `HtmlContent` | Application | Parsed into OOXML; treat as untrusted if sourced from end users. |
+| HTML in `HtmlContent` | Application | Parsed into OOXML; treat as untrusted if sourced from end users. `<img src>` is filtered (see below). |
 | Image paths in `ImageSource` | Application | Path traversal / sensitive file read if paths are user-controlled. |
 
 ## Threats and mitigations
@@ -39,6 +39,11 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 
 - **Risk**: Large templates, heavy HTML, or many `TableRows` occupy a PHP thread until completion.
 - **Mitigation**: Bundle `timeout` applies a cooperative deadline between merge phases and `set_time_limit`. Keep PHP `max_execution_time` and reverse-proxy write deadlines **above** this value (see [CONFIGURATION.md](CONFIGURATION.md) and [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md)).
+
+### HTML images (SSRF / local file read)
+
+- **Risk**: PHPWord `Html::addHtml()` calls `file_get_contents()` on every `<img src>`: remote URLs (SSRF to internal services / cloud metadata), stream wrappers (`php://filter`, `phar://`, `file://`) and local files outside `allowed_roots`; `data:` images are written to temp files PHPWord never deletes.
+- **Mitigation**: `HtmlImageSanitizer` rewrites the fragment before PHPWord sees it. Only `data:image/(png|jpeg|gif|bmp);base64` payloads that decode to a real image ≤ `html_image_max_bytes`, and existing local files under a non-empty `allowed_roots`, are kept; every other `<img>` is removed. Decoded `data:` images are written to bundle-owned temp files deleted after each merge.
 
 ### Image path abuse
 

@@ -20,6 +20,7 @@ final class WordTemplateExtension extends Extension
 
         $container->setParameter(Configuration::ALIAS . '.timeout', $config['timeout']);
         $container->setParameter(Configuration::ALIAS . '.allowed_roots', $config['allowed_roots']);
+        $container->setParameter(Configuration::ALIAS . '.html_image_max_bytes', $config['html_image_max_bytes']);
         $container->setParameter(Configuration::ALIAS . '.path_allowlist_required', $config['path_allowlist_required']);
         $container->setParameter(Configuration::ALIAS . '.macro_opening', $config['macro_opening']);
         $container->setParameter(Configuration::ALIAS . '.macro_closing', $config['macro_closing']);

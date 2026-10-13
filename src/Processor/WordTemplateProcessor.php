@@ -14,6 +14,7 @@ use Nowo\WordTemplateBundle\Result\ProcessedDocument;
 use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 use Nowo\WordTemplateBundle\Util\ConditionalBlockApplicator;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
+use Nowo\WordTemplateBundle\Util\HtmlImageSanitizer;
 use Nowo\WordTemplateBundle\Util\PathAllowlist;
 use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\Settings as PhpWordSettings;
@@ -23,16 +24,25 @@ use Stringable;
 use Throwable;
 
 use function count;
+use function implode;
 use function ini_get;
 use function is_bool;
+use function preg_match;
+use function preg_quote;
 use function sprintf;
+use function str_starts_with;
+use function strlen;
+use function substr;
 
 use const DIRECTORY_SEPARATOR;
 
 readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 {
+    public const DEFAULT_HTML_IMAGE_MAX_BYTES = 5_242_880;
+
     /**
      * @param list<string> $allowedRoots absolute directories that template/image/output paths must stay under (empty = unrestricted)
+     * @param int $htmlImageMaxBytes maximum decoded size of one {@code data:} image inside {@see HtmlContent}
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -43,6 +53,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         private string $conditionalEndifClosing = '}',
         private int $timeout = 180,
         private array $allowedRoots = [],
+        private int $htmlImageMaxBytes = self::DEFAULT_HTML_IMAGE_MAX_BYTES,
     ) {
     }
 
@@ -57,10 +68,40 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             $processor->removeTemporaryDocument();
         }
 
+        $markerPattern = $this->conditionalMarkerVariablePattern();
+        if ($markerPattern === null) {
+            return array_values($variables);
+        }
+
         return array_values(array_filter(
             $variables,
-            static fn (string $name): bool => !str_starts_with($name, '#if ') && !str_starts_with($name, '#endif '),
+            static fn (string $name): bool => preg_match($markerPattern, $name) !== 1,
         ));
+    }
+
+    /**
+     * Conditional markers are also matched by the placeholder delimiters (e.g. {@code ${#if name}} is seen by
+     * PHPWord as variable {@code #if name}). Builds a regex for those names from the configured delimiters;
+     * null when no conditional opening delimiter starts with {@code macro_opening}.
+     */
+    private function conditionalMarkerVariablePattern(): ?string
+    {
+        $prefixes = [];
+        foreach ([$this->conditionalIfOpening, $this->conditionalEndifOpening] as $opening) {
+            if ($this->macroOpening === '' || !str_starts_with($opening, $this->macroOpening)) {
+                continue;
+            }
+            $prefix = substr($opening, strlen($this->macroOpening));
+            if ($prefix !== '') {
+                $prefixes[] = preg_quote($prefix, '/');
+            }
+        }
+
+        if ($prefixes === []) {
+            return null;
+        }
+
+        return '/^(?:' . implode('|', $prefixes) . ')\s/';
     }
 
     public function listConditionalBlocks(string $templatePath): array
@@ -97,6 +138,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         PhpWordSettings::setOutputEscapingEnabled(true);
         $previousHtmlState = PhpWordHtmlState::isolate();
         $processor         = null;
+        $htmlImages        = new HtmlImageSanitizer($this->allowedRoots, $this->htmlImageMaxBytes);
 
         try {
             $deadline = $this->createDeadline();
@@ -123,7 +165,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
                 }
 
                 if ($value instanceof HtmlContent) {
-                    $this->applyHtml($processor, $key, $value);
+                    $this->applyHtml($processor, $key, $value, $htmlImages);
                     $deadline->assertNotTimedOut();
 
                     continue;
@@ -163,6 +205,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             return new ProcessedDocument($target, $temporary);
         } finally {
             $processor?->removeTemporaryDocument();
+            $htmlImages->cleanup();
             PhpWordHtmlState::restore($previousHtmlState);
             PhpWordSettings::setOutputEscapingEnabled($previousXmlEscaping);
             set_time_limit($previousMaxExecution);
@@ -223,12 +266,14 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         }
     }
 
-    private function applyHtml(TemplateProcessor $processor, string $macroKey, HtmlContent $content): void
+    private function applyHtml(TemplateProcessor $processor, string $macroKey, HtmlContent $content, HtmlImageSanitizer $images): void
     {
         $table = new Table(['borderSize' => 0, 'cellMargin' => 80]);
         $row   = $table->addRow();
         $cell  = $row->addCell(9200);
-        Html::addHtml($cell, $content->html, false, false);
+        // PHPWord would fetch any <img src> (remote URL, stream wrapper, file outside allowed_roots) and leak
+        // data: temp files; only data: images and allowlisted local files reach it.
+        Html::addHtml($cell, $images->sanitize($content->html), false, false);
         $processor->setComplexBlock($macroKey, $table);
     }
 
