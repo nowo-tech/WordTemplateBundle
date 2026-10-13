@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.4.3](#to-143)
 - [To 1.4.2](#to-142)
 - [To 1.4.1](#to-141)
 - [To 1.4.0](#to-140)
@@ -12,6 +13,16 @@
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
 
 ## Unreleased
+
+## To 1.4.3
+
+From **1.4.2** — dependency refresh and repository maintenance.
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
+
+- No breaking changes. No application upgrade steps.
 
 ## To 1.4.2
 
@@ -30,7 +41,6 @@ composer update nowo-tech/word-template-bundle
 ```
 
 ## To 1.4.0
-
 
 From **1.3.9** — path allowlist.
 
@@ -51,7 +61,6 @@ php bin/console cache:clear
 ```
 
 - No application upgrade steps for require-dev Igor tooling (REQ-CS-008). Consumers do not pull `igor-php/igor-php` transitively.
-
 
 ## From 1.3.7 to 1.3.8
 

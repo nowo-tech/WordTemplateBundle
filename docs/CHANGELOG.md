@@ -4,6 +4,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.4.3 — 2026-10-13
+
 ### Changed
 
 - Development: `composer.json` pins `config.platform.php` to 8.2.0 so local `composer update` resolves dependencies installable on the minimum PHP (the lock is not committed); CI overrides the platform per matrix cell.
@@ -25,7 +27,6 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## 1.4.0 — 2026-09-28
 
-
 ### Security
 
 - Template/output paths are gated by `allowed_roots`; `path_allowlist_required` (Flex `when@prod`) rejects empty allowlists in production.
@@ -39,7 +40,6 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 ### Changed
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
-
 
 ## 1.3.8 — 2026-09-25
 
