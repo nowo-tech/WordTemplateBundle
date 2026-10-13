@@ -4,6 +4,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.5.0 — 2026-10-13
+
 ### Security
 
 - `HtmlContent`: `<img src>` values are filtered before PHPWord parses the HTML. Remote URLs, stream wrappers (`php://`, `phar://`, `file://`, …) and local paths outside `allowed_roots` are dropped, closing SSRF and arbitrary local file reads. Only `data:image/(png|jpeg|gif|bmp);base64` images up to `html_image_max_bytes` (default 5 MiB) and, when `allowed_roots` is configured, existing local files under those roots are kept.

@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.5.0](#to-150)
 - [To 1.4.3](#to-143)
 - [To 1.4.2](#to-142)
 - [To 1.4.1](#to-141)
@@ -13,6 +14,17 @@
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
 
 ## Unreleased
+
+## To 1.5.0
+
+From **1.4.3** — security - HtmlContent images filtered before PHPWord (no SSRF / local file read / temp leak).
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
+
+- `<img>` tags in `HtmlContent` pointing to remote URLs or stream wrappers are now removed; local paths are only kept when `allowed_roots` is configured. Use `data:` images (up to the new `html_image_max_bytes`, default 5 MiB) or `ImageSource` instead.
+- `listVariables()` now honours custom conditional delimiters.
 
 ## To 1.4.3
 
