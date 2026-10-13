@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.6.0](#to-160)
 - [To 1.5.0](#to-150)
 - [To 1.4.3](#to-143)
 - [To 1.4.2](#to-142)
@@ -14,6 +15,14 @@
 - [From 1.3.5 to 1.3.6](#from-135-to-136)
 
 ## Unreleased
+
+## To 1.6.0
+
+From **1.5.0** — symfony/yaml required at runtime, Symfony >=7.4.
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
 
 - **Symfony 7.4+** is now required (was 7.0+); 8.x unchanged. `symfony/yaml` is now a runtime dependency.
 

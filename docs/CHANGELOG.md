@@ -4,6 +4,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.6.0 — 2026-10-13
+
 ### Changed
 
 - Minimum Symfony version raised from 7.0 to **7.4** (the lowest version tested in CI).
