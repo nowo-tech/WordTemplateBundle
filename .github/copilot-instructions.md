@@ -26,6 +26,7 @@ Use this when suggesting code, tests, documentation, or CI changes for this repo
 ### Git
 
 - **Never** add `Co-authored-by: Cursor` or `cursoragent@cursor.com` trailers to commit messages (REQ-GIT-001).
+- Never add `Co-Authored-By: Claude …` / `noreply@anthropic.com` trailers either (REQ-GIT-001).
 
 ### Tests
 
