@@ -9,6 +9,18 @@
 | Remediation (2026-09-25) | W-01 fixed (PHPWord `Html` statics isolated per `process()` call and restored in `finally`, `Processor/PhpWordHtmlState.php`); W-02 fixed (PHPWord working copy deleted on every path); regression tests reuse one processor for consecutive merges |
 | **Verdict** | ✅ **Viable under scenario B** — the bundle service is stateless, and every PHPWord global it touches (`Settings` output escaping, `Html::$css` / `$xpath` / `$options`) is saved and restored around each merge. W-03 (cooperative timeout) is accepted |
 
+## Table of contents
+
+- [Execution model assumed](#execution-model-assumed)
+- [Summary](#summary)
+- [Services reviewed](#services-reviewed)
+- [Findings](#findings)
+  - [W-01 — PHPWord `Html` keeps the last parsed `<style>` sheet in a static property (Medium)](#w-01--phpword-html-keeps-the-last-parsed--sheet-in-a-static-property-medium)
+  - [W-02 — PHPWord temporary template copies are not always removed (Low)](#w-02--phpword-temporary-template-copies-are-not-always-removed-low)
+  - [W-03 — Timeout is cooperative, and restoring `set_time_limit()` restarts the budget (Low)](#w-03--timeout-is-cooperative-and-restoring-set_time_limit-restarts-the-budget-low)
+- [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
+- [Re-audit triggers](#re-audit-triggers)
+
 ## Execution model assumed
 
 FrankenPHP worker mode boots the Symfony kernel once per worker and serves many requests with the same container. This audit assumes the **strict** variant: the kernel is **not** rebooted between requests, so every shared service, static property and PHP global survives from one request to the next. Two scenarios are evaluated:

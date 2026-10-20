@@ -2,6 +2,22 @@
 
 This document describes the **attack surface**, **threats**, and **controls** for `nowo-tech/word-template-bundle`. It is written in English per project standards.
 
+## Table of contents
+
+- [Scope](#scope)
+- [Attack surface](#attack-surface)
+- [Threats and mitigations](#threats-and-mitigations)
+  - [Unsafe template or output paths](#unsafe-template-or-output-paths)
+  - [Untrusted context / XXE and XML](#untrusted-context--xxe-and-xml)
+  - [Resource exhaustion / long merges](#resource-exhaustion--long-merges)
+  - [HTML images (SSRF / local file read)](#html-images-ssrf--local-file-read)
+  - [Image path abuse](#image-path-abuse)
+  - [Dependency vulnerabilities](#dependency-vulnerabilities)
+- [Logging and secrets](#logging-and-secrets)
+- [Cryptography](#cryptography)
+- [Reporting](#reporting)
+- [Release security checklist (12.4.1)](#release-security-checklist-1241)
+
 ## Scope
 
 The bundle merges **application-provided context** into **WordprocessingML (.docx)** templates using PHPWord `TemplateProcessor`. It may:

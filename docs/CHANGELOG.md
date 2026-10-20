@@ -5,6 +5,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [[Unreleased]](#unreleased)
 - [1.6.0 — 2026-10-13](#160--2026-10-13)
 - [1.5.0 — 2026-10-13](#150--2026-10-13)
 - [1.4.3 — 2026-10-13](#143--2026-10-13)
@@ -39,6 +40,12 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - [0.1.0 — 2026-05-12](#010--2026-05-12)
 
 ## Unreleased
+
+## [Unreleased]
+
+### Documentation
+
+- Documentation: wave-1 REQ compliance — README badges (canonical Downloads, Symfony 7.4 | 8.0 | 8.1, Coverage), canonical FrankenPHP claim, documentation list order (extras under Additional documentation), canonical issue and pull request templates, CONTRIBUTING Code of Conduct link and Cursor Agent queue settings (REQ-IDE-006), DEMO-FRANKENPHP troubleshooting, commented demo `.env.example`, tables of contents on long docs, Spec Kit inventory refresh (25/25: path allowlist, image sanitizer, split-macro normalizer, PHPWord HTML state).
 
 ## 1.6.0 — 2026-10-13
 

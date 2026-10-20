@@ -20,6 +20,19 @@ With those defaults, scalar placeholders look like `${client_name}` and conditio
 
 ---
 
+## Table of contents
+
+- [Scalars and nested keys](#scalars-and-nested-keys)
+- [One table with several columns (`TableRows`)](#one-table-with-several-columns-tablerows)
+- [Several independent tables in the same `.docx`](#several-independent-tables-in-the-same-docx)
+- [One conditional block](#one-conditional-block)
+- [Several sibling conditionals in the same document](#several-sibling-conditionals-in-the-same-document)
+- [Nested conditionals](#nested-conditionals)
+- [Combined example (scalars + 2 tables + 2 conditionals)](#combined-example-scalars--2-tables--2-conditionals)
+- [Context types (summary)](#context-types-summary)
+- [Listing placeholders and conditional blocks](#listing-placeholders-and-conditional-blocks)
+- [Combining with HtmlToWordBundle](#combining-with-htmltowordbundle)
+
 ## Scalars and nested keys
 
 **In Word** (plain text in a paragraph or table cell — do not split the macro across different font runs if you can avoid it):

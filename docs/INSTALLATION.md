@@ -1,5 +1,14 @@
 # Installation
 
+## Table of contents
+
+- [Requirements](#requirements)
+- [Composer](#composer)
+- [Register the bundle](#register-the-bundle)
+  - [With Symfony Flex](#with-symfony-flex)
+  - [Manual registration](#manual-registration)
+- [Configuration](#configuration)
+
 ## Requirements
 
 - PHP 8.2+ with extensions: `dom`, `json`, `libxml`, `zip`

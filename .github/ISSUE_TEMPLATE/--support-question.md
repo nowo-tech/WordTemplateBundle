@@ -1,12 +1,8 @@
 ---
-name: "Support question"
-about: Ask how to use the bundle
+name: "❓ Support Question"
+about: You have a question about this bundle or need help?
 title: ''
-labels: question
+labels: ''
 assignees: ''
 
 ---
-
-### Question
-
-### Versions (`composer info nowo-tech/word-template-bundle`, PHP, Symfony)

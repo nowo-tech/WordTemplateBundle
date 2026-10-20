@@ -58,6 +58,7 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 - **FR-CFG-002**: Conditional delimiters `conditional_if_opening` (default `${#if`), `conditional_if_closing` (default `}`), `conditional_endif_opening` (default `${#endif`), `conditional_endif_closing` (default `}`).
 - **FR-CFG-003**: Parameters wired to `WordTemplateProcessor` via `services.yaml`.
 - **FR-CFG-004**: `timeout` (default **180**) — wall-clock limit for `process()` (cooperative deadline + `set_time_limit`); FrankenPHP hierarchy documented (**REQ-RUNTIME-001**).
+- **FR-CFG-005**: `allowed_roots` (absolute directories templates, images and output paths must stay under; empty = unrestricted for BC), `path_allowlist_required` (fail-closed when roots are empty), `html_image_max_bytes` (max decoded size of one `data:` image inside `HtmlContent`).
 
 ### Processing
 
@@ -67,6 +68,7 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 - **FR-PROC-004**: `listVariables()` omits conditional marker names (`#if …`, `#endif …`); paint fields inside conditionals are included.
 - **FR-PROC-005**: `ProcessDeadline` — cooperative wall-clock checks during `process()`.
 - **FR-PROC-006**: `listConditionalBlocks()` returns unique block names from opening markers using `conditional_*` delimiters.
+- **FR-PROC-007**: `PhpWordHtmlState` saves and restores PHPWord's process-global `Html` parser state (and output escaping) around each merge so long-lived workers do not leak styles/DOM between merges.
 
 ### Domain models (**FR-MDL-002**)
 
@@ -82,10 +84,16 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 - `ContextFlattener` — dot keys; preserves model objects.
 - `ConditionalBlockApplicator` — resolves conditional regions in WordprocessingML paragraph boundaries; **nested blocks** resolved deepest-first.
 - `TemplateProcessorBridge` — internal access to document XML parts for conditional transforms.
+- `BrokenMacroNormalizer` (**FR-UTIL-002**) — collapses placeholder / conditional markers that Word split across several runs so `${…}` becomes contiguous text again.
+
+### Security (**FR-SEC-001**)
+
+- `PathAllowlist` — template, image and output paths must stay under `allowed_roots` (path traversal / SSRF-to-disk guard); violations throw `PathNotAllowedException`.
+- `HtmlImageSanitizer` — rewrites `<img src>` in `HtmlContent` before PHPWord `Html::addHtml()`: remote URLs, local paths outside `allowed_roots` and `data:` images above `html_image_max_bytes` are dropped (PHPWord would otherwise `file_get_contents()` any `src`).
 
 ### Errors (**FR-ERR-001**)
 
-- `TemplateNotFoundException`, `InvalidContextValueException`, `ProcessingTimedOutException`, `WordTemplateExceptionInterface`.
+- `TemplateNotFoundException`, `InvalidContextValueException`, `ProcessingTimedOutException`, `PathNotAllowedException`, `WordTemplateExceptionInterface`.
 
 ### DI (**FR-DI-001**)
 
@@ -120,9 +128,17 @@ ${#endif optional_funding}
 
 ---
 
+## Non-goals
+
+- Running or embedding Word VBA macros (“macros” are template placeholders).
+- Guaranteeing full Word layout or HTML fidelity (rich HTML is subject to PHPWord limits).
+- PDF conversion (see WordToPdfBundle) and `demo/` trees (illustrative, not Packagist API).
+
+---
+
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**18/18** mapped).
+- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**25/25** mapped, audited 2026-10-20).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: `composer qa` / `make release-check` pass in CI (PHPUnit, PHPStan).
 - **SC-004**: No Packagist-visible behavior change without spec, inventory, and test updates.
@@ -134,6 +150,6 @@ ${#endif optional_funding}
 | Check | Command |
 | --- | --- |
 | Full QA | `make release-check` or `composer qa` |
-| Code inventory audit | `find src -type f ! -path '*/assets/dist/*' \| wc -l` |
+| Code inventory audit | `git ls-files src \| wc -l` → 25 |
 
 When changing behavior, update this spec, `code-inventory.md`, integrator docs, and tests.

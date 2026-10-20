@@ -9,9 +9,31 @@ For how this repository uses requirement IDs (`REQ-*`) and a spec-first habit ar
 
 See repository workflows under `.github/workflows/` for CI expectations.
 
+## Table of contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Cursor Agent](#cursor-agent)
+- [Git hooks (REQ-GIT-001)](#git-hooks-req-git-001)
+- [Igor worker audit (REQ-CS-008)](#igor-worker-audit-req-cs-008)
+
 ## Code of Conduct
 
 This project follows the [Contributor Covenant Code of Conduct](../CODE_OF_CONDUCT.md). By participating, you are expected to uphold it. Please report unacceptable behavior to **hectorfranco@nowo.tech**.
+
+## Cursor Agent
+
+Contributors using Cursor Agent on this repository should enable these user-level settings (REQ-IDE-006):
+
+1. **Submit with Ctrl + Enter** (macOS: **⌘ + Enter**) — Cursor Settings → Agents / Chat → Submit with Ctrl + Enter. Enter inserts a newline; Ctrl/⌘+Enter submits the prompt.
+2. **Queue follow-ups while the agent is running** — in your user `settings.json` (Linux `~/.config/Cursor/User/settings.json`, Windows `%APPDATA%\Cursor\User\settings.json`, macOS `~/Library/Application Support/Cursor/User/settings.json`):
+
+```json
+{
+  "cursor.composer.queueMessageDefaultBehavior": "queue"
+}
+```
+
+Do not use `"steer"` as the default: it interrupts the running agent turn as soon as the follow-up is sent.
 
 ## Git hooks (REQ-GIT-001)
 

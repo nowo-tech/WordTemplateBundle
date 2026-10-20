@@ -1,14 +1,10 @@
 ---
-name: "Feature request"
-about: Suggest an idea
+name: "🎉 Feature Request"
+about: Suggest an idea for this project
 title: ''
 labels: enhancement
 assignees: ''
 
 ---
 
-### Problem / use case
-
-### Proposed solution
-
-### Alternatives considered
+<!-- Provide a summary of the feature you would like to see implemented. -->

@@ -10,6 +10,15 @@ The repository includes an **optional Symfony demo app** under `demo/symfony8` (
 
 See [`demo/README.md`](../demo/README.md) for quick start and aggregate `make` targets.
 
+## Table of contents
+
+- [Development vs production (FrankenPHP worker mode)](#development-vs-production-frankenphp-worker-mode)
+- [Worker mode with kernel not reset (scenario B)](#worker-mode-with-kernel-not-reset-scenario-b)
+- [Timeouts (avoid stuck FrankenPHP workers)](#timeouts-avoid-stuck-frankenphp-workers)
+  - [Shared `PROCESS_TIMEOUT`](#shared-process_timeout)
+  - [Demo page](#demo-page)
+- [Troubleshooting](#troubleshooting)
+
 ## Development vs production (FrankenPHP worker mode)
 
 The demo ships two Caddy configurations under `docker/frankenphp/`:
@@ -72,3 +81,16 @@ The demo exposes a single form at `/` that:
 The `Dockerfile` and `docker-compose.yml` at the **repository root** are for **developer QA** (`make up`, Composer, PHPUnit, PHPStan) against PHP 8.2 with required extensions — not for serving the demo.
 
 Conventions (Nowo bundles): Web Profiler + Twig Inspector in dev, path repository to the mounted bundle, `make up` prints `Demo started at: http://localhost:<PORT>`, Composer DNS fallbacks in compose when needed.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+| --- | --- |
+| Twig or PHP changes do not appear | Worker mode keeps the kernel in memory: use `FRANKENPHP_MODE=classic` / `APP_ENV=dev`, or restart the demo container. |
+| `FRANKENPHP_MODE` / `APP_ENV` change has no effect | Env is read at container creation: recreate it (`docker compose up -d`), not `restart`. |
+| `ProcessingTimedOutException` on large templates | The merge exceeded `PROCESS_TIMEOUT` (default 180 s): raise it together with PHP `max_execution_time` and the Caddy write timeout (hierarchy above). |
+| HTTP 502/504 before the merge finishes | Caddy write or PHP limit is lower than `PROCESS_TIMEOUT`: restore the hierarchy `PROCESS_TIMEOUT` < PHP < Caddy write. |
+| Images missing from `HtmlContent` output | Remote URLs, paths outside `allowed_roots` and `data:` images above `html_image_max_bytes` are dropped on purpose (see [CONFIGURATION.md](CONFIGURATION.md)). |
+| `${…}` placeholders not replaced | Word split the marker across runs; retype it in one go or keep the default delimiters (the bundle normalises split markers, but tracked changes / mixed formatting inside the marker can still break it). |
+| Port already in use | Change `PORT` in `demo/symfony8/.env` (default **8021**) and run `make up` again. |
+

@@ -1,6 +1,6 @@
 # WordTemplateBundle
 
-[![CI](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%2B%20%7C%208.x-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle) [![Coverage](https://img.shields.io/badge/Coverage-~100%25-green)](#tests-and-coverage)
+[![CI](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/WordTemplateBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/word-template-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/word-template-bundle.svg)](https://packagist.org/packages/nowo-tech/word-template-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%20%7C%208.0%20%7C%208.1%2B-000000?logo=symfony)](https://symfony.com) [![GitHub stars](https://img.shields.io/github/stars/nowo-tech/WordTemplateBundle.svg?style=social&label=Star)](https://github.com/nowo-tech/WordTemplateBundle) [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen)](#tests-and-coverage)
 
 > **Found this useful?** Install from Packagist (`composer require nowo-tech/word-template-bundle`) and consider starring [WordTemplateBundle on GitHub](https://github.com/nowo-tech/WordTemplateBundle).
 
@@ -17,7 +17,9 @@ Under FrankenPHP (especially **worker** mode), `process()` is bounded by a confi
 
 ![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
 
-This bundle is **FrankenPHP worker mode friendly** (including kernel-not-reset / scenario B).
+This bundle is **FrankenPHP worker mode friendly**.
+
+It stays safe in kernel-not-reset workers (scenario B): see [docs/FRANKENPHP-WORKER-AUDIT.md](docs/FRANKENPHP-WORKER-AUDIT.md).
 
 ## Versioning
 
@@ -73,10 +75,8 @@ Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 
 ## Documentation
 
-- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
-- [PSR evaluation (REQ-CS-007)](docs/PSR.md)
 - [Usage](docs/USAGE.md)
 - [Contributing](docs/CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
@@ -90,6 +90,8 @@ Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 
 ### Additional documentation
 
+- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
+- [PSR evaluation (REQ-CS-007)](docs/PSR.md)
 - [FrankenPHP / Docker demo](docs/DEMO-FRANKENPHP.md) — `demo/symfony8` (see [`demo/README.md`](demo/README.md))
 - [FrankenPHP worker audit (kernel not reset)](docs/FRANKENPHP-WORKER-AUDIT.md)
 
