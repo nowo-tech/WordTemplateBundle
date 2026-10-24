@@ -83,7 +83,7 @@ qa: ensure-up
 
 composer-sync: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer validate --strict
-	$(COMPOSE) exec -T $(SERVICE_PHP) composer update --no-install
+	$(COMPOSE) exec -T $(SERVICE_PHP) composer install --no-interaction --prefer-dist
 
 
 # Run Igor worker-state audit (REQ-CS-008)
