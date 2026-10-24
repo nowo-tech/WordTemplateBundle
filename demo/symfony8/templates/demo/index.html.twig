@@ -166,6 +166,12 @@
       {{ form_widget(form.submit_pdf) }}
       <small class="text-muted">PDF backend: PhpWord + DomPDF (<code>docx → HTML → PDF</code>) — fidelity is limited (no headers/footers, no <code>numberingStyle</code> lists, simplified tables).</small>
     </div>
+    {# REQ-TWIG-003 rule 3: the fieldsets above group the placeholders on purpose; the loop renders any remaining child. #}
+    {% for child in form %}
+      {% if not child.rendered %}
+        {{ form_row(child) }}
+      {% endif %}
+    {% endfor %}
     {{ form_errors(form) }}
   {{ form_end(form) }}
 {% endblock %}
