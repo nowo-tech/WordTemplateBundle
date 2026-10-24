@@ -43,6 +43,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ### Changed
 
+- Developer tooling: `make release-check` runs the full REQ-MAKE-002 chain in order (`ensure-up` first, then `check-no-cursor-coauthor`, `check-open-prs`, new `check-no-raw-html-form` (REQ-TWIG-005), `composer-sync`, `cs-fix`, `cs-check`, `rector-dry`, `phpstan`, `igor`, `coverage-check`, demo release-check).
 - Dependencies refreshed (Composer and pnpm/npm lock files of the bundle and its demos, campaign 2026-10-19).
 - `.php-cs-fixer.dist.php`: `new ParallelConfig(2)` (REQ-CS-001).
 - Demo: `demo/index.html.twig` keeps its grouped placeholder fieldsets (rule 3) and ends the form with the child loop
