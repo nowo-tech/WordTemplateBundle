@@ -94,7 +94,7 @@ final class HtmlImageSanitizer
             return $html;
         }
 
-        $xml = self::preprocessLikePhpWord($html);
+        $xml = $this->preprocessLikePhpWord($html);
 
         $dom            = new DOMDocument();
         $previousLibxml = libxml_use_internal_errors(true);
@@ -226,7 +226,7 @@ final class HtmlImageSanitizer
     /**
      * Same string pre-processing as {@see Html::addHtml()} (PHPWord 1.x) so the DOM seen here matches PHPWord's.
      */
-    private static function preprocessLikePhpWord(string $html): string
+    private function preprocessLikePhpWord(string $html): string
     {
         $html = str_replace(["\n", "\r"], '', $html);
         $html = str_replace(['&lt;', '&gt;', '&amp;', '&quot;'], ['_lt_', '_gt_', '_amp_', '_quot_'], $html);

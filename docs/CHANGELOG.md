@@ -49,6 +49,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - Demo: `demo/index.html.twig` keeps its grouped placeholder fieldsets (rule 3) and ends the form with the child loop
   (`{% for child in form %}` + `not child.rendered` + `form_row(child)`) so any remaining child is rendered, per
   REQ-TWIG-003.
+- Internal: applied the pending Rector suggestion (private static helper in the internal `HtmlImageSanitizer` made non-static); no behaviour change. `make rector-dry` is clean again.
+
 ### Documentation
 
 - Documentation: wave-1 REQ compliance — README badges (canonical Downloads, Symfony 7.4 | 8.0 | 8.1, Coverage), canonical FrankenPHP claim, documentation list order (extras under Additional documentation), canonical issue and pull request templates, CONTRIBUTING Code of Conduct link and Cursor Agent queue settings (REQ-IDE-006), DEMO-FRANKENPHP troubleshooting, commented demo `.env.example`, tables of contents on long docs, Spec Kit inventory refresh (25/25: path allowlist, image sanitizer, split-macro normalizer, PHPWord HTML state).
