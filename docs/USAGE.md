@@ -32,6 +32,7 @@ With those defaults, scalar placeholders look like `${client_name}` and conditio
 - [Context types (summary)](#context-types-summary)
 - [Listing placeholders and conditional blocks](#listing-placeholders-and-conditional-blocks)
 - [Combining with HtmlToWordBundle](#combining-with-htmltowordbundle)
+- [Forms in host apps and demos (REQ-TWIG-005)](#forms-in-host-apps-and-demos-req-twig-005)
 
 ## Scalars and nested keys
 
@@ -352,3 +353,20 @@ ${#endif annex}
 ## Combining with HtmlToWordBundle
 
 Use **WordTemplateBundle** when you already have a `.docx` skeleton with macros. Use **[HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle)** to build a complete `.docx` from HTML alone when you do not maintain a Word template.
+
+## Forms in host apps and demos (REQ-TWIG-005)
+
+The bundle ships no page templates of its own; host apps call its services from their own controllers and forms. Every form in host apps and in the demo is a PHP Form Type created in the controller and rendered only with the Twig form helpers and the rendered-aware child loop (REQ-TWIG-003):
+
+```twig
+{{ form_start(form) }}
+    {% for child in form %}
+        {% if not child.rendered %}
+            {{ form_row(child) }}
+        {% endif %}
+    {% endfor %}
+    <button type="submit">Submit</button>
+{{ form_end(form) }}
+```
+
+Hosts and demos must not reintroduce raw `<form>` / `<input>` / `<textarea>` / `<select>` markup; `make check-no-raw-html-form` (part of `make release-check`) fails when bundle or demo Twig contains them.
