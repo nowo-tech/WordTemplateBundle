@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.6.1](#to-161)
 - [To 1.6.0](#to-160)
 - [To 1.5.0](#to-150)
 - [To 1.4.3](#to-143)
@@ -41,6 +42,10 @@
 - [From pre-release snapshots](#from-pre-release-snapshots)
 
 ## Unreleased
+
+## To 1.6.1
+
+No action needed: temporary outputs are created `0600`.
 
 ## To 1.6.0
 

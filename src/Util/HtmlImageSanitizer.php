@@ -12,6 +12,7 @@ use PhpOffice\PhpWord\Shared\Html;
 
 use function base64_decode;
 use function bin2hex;
+use function chmod;
 use function file_put_contents;
 use function getimagesizefromstring;
 use function html_entity_decode;
@@ -192,6 +193,7 @@ final class HtmlImageSanitizer
 
             return null;
         }
+        chmod($path, 0o600);
         // @igor-ignore - Per-merge instance created inside process(), never a shared service.
         $this->tempFiles[] = $path;
 

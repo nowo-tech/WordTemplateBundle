@@ -23,6 +23,7 @@ use PhpOffice\PhpWord\TemplateProcessor;
 use Stringable;
 use Throwable;
 
+use function chmod;
 use function count;
 use function implode;
 use function ini_get;
@@ -194,6 +195,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
             try {
                 $this->persistTemplate($processor, $target);
+                if ($temporary) {
+                    // Merged documents often hold personal data: owner-only in the shared temp dir.
+                    chmod($target, 0o600);
+                }
             } catch (Throwable $e) {
                 if ($temporary && is_file($target)) {
                     @unlink($target);

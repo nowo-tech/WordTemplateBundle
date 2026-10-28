@@ -46,6 +46,23 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
         }
     }
 
+    public function testTemporaryOutputIsOwnerOnly(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('Name=${name}');
+        });
+
+        $out = (new WordTemplateProcessor())->process($tpl, ['name' => 'Ada']);
+
+        try {
+            self::assertTrue($out->isTemporary());
+            self::assertSame(0o600, fileperms($out->path()) & 0o777);
+        } finally {
+            $out->dispose();
+            @unlink($tpl);
+        }
+    }
+
     public function testReplacesScalarPlaceholders(): void
     {
         $tpl = $this->createTemplate(static function (PhpWord $pw): void {

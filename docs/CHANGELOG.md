@@ -5,6 +5,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [1.6.1 — 2026-10-28](#161--2026-10-28)
 - [1.6.0 — 2026-10-13](#160--2026-10-13)
 - [1.5.0 — 2026-10-13](#150--2026-10-13)
 - [1.4.3 — 2026-10-13](#143--2026-10-13)
@@ -40,6 +41,13 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+## 1.6.1 — 2026-10-28
+
+### Security
+
+- **Temporary files are owner-only.** The temporary output `.docx` and the images extracted from HTML values were
+  written to the shared temp dir with the default umask (usually world-readable); merged documents (contracts,
+  invoices) could be read by other local users until disposed. Both are `0600` now.
 
 ### Changed
 
