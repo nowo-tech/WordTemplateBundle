@@ -42,6 +42,19 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+### Security
+
+- **HTML image filter bypass via HTML entities (SSRF / local file read).** `HtmlImageSanitizer` looked for `<img` before
+  decoding entities, while PHPWord decodes them before parsing, so `&#60;img src="http://…"/&#62;` reached
+  `Html::parseImage()` (`file_get_contents()` on any URL or stream wrapper, files outside `allowed_roots` embedded in the
+  output). The filter now runs on the same decoded XML PHPWord parses, and an unparsable fragment that contains an image
+  is dropped (fail closed). Affects `HtmlContent` values built from untrusted HTML, 1.5.0–1.7.0 (REQ-SEC-004 re-audit M1,
+  CWE-918 / CWE-180).
+
+### Changed
+
+- `phpoffice/phpword` floor raised to `^1.4` (keeps `phpoffice/math` 0.2 with GHSA-42hm-pq2f-3r7m out of the tree).
+
 ## 1.7.0 — 2026-10-29
 
 ### Added

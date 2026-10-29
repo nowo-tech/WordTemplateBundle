@@ -89,17 +89,17 @@ final class HtmlImageSanitizer
     /**
      * Returns the fragment with every {@code <img>} either rewritten to a safe local file or removed.
      *
-     * Fragments without {@code <img} are returned unchanged. The fragment is pre-processed and parsed exactly
-     * like {@see Html::addHtml()} does; when that parse fails PHPWord would fail on the same input, so the
-     * fragment is returned unchanged as well.
+     * The fragment is pre-processed exactly like {@see Html::addHtml()} does (entity decoding included) before
+     * looking for images, so `&#60;img …&#62;` cannot slip past. Fragments that contain no {@code <img} after
+     * that step are returned unchanged. When the parse fails the fragment is dropped (fail closed): PHPWord
+     * parses the same decoded XML and would render nothing safe from it.
      */
     public function sanitize(string $html): string
     {
-        if (stripos($html, '<img') === false) {
+        $xml = $this->preprocessLikePhpWord($html);
+        if (stripos($xml, '<img') === false) {
             return $html;
         }
-
-        $xml = $this->preprocessLikePhpWord($html);
 
         $dom            = new DOMDocument();
         $previousLibxml = libxml_use_internal_errors(true);
@@ -109,7 +109,10 @@ final class HtmlImageSanitizer
 
         $body = $dom->documentElement;
         if (!$loaded || !$body instanceof DOMElement) {
-            return $html;
+            // @igor-ignore - Per-merge instance created inside process(), never a shared service.
+            ++$this->droppedImages;
+
+            return '';
         }
 
         /** @var list<DOMElement> $images */

@@ -9,7 +9,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 use function base64_encode;
+use function html_entity_decode;
 use function str_repeat;
+
+use const ENT_HTML5;
+use const ENT_QUOTES;
 
 final class HtmlImageSanitizerTest extends TestCase
 {
@@ -38,9 +42,39 @@ final class HtmlImageSanitizerTest extends TestCase
         self::assertSame($html, (new HtmlImageSanitizer([], 1024))->sanitize($html));
     }
 
-    public function testUnparsableHtmlIsReturnedUnchanged(): void
+    public function testUnparsableHtmlWithAnImageIsDropped(): void
     {
-        $html = '<p><img src="http://example.test/a.png"></p';
+        $sanitizer = new HtmlImageSanitizer([], 1024);
+
+        self::assertSame('', $sanitizer->sanitize('<p><img src="http://example.test/a.png"></p'));
+        self::assertSame(1, $sanitizer->droppedImages());
+    }
+
+    /**
+     * PHPWord decodes entities before parsing, so encoded tags must be filtered too (REQ-SEC-004 re-audit M1).
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function provideEntityEncodedImages(): iterable
+    {
+        yield 'decimal entities' => ['<p>&#60;img src="http://169.254.169.254/latest/meta-data/"/&#62;</p>'];
+        yield 'hex entities' => ['<p>&#x3C;img src="file:///etc/hostname"/&#x3E;</p>'];
+        yield 'encoded src only' => ['<p><img src="&#104;ttp://attacker.example/p.png"/></p>'];
+    }
+
+    #[DataProvider('provideEntityEncodedImages')]
+    public function testEntityEncodedImagesAreFiltered(string $html): void
+    {
+        $sanitizer = new HtmlImageSanitizer([], 1024);
+        $out       = $sanitizer->sanitize($html);
+
+        self::assertStringNotContainsStringIgnoringCase('<img', html_entity_decode($out, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        self::assertSame(1, $sanitizer->droppedImages());
+    }
+
+    public function testEscapedImageTextStaysText(): void
+    {
+        $html = '<p>&lt;img src="http://x.test/a.png"/&gt;</p>';
 
         self::assertSame($html, (new HtmlImageSanitizer([], 1024))->sanitize($html));
     }

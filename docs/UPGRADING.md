@@ -44,6 +44,9 @@
 
 ## Unreleased
 
+- No code change needed. If you pass user-supplied HTML as `HtmlContent`, upgrade: earlier versions let entity-encoded
+  `<img>` tags fetch remote URLs or local files. `phpoffice/phpword` must be 1.4 or later.
+
 ## To 1.7.0
 
 - **Logging (no action required).** `WordTemplateProcessor` now logs to the host `logger` service (Monolog channel
