@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.7.1](#to-171)
 - [To 1.7.0](#to-170)
 - [To 1.6.1](#to-161)
 - [To 1.6.0](#to-160)
@@ -43,6 +44,8 @@
 - [From pre-release snapshots](#from-pre-release-snapshots)
 
 ## Unreleased
+
+## To 1.7.1
 
 - No code change needed. If you pass user-supplied HTML as `HtmlContent`, upgrade: earlier versions let entity-encoded
   `<img>` tags fetch remote URLs or local files. `phpoffice/phpword` must be 1.4 or later.
