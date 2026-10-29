@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.7.0](#to-170)
 - [To 1.6.1](#to-161)
 - [To 1.6.0](#to-160)
 - [To 1.5.0](#to-150)
@@ -42,6 +43,8 @@
 - [From pre-release snapshots](#from-pre-release-snapshots)
 
 ## Unreleased
+
+## To 1.7.0
 
 - **Logging (no action required).** `WordTemplateProcessor` now logs to the host `logger` service (Monolog channel
   `word_template`): one `info` record per merge plus warnings/errors on rejected paths, dropped HTML images, timeouts and
