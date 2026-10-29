@@ -100,6 +100,27 @@ final class HtmlImageSanitizerTest extends TestCase
         self::assertSame([], $sanitizer->tempFiles());
     }
 
+    public function testDataImageIsDroppedWhenTempFileCannotBeWritten(): void
+    {
+        $sanitizer = new HtmlImageSanitizer([], 1024, $this->root . '/missing-dir');
+
+        self::assertSame('<p/>', $sanitizer->sanitize('<p><img src="data:image/png;base64,' . self::PNG_1X1 . '"/></p>'));
+        self::assertSame([], $sanitizer->tempFiles());
+        self::assertSame(1, $sanitizer->droppedImages());
+    }
+
+    public function testDroppedImagesCountsEveryRemovedImage(): void
+    {
+        $sanitizer = new HtmlImageSanitizer([], 1024, $this->root);
+
+        $sanitizer->sanitize('<p><img src="https://example.invalid/a.png"/><img src="data:image/png;base64,' . self::PNG_1X1 . '"/><img/></p>');
+
+        self::assertSame(2, $sanitizer->droppedImages());
+        self::assertCount(1, $sanitizer->tempFiles());
+        self::assertStringStartsWith($this->root . '/nowo_word_html_img_', $sanitizer->tempFiles()[0]);
+        $sanitizer->cleanup();
+    }
+
     public function testOversizedDataImageIsDroppedBeforeDecoding(): void
     {
         $sanitizer = new HtmlImageSanitizer([], 16);

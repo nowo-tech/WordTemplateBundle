@@ -6,8 +6,11 @@ namespace Nowo\WordTemplateBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\WordTemplateBundle\DependencyInjection\Configuration;
 use Nowo\WordTemplateBundle\DependencyInjection\WordTemplateExtension;
+use Nowo\WordTemplateBundle\Processor\WordTemplateProcessor;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Reference;
 
 final class WordTemplateExtensionTest extends TestCase
 {
@@ -62,6 +65,20 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.conditional_if_closing'));
         self::assertSame('[[#endif', $container->getParameter(Configuration::ALIAS . '.conditional_endif_opening'));
         self::assertSame(']]', $container->getParameter(Configuration::ALIAS . '.conditional_endif_closing'));
+    }
+
+    public function testProcessorGetsOptionalLoggerOnWordTemplateChannel(): void
+    {
+        $container = new ContainerBuilder();
+        (new WordTemplateExtension())->load([], $container);
+
+        $definition = $container->getDefinition(WordTemplateProcessor::class);
+        $logger     = $definition->getArgument('$logger');
+
+        self::assertInstanceOf(Reference::class, $logger);
+        self::assertSame('logger', (string) $logger);
+        self::assertSame(ContainerInterface::IGNORE_ON_INVALID_REFERENCE, $logger->getInvalidBehavior());
+        self::assertSame([['channel' => 'word_template']], $definition->getTag('monolog.logger'));
     }
 
     public function testGetAlias(): void

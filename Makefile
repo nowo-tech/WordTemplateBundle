@@ -1,6 +1,6 @@
 # WordTemplateBundle — Docker-driven development (REQ-MAKE-001)
 SHELL := /bin/bash
-.PHONY: help up down down-dev build shell ensure-up install test test-coverage coverage-check cs-check cs-fix qa clean composer-sync release-check release-check-demos demo-smoke phpstan igor rector rector-dry update validate setup-hooks check-no-cursor-coauthor check-open-prs check-no-raw-html-form strip-cursor-coauthor-from-history
+.PHONY: help up down down-dev build shell ensure-up install assets test test-coverage coverage-check cs-check cs-fix qa clean composer-sync release-check release-check-demos demo-smoke phpstan igor rector rector-dry update validate setup-hooks check-no-cursor-coauthor check-open-prs check-no-raw-html-form strip-cursor-coauthor-from-history
 
 COMPOSE_FILE ?= docker-compose.yml
 # Prefer Compose V2 plugin (GitHub Actions / modern Docker Desktop); fall back to docker-compose V1 (REQ-MAKE-010).
@@ -14,13 +14,24 @@ COMPOSER_INSTALL = $(COMPOSE) exec -T $(SERVICE_PHP) sh -c 'composer install --n
 help:
 	@echo "WordTemplateBundle — development commands"
 	@echo ""
-	@echo "  Container: up, down, down-dev, build, shell"
+	@echo "  Container:    up, down, build, shell"
 	@echo "  Dependencies: install"
-	@echo "  Tests: test, test-coverage, coverage-check"
-	@echo "  Quality: cs-check, cs-fix, rector, rector-dry, phpstan, qa"
-	@echo "  Release: check-open-prs, demo-smoke, release-check, composer-sync"
-	@echo "  Git hooks: setup-hooks"
-	@echo "  Cleanup: clean"
+	@echo "  Assets:       assets (no-op: no frontend assets)"
+	@echo "  Tests:        test, test-coverage"
+	@echo "  Quality:      cs-check, cs-fix, rector, rector-dry, phpstan, igor, qa"
+	@echo "  Release:      release-check, composer-sync"
+	@echo "  Cleanup:      clean"
+	@echo "  Composer:     update, update-deps, validate"
+	@echo ""
+	@echo "  Bundle-specific:"
+	@echo "    coverage-check     PHPUnit + PCOV, fails below 100% lines"
+	@echo "    down-dev           stop the dev container"
+	@echo "    check-open-prs, check-no-cursor-coauthor, check-no-raw-html-form"
+	@echo "    setup-hooks, strip-cursor-coauthor-from-history"
+	@echo ""
+	@echo "  Demos (demo/symfony8):"
+	@echo "    demo-smoke, release-check-demos   run demo release-check"
+	@echo "    make -C demo help                 demo up/down/update-bundle/release-check"
 
 build:
 	$(COMPOSE) build --no-cache
@@ -49,6 +60,10 @@ shell:
 
 install: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer install
+
+# REQ-MAKE-001: standard target; this bundle ships no frontend assets.
+assets:
+	@echo "No frontend assets in WordTemplateBundle (nothing to build)."
 
 test: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer install --no-interaction
@@ -102,7 +117,7 @@ demo-smoke:
 	@if [ -f demo/Makefile ]; then $(MAKE) -C demo release-check; else echo "No demo/Makefile — skip demo-smoke"; fi
 
 clean:
-	rm -rf vendor .phpunit.cache coverage .php-cs-fixer.cache coverage-php.txt coverage-output.txt
+	rm -rf vendor .phpunit.cache coverage .php-cs-fixer.cache coverage-php.txt coverage-output.txt coverage.xml
 
 update: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer update

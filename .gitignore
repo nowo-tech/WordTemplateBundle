@@ -7,7 +7,9 @@
 .php-cs-fixer.cache
 # Root lockfile optional for libraries; demo apps ship their own locks under demo/
 /composer.lock
+# Archives / compressed
 *.zip
+*.tar
 *.tar.gz
 *.tgz
 *.rar

@@ -21,6 +21,10 @@ use function strlen;
  */
 final readonly class BrokenMacroNormalizer
 {
+    /**
+     * @param string $openingChars macro opening characters (e.g. {@code ${})
+     * @param string $closingChars macro closing characters (e.g. {@code }})
+     */
     public function __construct(
         private string $openingChars,
         private string $closingChars,
@@ -43,6 +47,11 @@ final readonly class BrokenMacroNormalizer
         return new self($opening, $ifClosing);
     }
 
+    /**
+     * Returns the WordprocessingML part with macros split across runs joined back into one run.
+     *
+     * @param string $documentPart XML of one document part (body, header or footer)
+     */
     public function normalize(string $documentPart): string
     {
         if ($this->openingChars === '' || $this->closingChars === '') {

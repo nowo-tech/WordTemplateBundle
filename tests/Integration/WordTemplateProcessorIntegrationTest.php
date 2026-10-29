@@ -408,6 +408,26 @@ final class WordTemplateProcessorIntegrationTest extends TestCase
         }
     }
 
+    public function testListConditionalBlocksDeduplicatesAcrossHeaderAndBody(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $header  = $section->addHeader();
+            $header->addText('${#if annex}');
+            $header->addText('Header annex');
+            $header->addText('${#endif annex}');
+            $section->addText('${#if annex}');
+            $section->addText('Body annex');
+            $section->addText('${#endif annex}');
+        });
+
+        try {
+            self::assertSame(['annex'], (new WordTemplateProcessor())->listConditionalBlocks($tpl));
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
     public function testListConditionalBlocksRespectsCustomDelimiters(): void
     {
         $tpl = $this->createTemplate(static function (PhpWord $pw): void {

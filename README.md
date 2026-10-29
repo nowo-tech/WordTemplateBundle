@@ -97,10 +97,17 @@ Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 
 ## Tests and coverage
 
-| Scope | Detail |
-|-------|--------|
-| **PHPUnit** | `composer test` — unit + integration (minimal kernel in `tests/Fixtures/AppKernel.php`). |
-| **Lines** | `composer coverage-check` enforces **≥ 99%** (PCOV). Latest global measurement: **~100%**. |
+Measured on 2026-10-29 with `composer coverage-check` (PHP 8.2 + PCOV, same command as the CI `Tests & QA` job):
+
+| Language | Line coverage | Gate | Command |
+|----------|---------------|------|---------|
+| PHP | **100%** (lines of `src/`, Clover `coverage/coverage.xml`) | 100% — `composer coverage-check` fails below it (CI, `make release-check`) | `make coverage-check` |
+| TS/JS | N/A (no TypeScript/JavaScript code) | — | — |
+| Python | N/A (no Python code) | — | — |
+
+- **PHPUnit** — `composer test`: `tests/Unit` and `tests/Integration` (minimal kernel in `tests/Fixtures/AppKernel.php`; real `.docx` templates built with PHPWord at runtime).
+- **Measured scope** — all of `src/` (`phpunit.xml.dist` `<source>`); no exclusion and no `@codeCoverageIgnore`.
+- **Reports** — `composer test-coverage` / `coverage-check` write `coverage/coverage.xml` and the text summary into `coverage/` (the `coverage-data` Docker volume).
 
 ## License
 

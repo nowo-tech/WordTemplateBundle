@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Nowo\WordTemplateBundle\Processor;
 
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
+use Nowo\WordTemplateBundle\Exception\PathNotAllowedException;
+use Nowo\WordTemplateBundle\Exception\ProcessingTimedOutException;
 use Nowo\WordTemplateBundle\Exception\TemplateNotFoundException;
+use Nowo\WordTemplateBundle\Exception\WordTemplateExceptionInterface;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
@@ -20,16 +23,21 @@ use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\Settings as PhpWordSettings;
 use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\TemplateProcessor;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Stringable;
 use Throwable;
 
+use function basename;
 use function chmod;
 use function count;
+use function hrtime;
 use function implode;
 use function ini_get;
 use function is_bool;
 use function preg_match;
 use function preg_quote;
+use function round;
 use function sprintf;
 use function str_starts_with;
 use function strlen;
@@ -37,13 +45,31 @@ use function substr;
 
 use const DIRECTORY_SEPARATOR;
 
+/**
+ * Default {@see WordTemplateProcessorInterface} implementation on top of PHPWord {@see TemplateProcessor}.
+ *
+ * Stateless between calls (safe as a shared service in FrankenPHP worker mode). Operational events are sent
+ * to a PSR-3 logger (channel {@code word_template} when MonologBundle is installed): path rejections,
+ * dropped HTML images, timeouts and failures as warnings/errors, finished merges as info. Only the template
+ * file name and counters are logged — never full paths, context values or document contents.
+ */
 readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 {
     public const DEFAULT_HTML_IMAGE_MAX_BYTES = 5_242_880;
 
+    private LoggerInterface $logger;
+
     /**
+     * @param string $macroOpening placeholder opening delimiter
+     * @param string $macroClosing placeholder closing delimiter
+     * @param string $conditionalIfOpening opening delimiter of conditional {@code if} markers
+     * @param string $conditionalIfClosing closing delimiter of conditional {@code if} markers
+     * @param string $conditionalEndifOpening opening delimiter of conditional {@code endif} markers
+     * @param string $conditionalEndifClosing closing delimiter of conditional {@code endif} markers
+     * @param int $timeout wall-clock timeout of {@see self::process()} in seconds
      * @param list<string> $allowedRoots absolute directories that template/image/output paths must stay under (empty = unrestricted)
      * @param int $htmlImageMaxBytes maximum decoded size of one {@code data:} image inside {@see HtmlContent}
+     * @param LoggerInterface|null $logger PSR-3 logger; null disables logging
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -55,9 +81,18 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         private int $timeout = 180,
         private array $allowedRoots = [],
         private int $htmlImageMaxBytes = self::DEFAULT_HTML_IMAGE_MAX_BYTES,
+        ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? new NullLogger();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $templatePath readable .docx template
+     *
+     * @return list<string>
+     */
     public function listVariables(string $templatePath): array
     {
         $processor = $this->openTemplate($templatePath);
@@ -105,6 +140,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         return '/^(?:' . implode('|', $prefixes) . ')\s/';
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $templatePath readable .docx template
+     *
+     * @return list<string>
+     */
     public function listConditionalBlocks(string $templatePath): array
     {
         $processor  = $this->openTemplate($templatePath);
@@ -128,8 +170,18 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         return array_keys($names);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $templatePath readable .docx template
+     * @param array<string, mixed> $context merge values (nested arrays are flattened to dot keys)
+     * @param string|null $outputPath writable path for the result; null creates a temporary file
+     *
+     * @return ProcessedDocument generated document
+     */
     public function process(string $templatePath, array $context, ?string $outputPath = null): ProcessedDocument
     {
+        $startedAtNs          = hrtime(true);
         $previousMaxExecution = (int) ini_get('max_execution_time');
         $previousXmlEscaping  = PhpWordSettings::isOutputEscapingEnabled();
         set_time_limit($this->timeout);
@@ -173,7 +225,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
                 }
 
                 if ($value instanceof ImageSource) {
-                    $this->applyImage($processor, $key, $value);
+                    $this->applyImage($processor, $key, $value, $templatePath);
                     $deadline->assertNotTimedOut();
 
                     continue;
@@ -188,7 +240,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             $temporary = $outputPath === null;
 
             if ($outputPath !== null) {
-                PathAllowlist::assertUnderRoots($outputPath, $this->allowedRoots, false);
+                $this->assertPathAllowed($outputPath, false, 'output', $templatePath);
             }
 
             $deadline->assertNotTimedOut();
@@ -207,7 +259,28 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
                 throw $e;
             }
 
+            if ($htmlImages->droppedImages() > 0) {
+                $this->logger->warning('Word template merge dropped HTML images that are not allowed.', [
+                    'bundle'         => 'word_template',
+                    'action'         => 'process',
+                    'template'       => basename($templatePath),
+                    'dropped_images' => $htmlImages->droppedImages(),
+                ]);
+            }
+
+            $this->logger->info('Word template merged.', [
+                'bundle'      => 'word_template',
+                'action'      => 'process',
+                'template'    => basename($templatePath),
+                'temporary'   => $temporary,
+                'duration_ms' => round((hrtime(true) - $startedAtNs) / 1_000_000, 1),
+            ]);
+
             return new ProcessedDocument($target, $temporary);
+        } catch (Throwable $e) {
+            $this->logFailure($e, $templatePath);
+
+            throw $e;
         } finally {
             $processor?->removeTemporaryDocument();
             $htmlImages->cleanup();
@@ -282,9 +355,9 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         $processor->setComplexBlock($macroKey, $table);
     }
 
-    private function applyImage(TemplateProcessor $processor, string $macroKey, ImageSource $image): void
+    private function applyImage(TemplateProcessor $processor, string $macroKey, ImageSource $image, string $templatePath): void
     {
-        PathAllowlist::assertUnderRoots($image->path, $this->allowedRoots, true);
+        $this->assertPathAllowed($image->path, true, 'image', $templatePath);
 
         $replace = $image->path;
         if ($image->width !== null || $image->height !== null) {
@@ -322,12 +395,64 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             throw new TemplateNotFoundException(sprintf('DOCX template not found or not readable: "%s".', $templatePath));
         }
 
-        PathAllowlist::assertUnderRoots($templatePath, $this->allowedRoots, true);
+        $this->assertPathAllowed($templatePath, true, 'template', $templatePath);
 
         $processor = new TemplateProcessorBridge($templatePath);
         $processor->setMacroChars($this->macroOpening, $this->macroClosing);
 
         return $processor;
+    }
+
+    /**
+     * Runs {@see PathAllowlist::assertUnderRoots()} and logs a warning (path kind + template file name, never the
+     * full path) before rethrowing the rejection.
+     */
+    private function assertPathAllowed(string $path, bool $mustExist, string $kind, string $templatePath): void
+    {
+        try {
+            PathAllowlist::assertUnderRoots($path, $this->allowedRoots, $mustExist);
+        } catch (PathNotAllowedException $e) {
+            $this->logger->warning('Word template path rejected by nowo_word_template.allowed_roots.', [
+                'bundle'    => 'word_template',
+                'action'    => 'path_check',
+                'path_kind' => $kind,
+                'template'  => basename($templatePath),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Logs a failed {@see self::process()} call. Path rejections were already logged by {@see self::assertPathAllowed()}.
+     */
+    private function logFailure(Throwable $e, string $templatePath): void
+    {
+        if ($e instanceof PathNotAllowedException) {
+            return;
+        }
+
+        $context = [
+            'bundle'    => 'word_template',
+            'action'    => 'process',
+            'template'  => basename($templatePath),
+            'exception' => $e::class,
+        ];
+
+        if ($e instanceof ProcessingTimedOutException) {
+            $this->logger->warning('Word template merge timed out.', $context + ['timeout_s' => $this->timeout]);
+
+            return;
+        }
+
+        // Caller errors (missing template, invalid context value) are warnings; anything else is an error.
+        if ($e instanceof WordTemplateExceptionInterface) {
+            $this->logger->warning('Word template merge rejected.', $context);
+
+            return;
+        }
+
+        $this->logger->error('Word template merge failed.', $context);
     }
 
     private function makeTempOutputPath(): string

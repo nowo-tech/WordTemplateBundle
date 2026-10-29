@@ -41,6 +41,26 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Unreleased
 
+### Added
+
+- **PSR-3 logging** (REQ-OBS-001): `WordTemplateProcessor` takes an optional `?LoggerInterface $logger` (last
+  constructor argument, wired to `@?logger`, Monolog channel `word_template`). It logs finished merges (`info`),
+  path rejections by `allowed_roots`, dropped HTML images, timeouts and rejected input (`warning`) and unexpected
+  failures (`error`) with structured context; only the template file name is logged, never full paths, context
+  values or document contents. `psr/log` (`^1.1 || ^2.0 || ^3.0`) is now in `require`.
+- `HtmlImageSanitizer::droppedImages()` and an optional temp directory argument (internal class).
+
+### Changed
+
+- Coverage gate raised from 99% to **100%** lines (`composer coverage-check`, CI); README publishes the measured value
+  and TS/JS / Python N/A rows (REQ-TEST-003 / REQ-TEST-007).
+- Coverage reports move to `coverage/` (`coverage/coverage.xml`, `coverage/coverage-php.txt`,
+  `coverage/coverage-output.txt`); the root `coverage-data` volume is mounted at `/app/coverage` (REQ-DOC-001).
+- PHPDoc on every public class and method of `src/` (REQ-CS-001); `docs/PSR.md` re-evaluated (PSR-3 adopted, REQ-CS-007).
+- Makefile: `assets` no-op target and `help` in the REQ-MAKE-001 block order (incl. `igor`, `update`, `update-deps`, `validate`).
+- `.github/SECURITY.md`: supported versions `1.x` and the canonical report checklist (REQ-SEC-003).
+- `.gitignore`: `# Archives / compressed` block with `*.tar` (REQ-GITIGNORE-001); demo compose explains its `dns:` (REQ-DEMO-009).
+
 ## 1.6.1 — 2026-10-28
 
 ### Security

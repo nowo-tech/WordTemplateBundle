@@ -43,6 +43,13 @@
 
 ## Unreleased
 
+- **Logging (no action required).** `WordTemplateProcessor` now logs to the host `logger` service (Monolog channel
+  `word_template`): one `info` record per merge plus warnings/errors on rejected paths, dropped HTML images, timeouts and
+  failures. To silence or route them, configure a Monolog handler for the `word_template` channel (example in
+  [CONFIGURATION.md](CONFIGURATION.md#logging)). Code that builds the processor by hand can pass `logger:` (optional,
+  last constructor argument); existing positional/named calls keep working.
+- `psr/log` is now a direct requirement (`^1.1 || ^2.0 || ^3.0`); every Symfony 7.4/8 app already ships it.
+
 ## To 1.6.1
 
 No action needed: temporary outputs are created `0600`.

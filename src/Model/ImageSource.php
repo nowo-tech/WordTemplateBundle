@@ -11,6 +11,11 @@ use PhpOffice\PhpWord\TemplateProcessor;
  */
 final readonly class ImageSource
 {
+    /**
+     * @param string $path local image file (must stay under {@code allowed_roots} when configured)
+     * @param int|null $width optional width forwarded to PHPWord
+     * @param int|null $height optional height forwarded to PHPWord
+     */
     public function __construct(
         public string $path,
         public ?int $width = null,

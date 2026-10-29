@@ -14,6 +14,10 @@ namespace Nowo\WordTemplateBundle\Model;
  */
 final readonly class ConditionalBlock
 {
+    /**
+     * @param string $blockName block name used in the opening / closing markers
+     * @param bool $visible true keeps the inner content, false removes the whole region
+     */
     public function __construct(
         public string $blockName,
         public bool $visible,

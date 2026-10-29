@@ -12,6 +12,9 @@ use PhpOffice\PhpWord\Shared\Html;
  */
 final readonly class HtmlContent
 {
+    /**
+     * @param string $html HTML fragment passed to PHPWord after image sanitizing
+     */
     public function __construct(
         public string $html,
     ) {

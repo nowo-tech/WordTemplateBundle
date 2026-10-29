@@ -6,7 +6,8 @@ services:
     command: ["sleep", "infinity"]
     volumes:
       - .:/app
-      - coverage-data:/app/var/coverage
+      # Coverage reports (composer test-coverage / coverage-check) are written to /app/coverage (REQ-DOC-001).
+      - coverage-data:/app/coverage
     working_dir: /app
 
 volumes:

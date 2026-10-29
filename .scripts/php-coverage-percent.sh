@@ -4,7 +4,7 @@ set -eu
 # REQ-TEST-008 contract:
 # - composer.json must define:
 #   - "test": "phpunit ..."
-#   - "test-coverage": "phpunit ... --coverage-text ... --coverage-clover coverage.xml ..."
+#   - "test-coverage": "phpunit ... --coverage-text ... --coverage-clover coverage/coverage.xml ..."
 # - Makefile target `test-coverage` must run:
 #   composer test-coverage | tee coverage-php.txt
 #   ./.scripts/php-coverage-percent.sh coverage-php.txt

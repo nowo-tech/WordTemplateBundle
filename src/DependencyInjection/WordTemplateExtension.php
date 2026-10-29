@@ -9,8 +9,17 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
+/**
+ * Loads the bundle services and exposes the processed {@code nowo_word_template} configuration as container parameters.
+ */
 final class WordTemplateExtension extends Extension
 {
+    /**
+     * Loads {@code services.yaml} and sets one {@code nowo_word_template.*} parameter per configuration key.
+     *
+     * @param array<array<string, mixed>> $configs raw configuration arrays from the host application
+     * @param ContainerBuilder $container container being compiled
+     */
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
@@ -30,6 +39,11 @@ final class WordTemplateExtension extends Extension
         $container->setParameter(Configuration::ALIAS . '.conditional_endif_closing', $config['conditional_endif_closing']);
     }
 
+    /**
+     * Returns the configuration root key.
+     *
+     * @return string always {@see Configuration::ALIAS} ({@code nowo_word_template})
+     */
     public function getAlias(): string
     {
         return Configuration::ALIAS;

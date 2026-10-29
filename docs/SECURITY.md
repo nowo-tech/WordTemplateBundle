@@ -72,7 +72,12 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 
 ## Logging and secrets
 
-Do not log full merged documents or template paths that reveal internal layout. Avoid logging API keys or tokens when handling remote storage.
+The bundle logs through an optional PSR-3 logger (Monolog channel `word_template`, see [CONFIGURATION.md](CONFIGURATION.md#logging)):
+
+- **Logged:** finished merges (`info`), path rejections by `allowed_roots`, dropped HTML images, timeouts and rejected input (`warning`), unexpected failures (`error`). Context is structured (`bundle`, `action`, `template`, counters, exception class).
+- **Never logged:** full template / image / output paths (only the template file name), merge context values (often personal data), HTML fragments, image `src` values, document bytes, exception messages (they contain full paths).
+
+Host apps: do not log full merged documents or template paths that reveal internal layout yourself, and avoid logging API keys or tokens when handling remote storage.
 
 ## Cryptography
 

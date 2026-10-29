@@ -18,6 +18,10 @@ final readonly class ProcessDeadline
 {
     private float $deadlineNs;
 
+    /**
+     * @param int $timeoutSeconds allowed wall-clock duration in seconds
+     * @param float|null $startedAtNs start time from {@see hrtime()} in nanoseconds; null means now
+     */
     public function __construct(
         private int $timeoutSeconds,
         ?float $startedAtNs = null,
@@ -26,6 +30,11 @@ final readonly class ProcessDeadline
         $this->deadlineNs = $startedAtNs + ($timeoutSeconds * 1_000_000_000.0);
     }
 
+    /**
+     * Checkpoint called between merge steps.
+     *
+     * @throws ProcessingTimedOutException when the deadline has passed
+     */
     public function assertNotTimedOut(): void
     {
         if (hrtime(true) < $this->deadlineNs) {

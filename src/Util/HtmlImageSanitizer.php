@@ -72,13 +72,17 @@ final class HtmlImageSanitizer
     /** @var list<string> */
     private array $tempFiles = [];
 
+    private int $droppedImages = 0;
+
     /**
      * @param list<string> $allowedRoots same roots as {@code nowo_word_template.allowed_roots}
      * @param int $maxImageBytes maximum decoded size of one {@code data:} image
+     * @param string|null $tempDir directory for decoded {@code data:} images; null uses {@see sys_get_temp_dir()}
      */
     public function __construct(
         private readonly array $allowedRoots,
         private readonly int $maxImageBytes,
+        private readonly ?string $tempDir = null,
     ) {
     }
 
@@ -114,6 +118,8 @@ final class HtmlImageSanitizer
             $safe = $this->safeSource($img->getAttribute('src'));
             if ($safe === null) {
                 $img->parentNode?->removeChild($img);
+                // @igor-ignore - Per-merge instance created inside process(), never a shared service.
+                ++$this->droppedImages;
 
                 continue;
             }
@@ -143,6 +149,16 @@ final class HtmlImageSanitizer
     }
 
     /**
+     * Number of {@code <img>} elements removed by {@see self::sanitize()} since this instance was created.
+     */
+    public function droppedImages(): int
+    {
+        return $this->droppedImages;
+    }
+
+    /**
+     * Returns the temp files written for {@code data:} images and not yet removed by {@see self::cleanup()}.
+     *
      * @return list<string>
      */
     public function tempFiles(): array
@@ -186,7 +202,7 @@ final class HtmlImageSanitizer
             return null;
         }
 
-        $path = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR
+        $path = rtrim($this->tempDir ?? sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR
             . 'nowo_word_html_img_' . bin2hex(random_bytes(8)) . '.' . self::IMAGE_TYPES[$info[2]];
         if (urldecode($path) !== $path || @file_put_contents($path, $bytes) !== strlen($bytes)) {
             @unlink($path);

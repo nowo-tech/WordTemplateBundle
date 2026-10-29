@@ -8,6 +8,9 @@ use Nowo\WordTemplateBundle\Model;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
 use PhpOffice\PhpWord\TemplateProcessor;
 
+/**
+ * Public API of the bundle: inspect .docx templates and merge a context into them.
+ */
 interface WordTemplateProcessorInterface
 {
     /**

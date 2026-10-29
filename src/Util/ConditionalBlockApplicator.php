@@ -19,6 +19,12 @@ use const PREG_OFFSET_CAPTURE;
  */
 final readonly class ConditionalBlockApplicator
 {
+    /**
+     * @param string $ifOpening opening delimiter of {@code if} markers (e.g. {@code ${#if})
+     * @param string $ifClosing closing delimiter of {@code if} markers
+     * @param string $endifOpening opening delimiter of {@code endif} markers (e.g. {@code ${#endif})
+     * @param string $endifClosing closing delimiter of {@code endif} markers
+     */
     public function __construct(
         private string $ifOpening,
         private string $ifClosing,
@@ -27,11 +33,17 @@ final readonly class ConditionalBlockApplicator
     ) {
     }
 
+    /**
+     * Returns the opening marker text for a block (e.g. {@code ${#if annex}}).
+     */
     public function openingMarker(string $blockName): string
     {
         return $this->ifOpening . ' ' . $blockName . $this->ifClosing;
     }
 
+    /**
+     * Returns the closing marker text for a block (e.g. {@code ${#endif annex}}).
+     */
     public function closingMarker(string $blockName): string
     {
         return $this->endifOpening . ' ' . $blockName . $this->endifClosing;
@@ -117,6 +129,9 @@ final readonly class ConditionalBlockApplicator
         return $xml;
     }
 
+    /**
+     * Shows or removes one conditional block in a WordprocessingML part (shortcut for {@see self::applyAll()}).
+     */
     public function apply(string $xml, ConditionalBlock $block): string
     {
         return $this->applyAll($xml, [$block]);

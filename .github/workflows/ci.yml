@@ -101,7 +101,7 @@ jobs:
           SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
         run: composer test
 
-      - name: PHPUnit coverage gate (min 99% lines)
+      - name: PHPUnit coverage gate (100% lines)
         env:
           SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
         run: composer coverage-check

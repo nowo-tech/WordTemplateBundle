@@ -35,7 +35,7 @@ PHPWord's HTML parser would otherwise `file_get_contents()` any `<img src>`. Bef
 - `data:image/png|jpeg|gif|bmp;base64,…` payloads that decode to a real image of at most `html_image_max_bytes`; they are written to temp files that are deleted after the merge;
 - local filesystem paths that exist under `allowed_roots` (only when `allowed_roots` is non-empty).
 
-Remote URLs (`http(s)://`, `//host`), stream wrappers (`file://`, `php://`, `phar://`, …) and any other `src` are removed from the HTML silently; the rest of the fragment is merged unchanged. Use `ImageSource` for images that must always appear.
+Remote URLs (`http(s)://`, `//host`), stream wrappers (`file://`, `php://`, `phar://`, …) and any other `src` are removed from the HTML (one `warning` log record per merge with the count, see [Logging](#logging)); the rest of the fragment is merged unchanged. Use `ImageSource` for images that must always appear.
 
 `listVariables()` and `process()` both apply placeholder delimiters when opening a template. Conditional markers use the `conditional_*` keys and are independent from scalar placeholder delimiters. When a conditional opening delimiter starts with `macro_opening` (e.g. `${#if` / `${`), `listVariables()` omits the markers (`#if name`, `#endif name`) from the returned variables.
 
@@ -56,6 +56,32 @@ nowo_word_template:
     conditional_endif_opening: '${#endif'
     conditional_endif_closing: '}'
 ```
+
+### Logging
+
+`WordTemplateProcessor` takes an optional PSR-3 `Psr\Log\LoggerInterface` (`$logger`, wired to `@?logger`; no logger service = no logging). With MonologBundle the records go to the **`word_template`** channel, so they can be routed or silenced per channel:
+
+```yaml
+# config/packages/monolog.yaml (host app) — example: keep only warnings and errors of the bundle
+monolog:
+    handlers:
+        word_template:
+            type: stream
+            path: '%kernel.logs_dir%/word_template.log'
+            level: warning
+            channels: ['word_template']
+```
+
+| Level | Message | Context |
+|-------|---------|---------|
+| `info` | `Word template merged.` | `template` (file name), `temporary`, `duration_ms` |
+| `warning` | `Word template path rejected by nowo_word_template.allowed_roots.` | `path_kind` (`template` / `image` / `output`), `template` |
+| `warning` | `Word template merge dropped HTML images that are not allowed.` | `template`, `dropped_images` |
+| `warning` | `Word template merge timed out.` | `template`, `exception`, `timeout_s` |
+| `warning` | `Word template merge rejected.` | `template`, `exception` (missing template, invalid context value) |
+| `error` | `Word template merge failed.` | `template`, `exception` (unexpected failure, e.g. the output cannot be written) |
+
+Every record also has `bundle: word_template` and `action`. Only the template **file name** is logged — never full paths, context values, HTML, image sources or document contents ([SECURITY.md](SECURITY.md#logging-and-secrets)).
 
 A commented reference copy ships in `src/Resources/config/nowo_word_template.yaml` and in `demo/symfony8/config/packages/nowo_word_template.yaml`.
 

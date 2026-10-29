@@ -13,6 +13,9 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  */
 final class WordTemplateBundle extends Bundle
 {
+    /**
+     * Returns the {@see WordTemplateExtension} so the configuration key is {@code nowo_word_template}.
+     */
     public function getContainerExtension(): ExtensionInterface
     {
         if (!$this->extension instanceof WordTemplateExtension) {

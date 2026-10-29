@@ -13,22 +13,37 @@ use function sprintf;
  */
 final readonly class ProcessedDocument
 {
+    /**
+     * @param string $path absolute path of the generated .docx
+     * @param bool $isTemporary true when the bundle created the file in the system temp directory
+     */
     public function __construct(
         private string $path,
         private bool $isTemporary,
     ) {
     }
 
+    /**
+     * Returns the path of the generated .docx.
+     */
     public function path(): string
     {
         return $this->path;
     }
 
+    /**
+     * Tells whether the file is a temporary file owned by the caller (remove it with {@see self::dispose()}).
+     */
     public function isTemporary(): bool
     {
         return $this->isTemporary;
     }
 
+    /**
+     * Returns the bytes of the generated .docx.
+     *
+     * @throws RuntimeException when the file cannot be read
+     */
     public function readContents(): string
     {
         $c = @file_get_contents($this->path);

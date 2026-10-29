@@ -17,6 +17,10 @@ services:
             $timeout: '%nowo_word_template.timeout%'
             $allowedRoots: '%nowo_word_template.allowed_roots%'
             $htmlImageMaxBytes: '%nowo_word_template.html_image_max_bytes%'
+            # PSR-3 logger (REQ-OBS-001); optional: no logging when the host has no "logger" service.
+            $logger: '@?logger'
+        tags:
+            - { name: monolog.logger, channel: word_template }
 
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
         alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor

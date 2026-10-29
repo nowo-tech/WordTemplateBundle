@@ -15,6 +15,11 @@ final class Configuration implements ConfigurationInterface
 {
     public const ALIAS = 'nowo_word_template';
 
+    /**
+     * Builds the {@code nowo_word_template} configuration tree (timeout, path allowlist, macro delimiters).
+     *
+     * @return TreeBuilder tree validated so that {@code path_allowlist_required: true} needs non-empty {@code allowed_roots}
+     */
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder(self::ALIAS);
