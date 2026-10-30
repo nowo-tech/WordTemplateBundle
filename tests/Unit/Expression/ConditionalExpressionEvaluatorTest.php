@@ -137,6 +137,39 @@ final class ConditionalExpressionEvaluatorTest extends TestCase
         }
     }
 
+    /**
+     * REQ-SEC-004 BQ N4: runtime errors never quote values taken from the context.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function secretLeaks(): iterable
+    {
+        yield 'dynamic map key' => ['client[client.secret] == 1', 'unknown variable "client.…"'];
+        yield 'dynamic list index' => ['lines[client.secret] == 1', 'a list index or map key does not exist'];
+        yield 'regex from a value' => ["'x' matches client.secret", 'a regular expression is invalid'];
+        yield 'division by zero' => ['1 / zero > 0', 'division by zero'];
+        yield 'wrong type' => ['client.secret contains lines', 'wrong type'];
+        yield 'other runtime error' => ['zero.foo == 1', 'RuntimeException (details withheld'];
+    }
+
+    #[DataProvider('secretLeaks')]
+    public function testErrorsNeverEchoContextValues(string $expression, string $message): void
+    {
+        try {
+            (new ConditionalExpressionEvaluator())->evaluate($expression, ExpressionVariables::fromContext(['client' => ['secret' => 's3cr3t'], 'lines' => ['a'], 'zero' => 0]));
+            self::fail('ConditionalExpressionException expected');
+        } catch (ConditionalExpressionException $e) {
+            self::assertStringContainsString($message, $e->getMessage());
+            self::assertStringNotContainsString('s3cr3t', $e->getMessage());
+        }
+    }
+
+    public function testLiteralKeysAreStillNamedInErrors(): void
+    {
+        $this->expectExceptionMessage('unknown variable "client.zip"');
+        (new ConditionalExpressionEvaluator())->evaluate("client['zip'] == 1", ExpressionVariables::fromContext(['client' => ['a' => 1]]));
+    }
+
     public function testLintChecksNamesWithoutValues(): void
     {
         $evaluator = new ConditionalExpressionEvaluator();

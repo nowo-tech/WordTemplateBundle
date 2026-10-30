@@ -67,7 +67,7 @@ final readonly class ExpressionMap implements ArrayAccess
     public function offsetGet(mixed $offset): mixed
     {
         if (!array_key_exists($offset, $this->values)) {
-            throw new UnknownVariableError($this->path . (is_int($offset) ? '[' . $offset . ']' : '.' . $offset));
+            throw new UnknownVariableError($this->path, is_int($offset) ? $offset : (string) $offset);
         }
 
         return $this->values[$offset];

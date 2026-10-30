@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\Exception;
 
+use DivisionByZeroError;
+use Nowo\WordTemplateBundle\Expression\ExpressionFunctionError;
+use ReflectionClass;
 use RuntimeException;
+use Symfony\Component\ExpressionLanguage\SyntaxError;
 use Throwable;
+use TypeError;
+use ValueError;
 
 use function sprintf;
+use function str_contains;
 
 /**
  * Thrown when an expression conditional ({@code ${#if total > 0}} … {@code ${#endif}}) cannot be used:
@@ -64,9 +71,27 @@ final class ConditionalExpressionException extends RuntimeException implements W
     /**
      * Evaluating the expression failed (type error, missing list index, invalid regex, …).
      */
+    /**
+     * The message never contains evaluated values: runtime errors of PHP / ExpressionLanguage (which may quote a key or a
+     * regex taken from the context) are described by kind; only function errors, written without values, are quoted.
+     */
     public static function evaluationFailed(string $expression, Throwable $previous): self
     {
-        return new self($expression, sprintf('Conditional expression "%s" could not be evaluated: %s', $expression, $previous->getMessage()), $previous);
+        return new self($expression, sprintf('Conditional expression "%s" could not be evaluated: %s', $expression, self::describe($previous)), $previous);
+    }
+
+    private static function describe(Throwable $error): string
+    {
+        $message = $error->getMessage();
+
+        return match (true) {
+            $error instanceof ExpressionFunctionError                                                   => $message,
+            $error instanceof SyntaxError                                                               => 'a regular expression is invalid.',
+            $error instanceof DivisionByZeroError                                                       => 'division by zero.',
+            str_contains($message, 'Undefined array key') || str_contains($message, 'Undefined offset') => 'a list index or map key does not exist.',
+            $error instanceof TypeError || $error instanceof ValueError                                 => 'a value has the wrong type for an operator or a function.',
+            default                                                                                     => sprintf('%s (details withheld: they may contain context values).', (new ReflectionClass($error))->getShortName()),
+        };
     }
 
     /**

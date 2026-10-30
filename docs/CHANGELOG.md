@@ -81,8 +81,9 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - Hardening of the unreleased expression conditionals after the REQ-SEC-004 review (Appendix BQ): the `..` range
   operator only accepts integer literals with a span below 10,000 (`count(1..100000000)` exhausted memory);
   `number_format()` accepts at most 20 decimals and `replace()`, `join()`, `number_format()` check the result size before
-  building it; date formats are limited to 100 bytes; function errors no longer echo argument values; a PCRE failure
-  while scanning markers fails closed.
+  building it; date formats are limited to 100 bytes; error messages no longer echo context values (function arguments,
+  dynamic map keys / list indexes, regexes read from values); a PCRE failure while scanning markers fails closed.
+  `replace()` accepts maps with numeric keys again.
 - Loops and expression blocks (REQ-SEC-004 Appendix BQ M2, M3, L1, L2): one output byte budget for all loops and parts of
   a merge (`loops.max_output_bytes`, 32 MiB), checked before a loop renders; linear marker layout analysis with
   `conditional_expressions.max_markers` (2000 per part), `max_depth` (32) and `max_evaluations` (100,000 per merge), which

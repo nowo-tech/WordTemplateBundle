@@ -163,21 +163,25 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
     private function replace(mixed $subject, mixed $search, mixed $replacement = null): string
     {
         $subject = self::string($subject, 'replace');
-        $pairs   = [];
+
+        // [search, replacement] tuples: PHP would turn numeric string keys of a map back into ints.
+        $tuples = [];
         if ($search instanceof ExpressionMap || is_array($search)) {
             foreach (self::items($search, 'replace') as $from => $to) {
-                $pairs[(string) $from] = self::string($to, 'replace');
+                $tuples[] = [(string) $from, self::string($to, 'replace')];
             }
         } else {
-            $pairs[self::string($search, 'replace')] = self::string($replacement, 'replace');
+            $tuples[] = [self::string($search, 'replace'), self::string($replacement, 'replace')];
         }
 
         // Upper bound of the result, computed before strtr() allocates it.
-        $size = strlen($subject);
-        foreach ($pairs as $from => $to) {
+        $size  = strlen($subject);
+        $pairs = [];
+        foreach ($tuples as [$from, $to]) {
             if ($from !== '') {
                 $size += substr_count($subject, $from) * max(0, strlen($to) - strlen($from));
             }
+            $pairs[$from] = $to;
         }
         $this->assertSize($size, 'replace');
 
