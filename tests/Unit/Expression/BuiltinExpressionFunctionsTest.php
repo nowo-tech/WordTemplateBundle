@@ -164,6 +164,7 @@ final class BuiltinExpressionFunctionsTest extends TestCase
             ['upper(big) == 1', ['big' => $big], 'accepts strings up to 65536 bytes'],
             ["replace(half, 'a', 'aa') == 1", ['half' => $half], 'would return more than 65536 bytes'],
             ['count(many) == 1', ['many' => $many], 'accepts up to 10000 elements'],
+            ['number_format(1.0e300, 0, \'.\', sep) == 1', ['sep' => str_repeat('-', 1000)], 'number_format() would return more than 65536 bytes'],
         ];
 
         foreach ($cases as [$expression, $context, $message]) {

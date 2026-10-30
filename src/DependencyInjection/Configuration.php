@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\DependencyInjection;
 
+use DateTimeZone;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+
+use function in_array;
+use function is_string;
 
 /**
  * Root key: {@see self::ALIAS} — PHPWord template macro delimiters.
@@ -81,7 +85,7 @@ final class Configuration implements ConfigurationInterface
                         ->enumNode('on_error')
                             ->values(['exception', 'hide', 'keep'])
                             ->defaultValue('exception')
-                            ->info('Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block; keep = leave the markers as text (hide and keep log a warning).')
+                            ->info('Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block whose expression fails (a block with a bad marker layout cannot be delimited and is left as text); keep = leave the markers as text (hide and keep log a warning).')
                         ->end()
                         ->integerNode('max_length')
                             ->defaultValue(500)
@@ -91,6 +95,10 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                         ->scalarNode('timezone')
                             ->defaultNull()
+                            ->validate()
+                                ->ifTrue(static fn (mixed $v): bool => $v !== null && (!is_string($v) || !in_array($v, DateTimeZone::listIdentifiers(), true) && $v !== 'UTC'))
+                                ->thenInvalid('conditional_expressions.timezone must be a valid PHP time zone identifier (e.g. "Europe/Madrid"), %s given.')
+                            ->end()
                             ->info('Time zone of now() / date() (e.g. "Europe/Madrid"); null = PHP default time zone. "Now" comes from the Symfony clock service when available.')
                         ->end()
                         ->arrayNode('functions')

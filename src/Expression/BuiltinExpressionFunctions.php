@@ -118,12 +118,12 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
             'ceil'          => static fn (mixed $n): float => ceil(self::number($n, 'ceil')),
             'min'           => static fn (mixed ...$values): int|float => min(self::numbers($values, 'min')),
             'max'           => static fn (mixed ...$values): int|float => max(self::numbers($values, 'max')),
-            'number_format' => static fn (mixed $n, mixed $decimals = 0, mixed $decimalPoint = '.', mixed $thousands = ','): string => number_format(
+            'number_format' => static fn (mixed $n, mixed $decimals = 0, mixed $decimalPoint = '.', mixed $thousands = ','): string => self::output(number_format(
                 self::number($n, 'number_format'),
                 self::int($decimals, 'number_format'),
                 self::string($decimalPoint, 'number_format'),
                 self::string($thousands, 'number_format'),
-            ),
+            ), 'number_format'),
             // arrays
             'count' => static fn (mixed $value): int => count(self::items($value, 'count')),
             'keys'  => static fn (mixed $value): array => array_keys(self::items($value, 'keys')),

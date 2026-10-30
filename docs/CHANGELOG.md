@@ -66,12 +66,6 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   rejected with `InvalidContextValueException` before) and render as such in placeholders.
 - New runtime dependencies: `symfony/expression-language`, `symfony/cache`, `symfony/clock` (`^7.4 || ^8.0`).
 
-### Changed
-
-- `listVariables()` also omits the nameless `${#endif}` marker.
-- With `conditional_expressions.enabled: true`, `listConditionalBlocks()` returns named blocks only (expression blocks
-  are listed by `listConditionalExpressions()`).
-
 ### Documentation
 
 - `docs/USAGE.md` — new **Expression conditionals** section (enable, classification rule, exposed values, operators,
@@ -106,10 +100,18 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 - New `/conditionals` page in `demo/symfony8`: one form field per PHP type, a preview of the `ConditionalBlock`
   decisions and a download of `public/demo/conditionals-tpl.docx` (built by `bin/build-conditionals-template.php`).
+- `/conditionals` also shows the expression conditionals of its template (evaluated from the raw `order` values);
+  new `/conditionals/examples` page (Word text, PHP context, result, template / generated `.docx` downloads);
+  `bin/console app:conditionals:export-examples`; Playwright e2e (`make test-e2e`), page screenshots
+  (`make demo-screenshots`) and LibreOffice-rendered "template → generated document" previews (`make docx-previews`)
+  under `docs/images/demo/`.
 
 ### Changed
 
 - CHANGELOG headings use the `## [x.y.z] - YYYY-MM-DD` form.
+- `listVariables()` also omits the nameless `${#endif}` marker.
+- With `conditional_expressions.enabled: true`, `listConditionalBlocks()` returns named blocks only (expression blocks
+  are listed by `listConditionalExpressions()`).
 ## [1.7.1] - 2026-10-29
 ### Security
 

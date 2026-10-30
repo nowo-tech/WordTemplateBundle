@@ -15,9 +15,9 @@ Root key: `nowo_word_template`.
 | `conditional_endif_opening` | `${#endif` | Opening delimiter for conditional end markers (before the block name). |
 | `conditional_endif_closing` | `}` | Closing delimiter for conditional end markers. |
 | `conditional_expressions.enabled` | `false` | Opt-in (1.8): evaluate `${#if <expression>}` … `${#endif}` blocks (nameless end marker). When `false`, expression markers stay as literal text. See [Conditional expressions](#conditional-expressions). |
-| `conditional_expressions.on_error` | `exception` | `exception`, `hide` or `keep`: what happens with an invalid expression, an unknown variable, a bad function argument or a marker layout the bundle cannot apply. |
+| `conditional_expressions.on_error` | `exception` | `exception`, `hide` or `keep`: what happens with an invalid expression, an unknown variable, a bad function argument or a marker layout the bundle cannot apply. `hide` removes a block whose expression fails; a block with a bad marker layout cannot be delimited and is left as text in `hide` and `keep` (use `exception`, the default, to fail closed). |
 | `conditional_expressions.max_length` | `500` | Maximum length of one expression, in characters (1–10000). |
-| `conditional_expressions.timezone` | `null` | Time zone of `now()` / `date()`; `null` = PHP's default time zone. |
+| `conditional_expressions.timezone` | `null` | Time zone of `now()` / `date()`; `null` = PHP's default time zone. Validated when the configuration is compiled (an unknown identifier is a configuration error). |
 | `conditional_expressions.functions.allow` | `null` | When a list, only these functions are available (built-in and host). |
 | `conditional_expressions.functions.deny` | `[]` | Functions that are never available (e.g. `[now, date]`). |
 
