@@ -29,6 +29,7 @@ use function floor;
 use function get_debug_type;
 use function implode;
 use function in_array;
+use function intdiv;
 use function is_array;
 use function is_float;
 use function is_int;
@@ -47,6 +48,7 @@ use function str_ends_with;
 use function str_starts_with;
 use function strlen;
 use function strtr;
+use function substr_count;
 use function trim;
 
 use const MB_CASE_TITLE;
@@ -68,6 +70,12 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
 
     /** Maximum number of elements a function accepts or returns. */
     public const MAX_ITEMS = 10_000;
+
+    /** Maximum decimals of number_format(). */
+    public const MAX_DECIMALS = 20;
+
+    /** Maximum length of a date format. */
+    public const MAX_FORMAT_BYTES = 100;
 
     /** Names of all built-in functions. */
     public const NAMES = [
@@ -118,27 +126,19 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
             'ceil'          => static fn (mixed $n): float => ceil(self::number($n, 'ceil')),
             'min'           => static fn (mixed ...$values): int|float => min(self::numbers($values, 'min')),
             'max'           => static fn (mixed ...$values): int|float => max(self::numbers($values, 'max')),
-            'number_format' => static fn (mixed $n, mixed $decimals = 0, mixed $decimalPoint = '.', mixed $thousands = ','): string => self::output(number_format(
-                self::number($n, 'number_format'),
-                self::int($decimals, 'number_format'),
-                self::string($decimalPoint, 'number_format'),
-                self::string($thousands, 'number_format'),
-            ), 'number_format'),
+            'number_format' => $this->numberFormat(...),
             // arrays
-            'count' => static fn (mixed $value): int => count(self::items($value, 'count')),
-            'keys'  => static fn (mixed $value): array => array_keys(self::items($value, 'keys')),
-            'first' => static fn (mixed $value): mixed => self::edge($value, 'first', true),
-            'last'  => static fn (mixed $value): mixed => self::edge($value, 'last', false),
-            'join'  => static fn (mixed $value, mixed $glue = ''): string => self::output(implode(self::string($glue, 'join'), array_map(
-                static fn (mixed $item): string => self::string($item, 'join'),
-                self::items($value, 'join'),
-            )), 'join'),
+            'count'   => static fn (mixed $value): int => count(self::items($value, 'count')),
+            'keys'    => static fn (mixed $value): array => array_keys(self::items($value, 'keys')),
+            'first'   => static fn (mixed $value): mixed => self::edge($value, 'first', true),
+            'last'    => static fn (mixed $value): mixed => self::edge($value, 'last', false),
+            'join'    => $this->join(...),
             'empty'   => self::isEmpty(...),
             'default' => static fn (mixed $value, mixed $fallback = ''): mixed => self::isEmpty($value) ? $fallback : $value,
             'is_null' => static fn (mixed $value): bool => $value === null,
             // dates
-            'now'            => fn (mixed $format = 'Y-m-d'): string => $this->now()->format(self::string($format, 'now')),
-            'date'           => fn (mixed $value, mixed $format = 'Y-m-d'): string => $this->date($value, 'date')->format(self::string($format, 'date')),
+            'now'            => fn (mixed $format = 'Y-m-d'): string => $this->now()->format($this->format($format, 'now')),
+            'date'           => fn (mixed $value, mixed $format = 'Y-m-d'): string => $this->date($value, 'date')->format($this->format($format, 'date')),
             'date_diff_days' => fn (mixed $from, mixed $to): int => (int) $this->date($from, 'date_diff_days')->setTime(0, 0)->diff($this->date($to, 'date_diff_days')->setTime(0, 0))->format('%r%a'),
         ];
 
@@ -163,16 +163,76 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
     private function replace(mixed $subject, mixed $search, mixed $replacement = null): string
     {
         $subject = self::string($subject, 'replace');
+        $pairs   = [];
         if ($search instanceof ExpressionMap || is_array($search)) {
-            $pairs = [];
             foreach (self::items($search, 'replace') as $from => $to) {
                 $pairs[(string) $from] = self::string($to, 'replace');
             }
-
-            return self::output(strtr($subject, $pairs), 'replace');
+        } else {
+            $pairs[self::string($search, 'replace')] = self::string($replacement, 'replace');
         }
 
-        return self::output(strtr($subject, [self::string($search, 'replace') => self::string($replacement, 'replace')]), 'replace');
+        // Upper bound of the result, computed before strtr() allocates it.
+        $size = strlen($subject);
+        foreach ($pairs as $from => $to) {
+            if ($from !== '') {
+                $size += substr_count($subject, $from) * max(0, strlen($to) - strlen($from));
+            }
+        }
+        $this->assertSize($size, 'replace');
+
+        return strtr($subject, $pairs);
+    }
+
+    private function join(mixed $value, mixed $glue = ''): string
+    {
+        $glue  = self::string($glue, 'join');
+        $items = array_map(static fn (mixed $item): string => self::string($item, 'join'), self::items($value, 'join'));
+
+        $size = max(0, count($items) - 1) * strlen($glue);
+        foreach ($items as $item) {
+            $size += strlen($item);
+        }
+        $this->assertSize($size, 'join');
+
+        return implode($glue, $items);
+    }
+
+    /**
+     * number_format() with its size-driving arguments bounded before PHP builds the string.
+     */
+    private function numberFormat(mixed $n, mixed $decimals = 0, mixed $decimalPoint = '.', mixed $thousands = ','): string
+    {
+        $n            = self::number($n, 'number_format');
+        $decimals     = self::int($decimals, 'number_format');
+        $decimalPoint = self::string($decimalPoint, 'number_format');
+        $thousands    = self::string($thousands, 'number_format');
+
+        if ($decimals < 0 || $decimals > self::MAX_DECIMALS) {
+            throw new ExpressionFunctionError(sprintf('number_format() accepts 0 to %d decimals.', self::MAX_DECIMALS));
+        }
+
+        $digits = strlen(sprintf('%.0f', abs($n)));
+        $this->assertSize(1 + $digits + intdiv($digits, 3) * strlen($thousands) + strlen($decimalPoint) + $decimals, 'number_format');
+
+        return number_format($n, $decimals, $decimalPoint, $thousands);
+    }
+
+    private function format(mixed $format, string $function): string
+    {
+        $format = self::string($format, $function);
+        if (strlen($format) > self::MAX_FORMAT_BYTES) {
+            throw new ExpressionFunctionError(sprintf('%s() accepts formats up to %d bytes.', $function, self::MAX_FORMAT_BYTES));
+        }
+
+        return $format;
+    }
+
+    private function assertSize(int $bytes, string $function): void
+    {
+        if ($bytes > self::MAX_STRING_BYTES) {
+            throw new ExpressionFunctionError(sprintf('%s() would return more than %d bytes.', $function, self::MAX_STRING_BYTES));
+        }
     }
 
     /**
@@ -266,7 +326,7 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
         $string = self::string($value, $function);
         $parsed = date_parse($string);
         if ($string === '' || $parsed['error_count'] > 0) {
-            throw new ExpressionFunctionError(sprintf('%s() cannot read "%s" as a date.', $function, $string));
+            throw new ExpressionFunctionError(sprintf('%s() cannot read its argument as a date.', $function));
         }
 
         return $this->now()->modify($string);
@@ -288,15 +348,6 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
 
         if (strlen($value) > self::MAX_STRING_BYTES) {
             throw new ExpressionFunctionError(sprintf('%s() accepts strings up to %d bytes.', $function, self::MAX_STRING_BYTES));
-        }
-
-        return $value;
-    }
-
-    private static function output(string $value, string $function): string
-    {
-        if (strlen($value) > self::MAX_STRING_BYTES) {
-            throw new ExpressionFunctionError(sprintf('%s() would return more than %d bytes.', $function, self::MAX_STRING_BYTES));
         }
 
         return $value;

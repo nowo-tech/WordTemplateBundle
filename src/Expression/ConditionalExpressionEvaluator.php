@@ -11,6 +11,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface as SymfonyExpressionFunctionProviderInterface;
 use Symfony\Component\ExpressionLanguage\Node\BinaryNode;
+use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
 use Symfony\Component\ExpressionLanguage\Node\GetAttrNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
@@ -19,6 +20,7 @@ use Symfony\Component\ExpressionLanguage\Parser;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 use Throwable;
 
+use function abs;
 use function array_keys;
 use function get_debug_type;
 use function implode;
@@ -46,6 +48,9 @@ final readonly class ConditionalExpressionEvaluator
     public const DEFAULT_MAX_LENGTH = 500;
 
     public const DEFAULT_CACHE_ITEMS = 256;
+
+    /** Maximum number of elements of a range literal ({@code 1..100}). */
+    public const MAX_RANGE = BuiltinExpressionFunctions::MAX_ITEMS;
 
     private SandboxedExpressionLanguage $language;
 
@@ -181,6 +186,19 @@ final readonly class ConditionalExpressionEvaluator
     {
         if ($node instanceof GetAttrNode && $node->attributes['type'] === GetAttrNode::METHOD_CALL) {
             throw ConditionalExpressionException::forbidden($expression, 'method calls are not available in templates');
+        }
+
+        // The range operator allocates the whole list: only between integer literals, with a bounded span.
+        if ($node instanceof BinaryNode && $node->attributes['operator'] === '..') {
+            $left  = $node->nodes['left'];
+            $right = $node->nodes['right'];
+            if (!$left instanceof ConstantNode || !$right instanceof ConstantNode || !is_int($left->attributes['value']) || !is_int($right->attributes['value'])) {
+                throw ConditionalExpressionException::forbidden($expression, 'a range (a..b) needs two integer literals');
+            }
+
+            if (abs($right->attributes['value'] - $left->attributes['value']) >= self::MAX_RANGE) {
+                throw ConditionalExpressionException::forbidden($expression, sprintf('a range (a..b) may hold at most %d numbers', self::MAX_RANGE));
+            }
         }
 
         foreach ($node->nodes as $child) {

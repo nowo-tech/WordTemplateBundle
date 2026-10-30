@@ -17,9 +17,11 @@ use function array_pop;
 use function count;
 use function html_entity_decode;
 use function max;
+use function preg_last_error_msg;
 use function preg_match;
 use function preg_match_all;
 use function preg_quote;
+use function sprintf;
 use function strcasecmp;
 use function strlen;
 use function strpos;
@@ -150,7 +152,10 @@ final readonly class ConditionalExpressionApplicator
         $pattern = '/(?<endif>' . preg_quote($this->endifOpening, '/') . '(?:\s+(?<endname>[^<]*?))?\s*' . preg_quote($this->endifClosing, '/') . ')'
             . '|(?<if>' . preg_quote($this->ifOpening, '/') . '\s+(?<text>[^<]+?)' . preg_quote($this->ifClosing, '/') . ')/';
 
-        preg_match_all($pattern, $xml, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE | PREG_UNMATCHED_AS_NULL);
+        if (preg_match_all($pattern, $xml, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE | PREG_UNMATCHED_AS_NULL) === false) {
+            // Fail closed whatever on_error says: unscanned markers would leave conditional content visible.
+            throw new ConditionalExpressionException('', sprintf('Conditional markers could not be scanned (%s).', preg_last_error_msg()));
+        }
 
         /** @var list<array{text: string, marker: string, start: int, end: int, children: list<ExpressionBlock>}> $stack */
         $stack    = [];

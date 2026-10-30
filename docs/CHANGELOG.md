@@ -66,6 +66,14 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   rejected with `InvalidContextValueException` before) and render as such in placeholders.
 - New runtime dependencies: `symfony/expression-language`, `symfony/cache`, `symfony/clock` (`^7.4 || ^8.0`).
 
+### Security
+
+- Hardening of the unreleased expression conditionals after the REQ-SEC-004 review (Appendix BQ): the `..` range
+  operator only accepts integer literals with a span below 10,000 (`count(1..100000000)` exhausted memory);
+  `number_format()` accepts at most 20 decimals and `replace()`, `join()`, `number_format()` check the result size before
+  building it; date formats are limited to 100 bytes; function errors no longer echo argument values; a PCRE failure
+  while scanning markers fails closed.
+
 ### Documentation
 
 - `docs/USAGE.md` — new **Expression conditionals** section (enable, classification rule, exposed values, operators,

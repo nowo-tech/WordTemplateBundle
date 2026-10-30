@@ -136,8 +136,11 @@ final class BuiltinExpressionFunctionsTest extends TestCase
         yield 'min of nothing' => ['min(none) == 1', 'min() expects at least one number'];
         yield 'max of strings' => ["max('a', 'b') == 1", 'max() expects a number, got string'];
         yield 'join of nested list' => ["join([[1]]) == ''", 'join() expects a string, got array'];
-        yield 'date unreadable' => ["date('not a date') == ''", 'date() cannot read "not a date" as a date'];
-        yield 'date empty' => ["date('') == ''", 'date() cannot read "" as a date'];
+        yield 'date unreadable' => ["date('not a date') == ''", 'date() cannot read its argument as a date'];
+        yield 'date empty' => ["date('') == ''", 'date() cannot read its argument as a date'];
+        yield 'number_format huge decimals' => ["number_format(1.5, 1000000000) == ''", 'number_format() accepts 0 to 20 decimals'];
+        yield 'number_format negative decimals' => ["number_format(1.5, -1) == ''", 'number_format() accepts 0 to 20 decimals'];
+        yield 'date format too long' => ["now(join(['Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y'], 'YY')) == ''", 'now() accepts formats up to 100 bytes'];
         yield 'date of list' => ['date(tags) == 1', 'date() expects a string, got array'];
         yield 'missing argument' => ['upper() == 1', 'could not be evaluated'];
         yield 'is_defined of list' => ['is_defined(tags)', 'is_defined() expects a string, got array'];
@@ -165,6 +168,8 @@ final class BuiltinExpressionFunctionsTest extends TestCase
             ["replace(half, 'a', 'aa') == 1", ['half' => $half], 'would return more than 65536 bytes'],
             ['count(many) == 1', ['many' => $many], 'accepts up to 10000 elements'],
             ['number_format(1.0e300, 0, \'.\', sep) == 1', ['sep' => str_repeat('-', 1000)], 'number_format() would return more than 65536 bytes'],
+            ['join(items, \'\') == 1', ['items' => array_fill(0, 10, str_repeat('x', 7000))], 'join() would return more than 65536 bytes'],
+            ["replace(s, {'a': big}) == 1", ['s' => str_repeat('a', 1000), 'big' => str_repeat('b', 100)], 'replace() would return more than 65536 bytes'],
         ];
 
         foreach ($cases as [$expression, $context, $message]) {
