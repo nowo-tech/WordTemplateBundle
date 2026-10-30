@@ -5,6 +5,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.8.0] - 2026-10-30](#180---2026-10-30)
 - [[1.7.1] - 2026-10-29](#171---2026-10-29)
 - [[1.7.0] - 2026-10-29](#170---2026-10-29)
 - [[1.6.1] - 2026-10-28](#161---2026-10-28)
@@ -42,6 +43,10 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - [[0.1.0] - 2026-05-12](#010---2026-05-12)
 
 ## [Unreleased]
+
+## [1.8.0] - 2026-10-30
+
+WordTemplate: opt-in expression conditionals (${#if total > 1000}), Twig-like functions and ${#for} loops incl. table-row loops; values never re-read as placeholders; bounded templates (SEC-004 BQ) See [UPGRADING](UPGRADING.md#to-180).
 
 ### Added
 
