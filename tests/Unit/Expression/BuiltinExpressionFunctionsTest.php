@@ -172,6 +172,8 @@ final class BuiltinExpressionFunctionsTest extends TestCase
             ['number_format(1.0e300, 0, \'.\', sep) == 1', ['sep' => str_repeat('-', 1000)], 'number_format() would return more than 65536 bytes'],
             ['join(items, \'\') == 1', ['items' => array_fill(0, 10, str_repeat('x', 7000))], 'join() would return more than 65536 bytes'],
             ["replace(s, {'a': big}) == 1", ['s' => str_repeat('a', 1000), 'big' => str_repeat('b', 100)], 'replace() would return more than 65536 bytes'],
+            // REQ-SEC-004 BQ replacecpu: 9,999 search strings over a 49 KB subject.
+            ["replace(join(1..9999, 'x'), keys(1..9999)) == ''", [], 'replace() accepts at most 1000000 search strings × subject bytes'],
         ];
 
         foreach ($cases as [$expression, $context, $message]) {
