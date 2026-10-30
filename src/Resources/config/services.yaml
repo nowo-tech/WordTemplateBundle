@@ -5,6 +5,24 @@ services:
         autowire: true
         autoconfigure: true
 
+    # Expression conditionals: built-in functions first (high priority), host providers after (they may override).
+    Nowo\WordTemplateBundle\Expression\BuiltinExpressionFunctions:
+        autoconfigure: false
+        arguments:
+            $clock: '@?clock'
+            $timezone: '%nowo_word_template.conditional_expressions.timezone%'
+        tags:
+            - { name: nowo_word_template.expression_function_provider, priority: 1000 }
+
+    Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator:
+        public: true
+        arguments:
+            $maxLength: '%nowo_word_template.conditional_expressions.max_length%'
+            $cache: null
+            $functionProviders: !tagged_iterator nowo_word_template.expression_function_provider
+            $allowedFunctions: '%nowo_word_template.conditional_expressions.functions.allow%'
+            $deniedFunctions: '%nowo_word_template.conditional_expressions.functions.deny%'
+
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessor:
         public: true
         arguments:
@@ -19,9 +37,16 @@ services:
             $htmlImageMaxBytes: '%nowo_word_template.html_image_max_bytes%'
             # PSR-3 logger (REQ-OBS-001); optional: no logging when the host has no "logger" service.
             $logger: '@?logger'
+            $conditionalExpressionsEnabled: '%nowo_word_template.conditional_expressions.enabled%'
+            $conditionalExpressionsOnError: '%nowo_word_template.conditional_expressions.on_error%'
+            $conditionalExpressionEvaluator: '@Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator'
         tags:
             - { name: monolog.logger, channel: word_template }
 
     Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface:
+        alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor
+        public: true
+
+    Nowo\WordTemplateBundle\Processor\ConditionalExpressionInspectorInterface:
         alias: Nowo\WordTemplateBundle\Processor\WordTemplateProcessor
         public: true

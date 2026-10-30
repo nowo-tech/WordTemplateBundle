@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\Util;
 
+use BackedEnum;
+use DateTimeInterface;
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Stringable;
+use UnitEnum;
 
 use function is_array;
 use function is_int;
@@ -18,7 +21,8 @@ use function sprintf;
 
 /**
  * Flattens nested scalar arrays into dot keys; preserves {@see ConditionalBlock}, {@see HtmlContent},
- * {@see TableRows}, {@see ImageSource}.
+ * {@see TableRows}, {@see ImageSource}. Backed enums become their value, pure enums their name and
+ * {@see DateTimeInterface} a {@code 'Y-m-d'} string (the same values expression conditionals compare).
  *
  * @phpstan-return array<string, scalar|Stringable|ConditionalBlock|HtmlContent|TableRows|ImageSource|null>
  */
@@ -42,6 +46,24 @@ final class ContextFlattener
                 continue;
             }
 
+            if ($value instanceof BackedEnum) {
+                $out[$fullKey] = $value->value;
+
+                continue;
+            }
+
+            if ($value instanceof UnitEnum) {
+                $out[$fullKey] = $value->name;
+
+                continue;
+            }
+
+            if ($value instanceof DateTimeInterface) {
+                $out[$fullKey] = $value->format('Y-m-d');
+
+                continue;
+            }
+
             if (is_object($value)) {
                 if ($value instanceof Stringable) {
                     $out[$fullKey] = $value;
@@ -49,7 +71,7 @@ final class ContextFlattener
                     continue;
                 }
 
-                throw new InvalidContextValueException(sprintf('Unsupported context value at key "%s": use scalars, Stringable, or ConditionalBlock / HtmlContent / TableRows / ImageSource.', $fullKey));
+                throw new InvalidContextValueException(sprintf('Unsupported context value at key "%s": use scalars, Stringable, enums, DateTimeInterface, or ConditionalBlock / HtmlContent / TableRows / ImageSource.', $fullKey));
             }
 
             if (is_array($value)) {

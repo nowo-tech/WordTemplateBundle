@@ -1,0 +1,10 @@
+nowo_word_template:
+    conditional_expressions:
+        enabled: true
+        timezone: Europe/Madrid
+        functions:
+            deny: [now]
+
+services:
+    Nowo\WordTemplateBundle\Tests\Fixtures\VatExpressionFunctions:
+        autoconfigure: true

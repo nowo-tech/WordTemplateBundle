@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\Processor;
 
+use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Exception\PathNotAllowedException;
 use Nowo\WordTemplateBundle\Exception\ProcessingTimedOutException;
 use Nowo\WordTemplateBundle\Exception\TemplateNotFoundException;
 use Nowo\WordTemplateBundle\Exception\WordTemplateExceptionInterface;
+use Nowo\WordTemplateBundle\Expression\ConditionalExpressionErrorMode;
+use Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator;
+use Nowo\WordTemplateBundle\Expression\ConditionalExpressionReport;
+use Nowo\WordTemplateBundle\Expression\ExpressionVariables;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
@@ -16,6 +21,7 @@ use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Result\ProcessedDocument;
 use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 use Nowo\WordTemplateBundle\Util\ConditionalBlockApplicator;
+use Nowo\WordTemplateBundle\Util\ConditionalExpressionApplicator;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
 use Nowo\WordTemplateBundle\Util\HtmlImageSanitizer;
 use Nowo\WordTemplateBundle\Util\PathAllowlist;
@@ -53,11 +59,15 @@ use const DIRECTORY_SEPARATOR;
  * dropped HTML images, timeouts and failures as warnings/errors, finished merges as info. Only the template
  * file name and counters are logged — never full paths, context values or document contents.
  */
-readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
+readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, ConditionalExpressionInspectorInterface
 {
     public const DEFAULT_HTML_IMAGE_MAX_BYTES = 5_242_880;
 
     private LoggerInterface $logger;
+
+    private ConditionalExpressionEvaluator $expressionEvaluator;
+
+    private ConditionalExpressionErrorMode $expressionErrorMode;
 
     /**
      * @param string $macroOpening placeholder opening delimiter
@@ -70,6 +80,9 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
      * @param list<string> $allowedRoots absolute directories that template/image/output paths must stay under (empty = unrestricted)
      * @param int $htmlImageMaxBytes maximum decoded size of one {@code data:} image inside {@see HtmlContent}
      * @param LoggerInterface|null $logger PSR-3 logger; null disables logging
+     * @param bool $conditionalExpressionsEnabled true applies {@code ${#if <expression>}} … {@code ${#endif}} blocks (opt-in)
+     * @param string $conditionalExpressionsOnError {@code exception}, {@code hide} or {@code keep} ({@see ConditionalExpressionErrorMode})
+     * @param ConditionalExpressionEvaluator|null $conditionalExpressionEvaluator parser / evaluator (max length, functions); null = defaults
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -82,8 +95,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         private array $allowedRoots = [],
         private int $htmlImageMaxBytes = self::DEFAULT_HTML_IMAGE_MAX_BYTES,
         ?LoggerInterface $logger = null,
+        private bool $conditionalExpressionsEnabled = false,
+        string $conditionalExpressionsOnError = 'exception',
+        ?ConditionalExpressionEvaluator $conditionalExpressionEvaluator = null,
     ) {
-        $this->logger = $logger ?? new NullLogger();
+        $this->logger              = $logger ?? new NullLogger();
+        $this->expressionErrorMode = ConditionalExpressionErrorMode::from($conditionalExpressionsOnError);
+        $this->expressionEvaluator = $conditionalExpressionEvaluator ?? new ConditionalExpressionEvaluator();
     }
 
     /**
@@ -137,7 +155,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             return null;
         }
 
-        return '/^(?:' . implode('|', $prefixes) . ')\s/';
+        return '/^(?:' . implode('|', $prefixes) . ')(?:\s|$)/';
     }
 
     /**
@@ -150,7 +168,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
     public function listConditionalBlocks(string $templatePath): array
     {
         $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->createConditionalApplicator();
+        $applicator = $this->conditionalExpressionsEnabled ? $this->createExpressionApplicator() : $this->createConditionalApplicator();
         $names      = [];
 
         try {
@@ -168,6 +186,64 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
         }
 
         return array_keys($names);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return list<string>
+     */
+    public function listConditionalExpressions(string $templatePath): array
+    {
+        $processor   = $this->openTemplate($templatePath);
+        $applicator  = $this->createExpressionApplicator();
+        $expressions = [];
+
+        try {
+            foreach ($processor->documentPartXmls() as $xml) {
+                foreach ($applicator->discoverExpressions($xml) as $expression) {
+                    $expressions[$expression] = true;
+                }
+            }
+        } finally {
+            // @igor-ignore - Not shared worker service state.
+            $processor->removeTemporaryDocument();
+        }
+
+        return array_keys($expressions);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param list<string> $variableNames
+     *
+     * @return list<ConditionalExpressionException>
+     */
+    public function lintConditionalExpressions(string $templatePath, array $variableNames): array
+    {
+        $processor  = $this->openTemplate($templatePath);
+        $applicator = $this->createExpressionApplicator();
+        $problems   = [];
+
+        try {
+            foreach ($processor->documentPartXmls() as $xml) {
+                $problems = [...$problems, ...$applicator->findProblems($xml)];
+            }
+        } finally {
+            // @igor-ignore - Not shared worker service state.
+            $processor->removeTemporaryDocument();
+        }
+
+        foreach ($this->listConditionalExpressions($templatePath) as $expression) {
+            try {
+                $this->expressionEvaluator->lint($expression, $variableNames);
+            } catch (ConditionalExpressionException $e) {
+                $problems[] = $e;
+            }
+        }
+
+        return $problems;
     }
 
     /**
@@ -203,6 +279,9 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
             $deadline->assertNotTimedOut();
 
             $this->applyConditionalBlocks($processor, $flat);
+            $deadline->assertNotTimedOut();
+
+            $this->applyConditionalExpressions($processor, $context, $templatePath);
             $deadline->assertNotTimedOut();
 
             foreach ($flat as $value) {
@@ -316,6 +395,46 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface
 
         $applicator = $this->createConditionalApplicator();
         $processor->transformDocumentParts(static fn (string $xml): string => $applicator->applyAll($xml, $blocks));
+    }
+
+    /**
+     * Evaluates the expression blocks after the named ones (so expressions inside a removed named block are never
+     * evaluated). No-op unless {@code conditional_expressions.enabled}.
+     *
+     * @param array<string, mixed> $context
+     */
+    private function applyConditionalExpressions(TemplateProcessorBridge $processor, array $context, string $templatePath): void
+    {
+        if (!$this->conditionalExpressionsEnabled) {
+            return;
+        }
+
+        $applicator = $this->createExpressionApplicator();
+        $variables  = ExpressionVariables::fromContext($context);
+        $report     = new ConditionalExpressionReport();
+        $processor->transformDocumentParts(static fn (string $xml): string => $applicator->apply($xml, $variables, $report));
+
+        if ($report->errors() !== []) {
+            $this->logger->warning('Word template conditional expressions failed and were applied with on_error mode.', [
+                'bundle'   => 'word_template',
+                'action'   => 'conditional_expressions',
+                'template' => basename($templatePath),
+                'on_error' => $this->expressionErrorMode->value,
+                'errors'   => count($report->errors()),
+            ]);
+        }
+    }
+
+    private function createExpressionApplicator(): ConditionalExpressionApplicator
+    {
+        return new ConditionalExpressionApplicator(
+            $this->conditionalIfOpening,
+            $this->conditionalIfClosing,
+            $this->conditionalEndifOpening,
+            $this->conditionalEndifClosing,
+            $this->expressionEvaluator,
+            $this->expressionErrorMode,
+        );
     }
 
     private function createConditionalApplicator(): ConditionalBlockApplicator

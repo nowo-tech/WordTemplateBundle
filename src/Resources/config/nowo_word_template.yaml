@@ -46,3 +46,22 @@ nowo_word_template:
 
     # Suffix that closes the conditional end marker (after the block name).
     conditional_endif_closing: '}'
+
+    # Expression conditionals (opt-in, since 1.8): ${#if total > 1000} … ${#endif}
+    # A nameless ${#endif} closes the nearest open ${#if …} and makes it an expression block,
+    # evaluated against the context with a function-less Symfony ExpressionLanguage.
+    # Named blocks (${#if name} … ${#endif name} + ConditionalBlock) are unchanged.
+    conditional_expressions:
+        # false = expression markers stay as literal text (1.7 behaviour).
+        enabled: false
+        # exception: throw ConditionalExpressionException (invalid syntax, unknown variable, bad layout)
+        # hide: remove the block; keep: leave markers as text. hide / keep log a warning.
+        on_error: exception
+        # Maximum length of one expression (characters).
+        max_length: 500
+        # Time zone of now() / date(); null = PHP default. "Now" comes from the Symfony clock.
+        timezone: null
+        # Restrict functions (built-ins + host providers tagged nowo_word_template.expression_function_provider).
+        functions:
+            allow: ~        # null = all; e.g. [upper, lower, length]
+            deny: []        # e.g. [now, date]

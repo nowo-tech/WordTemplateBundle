@@ -93,4 +93,29 @@ final class ConfigurationTest extends TestCase
         self::assertTrue($config['path_allowlist_required']);
         self::assertSame(['/tmp/templates'], $config['allowed_roots']);
     }
+
+    public function testConditionalExpressionsDefaultToDisabled(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), []);
+
+        self::assertSame(['enabled' => false, 'on_error' => 'exception', 'max_length' => 500, 'timezone' => null, 'functions' => ['allow' => null, 'deny' => []]], $config['conditional_expressions']);
+    }
+
+    public function testConditionalExpressionsCustom(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), [[
+            'conditional_expressions' => ['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]],
+        ]]);
+
+        self::assertSame(['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]], $config['conditional_expressions']);
+    }
+
+    public function testConditionalExpressionsRejectUnknownErrorMode(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        (new Processor())->processConfiguration(new Configuration(), [[
+            'conditional_expressions' => ['on_error' => 'ignore'],
+        ]]);
+    }
 }

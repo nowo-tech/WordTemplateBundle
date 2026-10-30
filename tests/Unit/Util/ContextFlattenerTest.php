@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\Tests\Unit\Util;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
 use Nowo\WordTemplateBundle\Model\TableRows;
+use Nowo\WordTemplateBundle\Tests\Fixtures\Conditionals\InvoiceStatus;
+use Nowo\WordTemplateBundle\Tests\Fixtures\Conditionals\Priority;
 use Nowo\WordTemplateBundle\Util\ContextFlattener;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -65,6 +69,17 @@ final class ContextFlattenerTest extends TestCase
         $id = $flat['id'];
         self::assertInstanceOf(Stringable::class, $id);
         self::assertSame('42', (string) $id);
+    }
+
+    public function testEnumsAndDatesBecomeScalars(): void
+    {
+        $flat = ContextFlattener::flatten([
+            'status'   => InvoiceStatus::Paid,
+            'priority' => Priority::High,
+            'invoice'  => ['due' => new DateTimeImmutable('2026-10-30 23:30', new DateTimeZone('Europe/Madrid'))],
+        ]);
+
+        self::assertSame(['status' => 'paid', 'priority' => 'High', 'invoice.due' => '2026-10-30'], $flat);
     }
 
     public function testRejectsUnsupportedObjects(): void

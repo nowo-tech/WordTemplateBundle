@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\DependencyInjection;
 
+use Nowo\WordTemplateBundle\Expression\ExpressionFunctionProviderInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -37,6 +38,15 @@ final class WordTemplateExtension extends Extension
         $container->setParameter(Configuration::ALIAS . '.conditional_if_closing', $config['conditional_if_closing']);
         $container->setParameter(Configuration::ALIAS . '.conditional_endif_opening', $config['conditional_endif_opening']);
         $container->setParameter(Configuration::ALIAS . '.conditional_endif_closing', $config['conditional_endif_closing']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.enabled', $config['conditional_expressions']['enabled']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.on_error', $config['conditional_expressions']['on_error']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.max_length', $config['conditional_expressions']['max_length']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.timezone', $config['conditional_expressions']['timezone']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.functions.allow', $config['conditional_expressions']['functions']['allow']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.functions.deny', $config['conditional_expressions']['functions']['deny']);
+
+        $container->registerForAutoconfiguration(ExpressionFunctionProviderInterface::class)
+            ->addTag(ExpressionFunctionProviderInterface::TAG);
     }
 
     /**
