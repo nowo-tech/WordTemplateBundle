@@ -4,47 +4,72 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
-- [1.7.1 — 2026-10-29](#171--2026-10-29)
-- [1.7.0 — 2026-10-29](#170--2026-10-29)
-- [1.6.1 — 2026-10-28](#161--2026-10-28)
-- [1.6.0 — 2026-10-13](#160--2026-10-13)
-- [1.5.0 — 2026-10-13](#150--2026-10-13)
-- [1.4.3 — 2026-10-13](#143--2026-10-13)
-- [1.4.2 — 2026-10-09](#142--2026-10-09)
-- [1.4.1 — 2026-09-28](#141--2026-09-28)
-- [1.4.0 — 2026-09-28](#140--2026-09-28)
-- [1.3.9 — 2026-09-27](#139--2026-09-27)
-- [1.3.8 — 2026-09-25](#138--2026-09-25)
-- [1.3.7 — 2026-09-09](#137--2026-09-09)
-- [1.3.6 — 2026-08-24](#136--2026-08-24)
-- [1.3.5 — 2026-08-19](#135--2026-08-19)
-- [1.3.4 — 2026-08-19](#134--2026-08-19)
-- [1.3.3 — 2026-08-19](#133--2026-08-19)
-- [1.3.2 — 2026-08-18](#132--2026-08-18)
-- [1.3.1 — 2026-07-31](#131--2026-07-31)
-- [1.3.0 — 2026-07-30](#130--2026-07-30)
-- [1.2.4 — 2026-07-30](#124--2026-07-30)
-- [1.2.3 — 2026-07-29](#123--2026-07-29)
-- [1.2.2 — 2026-07-24](#122--2026-07-24)
-- [1.2.1 — 2026-07-24](#121--2026-07-24)
-- [1.2.0 — 2026-07-22](#120--2026-07-22)
-- [1.1.0 — 2026-07-15](#110--2026-07-15)
-- [1.0.5 — 2026-07-15](#105--2026-07-15)
-- [1.0.4 — 2026-07-13](#104--2026-07-13)
-- [1.0.3 — 2026-07-08](#103--2026-07-08)
-- [1.0.2 — 2026-07-07](#102--2026-07-07)
-- [1.0.1 — 2026-06-29](#101--2026-06-29)
-- [1.0.0 — 2026-06-29](#100--2026-06-29)
-- [0.1.3 — 2026-06-29](#013--2026-06-29)
-- [0.1.2 — 2026-06-16](#012--2026-06-16)
-- [0.1.1 — 2026-05-12](#011--2026-05-12)
-- [0.1.0 — 2026-05-12](#010--2026-05-12)
+- [[Unreleased]](#unreleased)
+- [[1.7.1] - 2026-10-29](#171---2026-10-29)
+- [[1.7.0] - 2026-10-29](#170---2026-10-29)
+- [[1.6.1] - 2026-10-28](#161---2026-10-28)
+- [[1.6.0] - 2026-10-13](#160---2026-10-13)
+- [[1.5.0] - 2026-10-13](#150---2026-10-13)
+- [[1.4.3] - 2026-10-13](#143---2026-10-13)
+- [[1.4.2] - 2026-10-09](#142---2026-10-09)
+- [[1.4.1] - 2026-09-28](#141---2026-09-28)
+- [[1.4.0] - 2026-09-28](#140---2026-09-28)
+- [[1.3.9] - 2026-09-27](#139---2026-09-27)
+- [[1.3.8] - 2026-09-25](#138---2026-09-25)
+- [[1.3.7] - 2026-09-09](#137---2026-09-09)
+- [[1.3.6] - 2026-08-24](#136---2026-08-24)
+- [[1.3.5] - 2026-08-19](#135---2026-08-19)
+- [[1.3.4] - 2026-08-19](#134---2026-08-19)
+- [[1.3.3] - 2026-08-19](#133---2026-08-19)
+- [[1.3.2] - 2026-08-18](#132---2026-08-18)
+- [[1.3.1] - 2026-07-31](#131---2026-07-31)
+- [[1.3.0] - 2026-07-30](#130---2026-07-30)
+- [[1.2.4] - 2026-07-30](#124---2026-07-30)
+- [[1.2.3] - 2026-07-29](#123---2026-07-29)
+- [[1.2.2] - 2026-07-24](#122---2026-07-24)
+- [[1.2.1] - 2026-07-24](#121---2026-07-24)
+- [[1.2.0] - 2026-07-22](#120---2026-07-22)
+- [[1.1.0] - 2026-07-15](#110---2026-07-15)
+- [[1.0.5] - 2026-07-15](#105---2026-07-15)
+- [[1.0.4] - 2026-07-13](#104---2026-07-13)
+- [[1.0.3] - 2026-07-08](#103---2026-07-08)
+- [[1.0.2] - 2026-07-07](#102---2026-07-07)
+- [[1.0.1] - 2026-06-29](#101---2026-06-29)
+- [[1.0.0] - 2026-06-29](#100---2026-06-29)
+- [[0.1.3] - 2026-06-29](#013---2026-06-29)
+- [[0.1.2] - 2026-06-16](#012---2026-06-16)
+- [[0.1.1] - 2026-05-12](#011---2026-05-12)
+- [[0.1.0] - 2026-05-12](#010---2026-05-12)
 
-## Unreleased
+## [Unreleased]
 
-## 1.7.1 — 2026-10-29
+### Documentation
 
+- `docs/USAGE.md` — new **Conditionals by data type** section: how to turn `bool`, `?bool`, `int`/`?int`, `float`,
+  `string`/`?string`, `null`/optional values, arrays, `DateTimeInterface`, backed enums, Doctrine relations/collections and
+  Symfony request/form data into the `bool` that `ConditionalBlock` requires, with recommended expressions and pitfalls
+  (`'0'` is falsy, `(bool) 'false'` is `true`, float noise, `stripos()` at offset 0, loose `in_array()`, time zones,
+  `getBoolean()`/`getInt()` throwing `BadRequestException`), the `TypeError` in strict mode vs weak-mode coercion, the
+  "else" and "one of N" patterns, combining conditions (flatten vs nest), same block name used twice, the table / "no
+  items" pattern with `TableRows`, what happens with a missing block (markers stay as literal text), and where markers may
+  go in Word (own paragraph, table cells, headers/footers, page breaks; not across cells, footnotes or overlapping).
+  Linked from the README.
+
+### Tests
+
+- `tests/Integration/ConditionalsUsageDocTest.php` executes every documented expression (asserting the snippet is present
+  in `docs/USAGE.md`) and renders the documented patterns and edge cases through real `.docx` templates, so the docs
+  cannot drift from the behaviour. `doctrine/collections` added to `require-dev` for the collection examples.
+
+### Demo
+
+- New `/conditionals` page in `demo/symfony8`: one form field per PHP type, a preview of the `ConditionalBlock`
+  decisions and a download of `public/demo/conditionals-tpl.docx` (built by `bin/build-conditionals-template.php`).
+
+### Changed
+
+- CHANGELOG headings use the `## [x.y.z] - YYYY-MM-DD` form.
+## [1.7.1] - 2026-10-29
 ### Security
 
 - **HTML image filter bypass via HTML entities (SSRF / local file read).** `HtmlImageSanitizer` looked for `<img` before
@@ -58,8 +83,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 - `phpoffice/phpword` floor raised to `^1.4` (keeps `phpoffice/math` 0.2 with GHSA-42hm-pq2f-3r7m out of the tree).
 
-## 1.7.0 — 2026-10-29
-
+## [1.7.0] - 2026-10-29
 ### Added
 
 - **PSR-3 logging** (REQ-OBS-001): `WordTemplateProcessor` takes an optional `?LoggerInterface $logger` (last
@@ -80,8 +104,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - `.github/SECURITY.md`: supported versions `1.x` and the canonical report checklist (REQ-SEC-003).
 - `.gitignore`: `# Archives / compressed` block with `*.tar` (REQ-GITIGNORE-001); demo compose explains its `dns:` (REQ-DEMO-009).
 
-## 1.6.1 — 2026-10-28
-
+## [1.6.1] - 2026-10-28
 ### Security
 
 - **Temporary files are owner-only.** The temporary output `.docx` and the images extracted from HTML values were
@@ -103,15 +126,13 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 - Documentation: wave-1 REQ compliance — README badges (canonical Downloads, Symfony 7.4 | 8.0 | 8.1, Coverage), canonical FrankenPHP claim, documentation list order (extras under Additional documentation), canonical issue and pull request templates, CONTRIBUTING Code of Conduct link and Cursor Agent queue settings (REQ-IDE-006), DEMO-FRANKENPHP troubleshooting, commented demo `.env.example`, tables of contents on long docs, Spec Kit inventory refresh (25/25: path allowlist, image sanitizer, split-macro normalizer, PHPWord HTML state).
 
-## 1.6.0 — 2026-10-13
-
+## [1.6.0] - 2026-10-13
 ### Changed
 
 - Minimum Symfony version raised from 7.0 to **7.4** (the lowest version tested in CI).
 - `symfony/yaml` moved from `require-dev` to `require` (the extension loads `services.yaml` with `YamlFileLoader`).
 
-## 1.5.0 — 2026-10-13
-
+## [1.5.0] - 2026-10-13
 ### Security
 
 - `HtmlContent`: `<img src>` values are filtered before PHPWord parses the HTML. Remote URLs, stream wrappers (`php://`, `phar://`, `file://`, …) and local paths outside `allowed_roots` are dropped, closing SSRF and arbitrary local file reads. Only `data:image/(png|jpeg|gif|bmp);base64` images up to `html_image_max_bytes` (default 5 MiB) and, when `allowed_roots` is configured, existing local files under those roots are kept.
@@ -129,35 +150,30 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 - `docs/CONFIGURATION.md` and the reference/recipe YAML now document `allowed_roots`, `path_allowlist_required` and `html_image_max_bytes`.
 
-## 1.4.3 — 2026-10-13
-
+## [1.4.3] - 2026-10-13
 ### Changed
 
 - Development: `composer.json` pins `config.platform.php` to 8.2.0 so local `composer update` resolves dependencies installable on the minimum PHP (the lock is not committed); CI overrides the platform per matrix cell.
 
-## 1.4.2 — 2026-10-09
-
+## [1.4.2] - 2026-10-09
 ### Dependencies
 
 - `igor-php/igor-php` require-dev constraint bumped to `^0.10.1` (Dependabot). Dev tooling only.
 - Demo `symfony8`: Symfony 8.1.8, Twig 3.30.0, `sabberworm/php-css-parser` 9.5.0.
 
-## 1.4.1 — 2026-09-28
-
+## [1.4.1] - 2026-09-28
 ### Fixed
 
 - PHPStan: drop redundant `is_string()` on `list<string>` allowlist roots.
 - Tests: expand `PathAllowlist` coverage for empty/invalid roots and `mustExist=false` output paths (CI 99% gate).
 - Style: PHP CS Fixer on path-allowlist related files.
 
-## 1.4.0 — 2026-09-28
-
+## [1.4.0] - 2026-09-28
 ### Security
 
 - Template/output paths are gated by `allowed_roots`; `path_allowlist_required` (Flex `when@prod`) rejects empty allowlists in production.
 
-## 1.3.9 — 2026-09-27
-
+## [1.3.9] - 2026-09-27
 ### Added
 
 - **REQ-CS-008:** `igor-php/igor-php` (require-dev only), root `igor.json`, Composer/`Makefile` `igor` target, and `release-check` wiring for FrankenPHP worker-state audit.
@@ -166,8 +182,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 - **Worker safety (Igor):** justified `// @igor-ignore` annotations and/or `ResetInterface` / request-scoped fixes so `make igor` passes on package `src/`.
 
-## 1.3.8 — 2026-09-25
-
+## [1.3.8] - 2026-09-25
 ### Fixed
 
 - **Worker mode — PHPWord `Html` static state:** `process()` now clears PHPWord's static `Html::$css` / `$xpath` / `$options` before the merge and restores the previous values in `finally` (`Processor\PhpWordHtmlState`). A `<style>` block in one `HtmlContent` no longer styles documents generated by later requests in the same FrankenPHP worker, and the last HTML DOM is not kept in memory after the merge.
@@ -190,8 +205,7 @@ composer require nowo-tech/word-template-bundle:^1.3.8
 
 No API or config changes. See [UPGRADING.md](UPGRADING.md).
 
-## 1.3.7 — 2026-09-09
-
+## [1.3.7] - 2026-09-09
 ### Fixed
 
 - **XML escape scalar / table merge values** — `WordTemplateProcessor::process()` now enables PHPWord `Settings::setOutputEscapingEnabled(true)` for the duration of the merge (restored afterwards). Values containing `&`, `<`, etc. (e.g. partner names like `Ores & Bryan…`) no longer corrupt `word/document.xml`, which previously broke downstream LibreOffice Word→PDF conversion.
@@ -212,8 +226,7 @@ composer require nowo-tech/word-template-bundle:^1.3.7
 
 No API or config changes. See [UPGRADING.md](UPGRADING.md).
 
-## 1.3.6 — 2026-08-24
-
+## [1.3.6] - 2026-08-24
 ### Changed
 
 - **Docs:** Flex recipe installation notes (REQ-RECIPE-001).
@@ -223,32 +236,27 @@ No API or config changes. See [UPGRADING.md](UPGRADING.md).
 
 - **No API or configuration changes** for integrators unless noted above.
 
-## 1.3.5 — 2026-08-19
-
+## [1.3.5] - 2026-08-19
 ### Added
 
 - **Symfony Flex recipe:** ship `nowo_word_template.yaml`, manifest, and post-install text. Prefer **`^1.3.5`** over `v1.3.4`.
 
-## 1.3.4 — 2026-08-19
-
+## [1.3.4] - 2026-08-19
 ### Added
 
 - **Symfony Flex recipe:** ships `nowo_word_template.yaml` with prod `timeout` defaults.
 
-## 1.3.3 — 2026-08-19
-
+## [1.3.3] - 2026-08-19
 ### Security
 
 - **CI:** run `composer audit --locked` after dependency install (REQ-SEC / P3).
 
-## 1.3.2 — 2026-08-18
-
+## [1.3.2] - 2026-08-18
 ### Changed
 
 - **Demos:** pin `nowo-tech/hot-reload-bundle` to `^1.4` with FrankenPHP Mercure/`hot_reload` (`dev`/`test` only).
 
-## 1.3.1 — 2026-07-31
-
+## [1.3.1] - 2026-07-31
 ### Fixed
 
 - **Word-split conditional markers** — `ConditionalBlockApplicator` now heals macros fragmented across `<w:r>/<w:t>` runs (common when Word spell-check or partial formatting splits `${#if name}` / `${#endif name}`) via `BrokenMacroNormalizer` before discover/apply. Discovery and show/hide no longer depend solely on PHPWord’s internal `fixBrokenMacros`.
@@ -269,8 +277,7 @@ composer require nowo-tech/word-template-bundle:^1.3.1
 
 No API or config changes. See [UPGRADING.md](UPGRADING.md).
 
-## 1.3.0 — 2026-07-30
-
+## [1.3.0] - 2026-07-30
 ### Added
 
 - **`WordTemplateProcessorInterface::listConditionalBlocks()`** — unique conditional block names from opening markers (`${#if annex}` → `annex`), using configured `conditional_*` delimiters (main document, headers, footers).
@@ -293,8 +300,7 @@ composer require nowo-tech/word-template-bundle:^1.3
 
 Backward compatible for DI consumers of `WordTemplateProcessor`. Custom implementations of `WordTemplateProcessorInterface` must add `listConditionalBlocks()`. See [UPGRADING.md](UPGRADING.md).
 
-## 1.2.4 — 2026-07-30
-
+## [1.2.4] - 2026-07-30
 ### Documentation
 
 - **[`USAGE.md`](USAGE.md)** / **[`README.md`](../README.md)** — end-to-end Word + YAML + PHP examples for multiple independent `TableRows` and sibling / nested `ConditionalBlock`s; anti-pattern of two `cloneRow`s on the same physical row.
@@ -315,8 +321,7 @@ composer require nowo-tech/word-template-bundle:^1.2.4
 
 No runtime or config API changes. See [UPGRADING.md](UPGRADING.md).
 
-## 1.2.3 — 2026-07-29
-
+## [1.2.3] - 2026-07-29
 ### Added
 
 - `make check-open-prs`, `demo-smoke`, `down-dev`, `release-check-demos` (REQ-MAKE-002 / 007).
@@ -342,8 +347,7 @@ composer require nowo-tech/word-template-bundle:^1.2.3
 
 No runtime or config API changes.
 
-## 1.2.2 — 2026-07-24
-
+## [1.2.2] - 2026-07-24
 ### Added
 
 - **GitHub automation (REQ-GH)** — `.github/copilot-instructions.md` (REQ-GH-001), `workflows/pr-lint.yml` semantic PR titles (REQ-GH-004), `workflows/stale.yml` inactive issues/PRs (REQ-GH-005).
@@ -360,8 +364,7 @@ composer require nowo-tech/word-template-bundle:^1.2.2
 
 No runtime or config API changes.
 
-## 1.2.1 — 2026-07-24
-
+## [1.2.1] - 2026-07-24
 ### Changed
 
 - **Dev / QA** — require-dev [`nowo-tech/phpstan-frankenphp`](https://github.com/nowo-tech/PhpStanFrankenPhp) `^1.0` and include classic + worker rulesets in `phpstan.neon.dist` (FrankenPHP-safe static analysis for contributors).
@@ -378,8 +381,7 @@ composer require nowo-tech/word-template-bundle:^1.2.1
 
 No runtime or config API changes. Contributors: `composer update` (dev) so PHPStan loads the FrankenPHP rulesets.
 
-## 1.2.0 — 2026-07-22
-
+## [1.2.0] - 2026-07-22
 ### Added
 
 - **`timeout`** config (`nowo_word_template.timeout`, default **180**) — wall-clock limit for `WordTemplateProcessor::process()` via cooperative deadline between merge phases and PHP `set_time_limit` (**REQ-RUNTIME-001**). Prefer `%env(int:PROCESS_TIMEOUT)%`.
@@ -403,8 +405,7 @@ composer require nowo-tech/word-template-bundle:^1.2
 
 No breaking API changes. Optional: set `timeout` / `PROCESS_TIMEOUT` and align PHP / Caddy deadlines. See [UPGRADING.md](UPGRADING.md).
 
-## 1.1.0 — 2026-07-15
-
+## [1.1.0] - 2026-07-15
 ### Added
 
 - **`ConditionalBlock`** — Twig-style `${#if blockName}` … `${#endif blockName}` regions in `.docx` templates; show or remove content from PHP. **Nested blocks** with distinct names are resolved inside-out (deepest first).
@@ -434,8 +435,7 @@ composer require nowo-tech/word-template-bundle:^1.1
 
 No code changes required unless you adopt `ConditionalBlock` or customize conditional delimiters. See [UPGRADING.md](UPGRADING.md).
 
-## 1.0.5 — 2026-07-15
-
+## [1.0.5] - 2026-07-15
 Repository tooling and documentation only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.
 
 ### Added
@@ -457,8 +457,7 @@ Repository tooling and documentation only. **No changes** to PHP APIs, services,
 
 - Refresh demo `composer.lock` path references for `word-template-bundle`.
 
-## 1.0.4 — 2026-07-13
-
+## [1.0.4] - 2026-07-13
 Repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.
 
 ### Changed
@@ -469,8 +468,7 @@ Repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_tem
 
 - **`.gitignore`** — ignore `.cursor/sandbox.json` (machine-specific Cursor sandbox config).
 
-## 1.0.3 — 2026-07-08
-
+## [1.0.3] - 2026-07-08
 Documentation and repository tooling only. **No changes** to PHP APIs, services, or `nowo_word_template` configuration.
 
 ### Added
@@ -487,8 +485,7 @@ Documentation and repository tooling only. **No changes** to PHP APIs, services,
 
 - Refresh demo `composer.lock` path references and dev dependency pins.
 
-## 1.0.2 — 2026-07-07
-
+## [1.0.2] - 2026-07-07
 ### Changed
 
 - **`WordTemplateProcessor`** — extract `persistTemplate()` as a `protected` hook around `TemplateProcessor::saveAs()`; class is no longer `final` (enables focused unit tests and optional subclassing). Public API unchanged.
@@ -511,14 +508,12 @@ Documentation and repository tooling only. **No changes** to PHP APIs, services,
 - Coverage Clover output: `coverage/clover.xml` → `coverage.xml`.
 - Bump `actions/checkout` to **v7**.
 
-## 1.0.1 — 2026-06-29
-
+## [1.0.1] - 2026-06-29
 ### Fixed
 
 - **`WordTemplateProcessorInterface` service alias** — mark the interface alias as `public: true` so `$container->get(WordTemplateProcessorInterface::class)` works after the container is compiled. Without this, Symfony inlines the private alias and throws *"service or alias has been removed or inlined"*. Constructor injection was unaffected.
 
-## 1.0.0 — 2026-06-29
-
+## [1.0.0] - 2026-06-29
 First **stable** release. The public API (`WordTemplateProcessorInterface`, value objects, `nowo_word_template` configuration, and service id) is now covered by [Semantic Versioning](https://semver.org/) for `1.x`.
 
 ### Summary
@@ -536,8 +531,7 @@ First **stable** release. The public API (`WordTemplateProcessorInterface`, valu
 
 Drop-in replacement for `0.1.x`. Set `composer require nowo-tech/word-template-bundle:^1.0`. See [UPGRADING.md](UPGRADING.md).
 
-## 0.1.3 — 2026-06-29
-
+## [0.1.3] - 2026-06-29
 ### Added
 
 - **`WordTemplateProcessorInterface::listVariables()`** — returns unique placeholder names from a `.docx` template (main document, headers, footers), using the configured `macro_opening` / `macro_closing` delimiters. Throws `TemplateNotFoundException` when the file is missing or not readable, same as `process()`.
@@ -551,8 +545,7 @@ Drop-in replacement for `0.1.x`. Set `composer require nowo-tech/word-template-b
 - **Docker** — mark `/app` as a Git `safe.directory` to avoid “dubious ownership” warnings when the repository is bind-mounted from the host.
 - **Makefile** — retry `composer install` after clearing a partial `vendor/` directory when the first attempt fails (common on bind mounts / flaky GitHub downloads).
 
-## 0.1.2 — 2026-06-16
-
+## [0.1.2] - 2026-06-16
 ### Demos
 
 - **Download blank template** — `GET /template` (`demo_template`) serves `public/demo/doc-final-tpl.docx` with placeholders intact (no `symfony/mime` dependency; explicit `Content-Type`).
@@ -571,15 +564,13 @@ Drop-in replacement for `0.1.x`. Set `composer require nowo-tech/word-template-b
 - Add CodeRabbit configuration (`.coderabbit.yaml`) and GitHub workflow.
 - Refresh demo `composer.lock` / Flex config (`csrf`, `property_info`, `reference.php`) for Symfony 7 and 8 demos.
 
-## 0.1.1 — 2026-05-12
-
+## [0.1.1] - 2026-05-12
 ### Documentation
 
 - Add [`SPEC-DRIVEN-DEVELOPMENT.md`](SPEC-DRIVEN-DEVELOPMENT.md): functional scope of the bundle, how behavior is validated (tests / static analysis), and `REQ-*` traceability for Makefiles and demos.
 - Link the guide from [`README.md`](../README.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), and [`ENGRAM.md`](ENGRAM.md).
 
-## 0.1.0 — 2026-05-12
-
+## [0.1.0] - 2026-05-12
 - Initial tagged release: `WordTemplateProcessor`, context flattening, `HtmlContent`, `TableRows`, `ImageSource`, Symfony extension `nowo_word_template`.
 - FrankenPHP demos for Symfony 7 and 8 (`demo/symfony7`, `demo/symfony8`); optional download of the filled `.docx` as **PDF** (PhpWord PDF writer + DomPDF, internally `docx → html → pdf`; fidelity limits are noted in the demo UI).
 

@@ -15,7 +15,7 @@
 - [Summary](#summary)
 - [Services reviewed](#services-reviewed)
 - [Findings](#findings)
-  - [W-01 — PHPWord `Html` keeps the last parsed `<style>` sheet in a static property (Medium)](#w-01--phpword-html-keeps-the-last-parsed--sheet-in-a-static-property-medium)
+  - [W-01 — PHPWord `Html` keeps the last parsed `<style>` sheet in a static property (Medium)](#w-01--phpword-html-keeps-the-last-parsed-style-sheet-in-a-static-property-medium)
   - [W-02 — PHPWord temporary template copies are not always removed (Low)](#w-02--phpword-temporary-template-copies-are-not-always-removed-low)
   - [W-03 — Timeout is cooperative, and restoring `set_time_limit()` restarts the budget (Low)](#w-03--timeout-is-cooperative-and-restoring-set_time_limit-restarts-the-budget-low)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)

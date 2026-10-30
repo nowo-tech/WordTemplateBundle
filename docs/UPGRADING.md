@@ -45,6 +45,11 @@
 
 ## Unreleased
 
+- No code or configuration change needed: documentation, tests and demo only. If your templates rely on
+  `ConditionalBlock`, read [USAGE.md — Conditionals by data type](USAGE.md#conditionals-by-data-type): it documents that a
+  block without a `ConditionalBlock` in the context is left in the output as literal text and that a marker sharing its
+  paragraph with other text is not (fully) supported — check your templates with `listConditionalBlocks()`.
+
 ## To 1.7.1
 
 - No code change needed. If you pass user-supplied HTML as `HtmlContent`, upgrade: earlier versions let entity-encoded
