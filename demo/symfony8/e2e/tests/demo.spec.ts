@@ -39,6 +39,15 @@ test.describe('WordTemplate demo', () => {
     await expect(page.locator('[data-testid="example-error-message"]')).toContainText('unknown variable "totl"');
   });
 
+  test('loops page repeats rows and paragraphs', async ({ page }) => {
+    await page.goto('/loops');
+    const invoice = page.locator('[data-testid="example-loop-invoice"] [data-testid="example-result"]');
+    await expect(invoice).toContainText('3 | Crane rental (1 day) | 1 | 450');
+    await expect(invoice).toContainText('Discount');
+    await expect(page.locator('[data-testid="example-loop-nested"] [data-testid="example-result"]')).toContainText('2.1 Crane');
+    await expect(page.locator('[data-testid="example-loop-empty"] [data-testid="example-result"]')).toContainText('No items in this order.');
+  });
+
   test('example documents can be downloaded', async ({ request }) => {
     const template = await request.get('/conditionals/examples/nested/template.docx');
     expect(template.ok()).toBeTruthy();

@@ -6,6 +6,7 @@ namespace App\Command;
 
 use App\Conditionals\ExpressionExampleRunner;
 use App\Conditionals\ExpressionExamples;
+use App\Conditionals\LoopExamples;
 use DateTimeImmutable;
 use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
 use Psr\Clock\ClockInterface;
@@ -22,7 +23,7 @@ use function mkdir;
  * Writes the template and the generated document of every /conditionals example to a directory
  * (used by "make docx-previews" to render the side-by-side images of docs/images/demo/).
  */
-#[AsCommand(name: 'app:conditionals:export-examples', description: 'Export the template and generated .docx of every expression example.')]
+#[AsCommand(name: 'app:conditionals:export-examples', description: 'Export the template and generated .docx of every expression and loop example.')]
 final class ExportExpressionExamplesCommand
 {
     public function __construct(
@@ -37,7 +38,7 @@ final class ExportExpressionExamplesCommand
             mkdir($directory, 0o775, true);
         }
 
-        foreach (ExpressionExamples::all(DateTimeImmutable::createFromInterface($this->clock->now())) as $example) {
+        foreach ([...ExpressionExamples::all(DateTimeImmutable::createFromInterface($this->clock->now())), ...LoopExamples::all()] as $example) {
             file_put_contents($directory . '/' . $example['id'] . '-template.docx', $this->runner->templateBytes($example));
 
             try {

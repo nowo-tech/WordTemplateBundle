@@ -34,3 +34,7 @@ nowo_word_template:
         enabled: true
         on_error: exception
         timezone: Europe/Madrid
+
+    # Loops (bundle 1.8, opt-in): ${#for line in lines} … ${#endfor} — see the /loops page.
+    loops:
+        enabled: true

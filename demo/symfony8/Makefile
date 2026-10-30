@@ -129,7 +129,7 @@ demo-screenshots: ensure-up
 # "Template in Word → generated document" images: export every /conditionals/examples case, render both .docx
 # with LibreOffice (installed on the fly in LIBREOFFICE_IMAGE unless it already has soffice) and compose them.
 LIBREOFFICE_IMAGE ?= debian:bookworm-slim
-DOCX_PREVIEW_IDS  ?= named-block expression-true expression-false functions nested else one-of-n table table-empty dates
+DOCX_PREVIEW_IDS  ?= named-block expression-true expression-false functions nested else one-of-n table table-empty dates loop-invoice loop-paragraphs loop-nested loop-map loop-empty
 
 docx-previews: ensure-up
 	@rm -rf e2e/docx-previews && mkdir -p e2e/docx-previews ../../docs/images/demo e2e/node_modules

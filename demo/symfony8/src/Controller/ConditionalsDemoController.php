@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Conditionals\ConditionalsContextBuilder;
 use App\Conditionals\ExpressionExampleRunner;
 use App\Conditionals\ExpressionExamples;
+use App\Conditionals\LoopExamples;
 use App\Form\ConditionalsFormType;
 use App\Model\InvoiceStatus;
 use DateTimeImmutable;
@@ -133,13 +134,34 @@ final class ConditionalsDemoController extends AbstractController
             $examples[] = $example + $runner->preview($example);
         }
 
-        return $this->render('demo/conditional_examples.html.twig', ['examples' => $examples]);
+        return $this->render('demo/conditional_examples.html.twig', [
+            'examples' => $examples,
+            'heading'  => 'Expression conditionals — worked examples',
+            'flag'     => 'conditional_expressions.enabled',
+            'section'  => 'Expression conditionals',
+        ]);
+    }
+
+    #[Route('/loops', name: 'demo_loops', methods: ['GET'])]
+    public function loops(ExpressionExampleRunner $runner): Response
+    {
+        $examples = [];
+        foreach (LoopExamples::all() as $example) {
+            $examples[] = $example + $runner->preview($example);
+        }
+
+        return $this->render('demo/conditional_examples.html.twig', [
+            'examples' => $examples,
+            'heading'  => 'Loops — worked examples',
+            'flag'     => 'loops.enabled',
+            'section'  => 'Loops',
+        ]);
     }
 
     #[Route('/conditionals/examples/{id}/{kind}.docx', name: 'demo_conditionals_example', requirements: ['kind' => 'template|result'], methods: ['GET'])]
     public function downloadExample(string $id, string $kind, ExpressionExampleRunner $runner, ClockInterface $clock): Response
     {
-        foreach (ExpressionExamples::all(DateTimeImmutable::createFromInterface($clock->now())) as $example) {
+        foreach ([...ExpressionExamples::all(DateTimeImmutable::createFromInterface($clock->now())), ...LoopExamples::all()] as $example) {
             if ($example['id'] !== $id) {
                 continue;
             }
