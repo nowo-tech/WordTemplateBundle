@@ -71,6 +71,9 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
     /** Maximum number of elements a function accepts or returns. */
     public const MAX_ITEMS = 10_000;
 
+    /** Maximum work of one replace() call: search strings × subject bytes. */
+    public const MAX_WORK = 1_000_000;
+
     /** Maximum decimals of number_format(). */
     public const MAX_DECIMALS = 20;
 
@@ -172,6 +175,11 @@ final readonly class BuiltinExpressionFunctions implements ExpressionFunctionPro
             }
         } else {
             $tuples[] = [self::string($search, 'replace'), self::string($replacement, 'replace')];
+        }
+
+        // Bounded work: every search string is looked up in the whole subject.
+        if (count($tuples) * strlen($subject) > self::MAX_WORK) {
+            throw new ExpressionFunctionError(sprintf('replace() accepts at most %d search strings × subject bytes.', self::MAX_WORK));
         }
 
         // Upper bound of the result, computed before strtr() allocates it.

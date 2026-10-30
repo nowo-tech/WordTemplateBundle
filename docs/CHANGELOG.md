@@ -73,7 +73,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   `number_format()` accepts at most 20 decimals and `replace()`, `join()`, `number_format()` check the result size before
   building it; date formats are limited to 100 bytes; error messages no longer echo context values (function arguments,
   dynamic map keys / list indexes, regexes read from values); a PCRE failure while scanning markers fails closed.
-  `replace()` accepts maps with numeric keys again.
+  `replace()` accepts maps with numeric keys again and bounds its work (search strings × subject bytes).
 
 ### Documentation
 
