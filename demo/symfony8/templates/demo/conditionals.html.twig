@@ -1,15 +1,21 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}WordTemplate — conditionals by data type{% endblock %}
+{% block title %}WordTemplate — conditionals{% endblock %}
 
 {% block body %}
-  <h1>Conditionals by data type</h1>
+  <h1>Conditionals</h1>
   <p class="lead">
-    A <code>ConditionalBlock</code> only takes a <code>bool</code>: the template never evaluates expressions.
-    Each field below has a different PHP type; the controller turns it into one or more blocks with the expressions
-    recommended in the bundle's <code>docs/USAGE.md</code> (&ldquo;Conditionals by data type&rdquo;).
-    Preview the decisions, then download <code>public/demo/{{ template_filename }}</code> filled in, or
-    <a href="{{ path('demo_conditionals_template') }}">download the blank template</a>.
+    Two ways to show or hide a part of the document. <strong>Named blocks</strong>
+    (<code>${{ '{' }}#if annex}</code> &hellip; <code>${{ '{' }}#endif annex}</code>) are decided in PHP with a
+    <code>ConditionalBlock</code> and a <code>bool</code>. <strong>Expression conditionals</strong>
+    (<code>${{ '{' }}#if order.total &gt; 100}</code> &hellip; <code>${{ '{' }}#endif}</code>, bundle 1.8, opt-in) carry
+    the condition in the template and are evaluated against the context.
+    Each field below has a different PHP type: the controller turns it into named blocks with the expressions of
+    <code>docs/USAGE.md</code> (&ldquo;Conditionals by data type&rdquo;) and passes the raw values as <code>order</code>
+    for the expression blocks. Preview the decisions, then download <code>public/demo/{{ template_filename }}</code>
+    filled in, or <a href="{{ path('demo_conditionals_template') }}">download the blank template</a>.
+    Step-by-step cases (Word text, PHP context, result, downloads) are on the
+    <a href="{{ path('demo_conditionals_examples') }}">expression examples</a> page.
   </p>
 
   <div class="alert alert-info small">
@@ -62,6 +68,27 @@
           {% endfor %}
         </tbody>
       </table>
+      <h2 class="h5 mt-4">Expression conditionals in the template</h2>
+      <table class="demo-table mb-3" data-testid="expressions">
+        <thead>
+          <tr><th>In Word</th><th>Paragraph inside the block</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          {% for row in expressions %}
+            <tr>
+              <td class="small"><code>${{ '{' }}#if {{ row.expression }}}</code></td>
+              <td class="small">{{ row.text }}</td>
+              <td class="small text-nowrap">
+                {% if row.error %}
+                  <span class="badge bg-danger" title="{{ row.error }}">error</span>
+                {% else %}
+                  <span class="badge {{ row.visible ? 'bg-success' : 'bg-light text-secondary border' }}">{{ row.visible ? 'kept' : 'removed' }}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
       <p class="small text-muted mb-0">
         Green blocks are kept, grey ones are removed with their content. Try <code>0</code> vs an empty discount,
         a total of <code>0.004</code> (rounds to 0.00), <code>yes</code>/<code>0</code> as notes, <code>es</code> vs <code>ES</code>,
@@ -69,4 +96,5 @@
       </p>
     </div>
   </div>
+
 {% endblock %}

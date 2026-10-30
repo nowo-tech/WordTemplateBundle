@@ -38,6 +38,22 @@ final class ConditionalsContextBuilder
     private const PLANS = ['basic', 'pro', 'enterprise'];
 
     /**
+     * Expression conditionals of {@code conditionals-tpl.docx} (opening marker text => paragraph inside the block),
+     * evaluated by the bundle against the {@code order} map built below. Also read by bin/build-conditionals-template.php.
+     */
+    public const EXPRESSIONS = [
+        'order.total > 100'                                                            => 'Large order (over 100 EUR): shipping is free.',
+        "order.is_vip and upper(order.country) == 'ES'"                                => 'Spanish VIP customer: a personal account manager will call you.',
+        "order.status in ['draft', 'overdue']"                                         => 'Reminder: this invoice is not paid yet.',
+        "order.due_date != null and order.due_date < now() and order.status != 'paid'" => 'Overdue: the due date has passed.',
+        '(order.discount ?? 0) > 0'                                                    => 'A discount applies to this order.',
+        'length(order.lines) > 1'                                                      => 'Several order lines: they ship together.',
+        "trim(default(order.notes, '')) != ''"                                         => 'The customer left notes.',
+        "order.plan == 'pro'"                                                          => 'Pro plan: 24/7 support.',
+        "order.plan != 'pro'"                                                          => 'Upgrade to Pro for 24/7 support.',
+    ];
+
+    /**
      * @param FormData $data
      *
      * @return array{context: array<string, mixed>, decisions: list<Decision>}
@@ -118,6 +134,19 @@ final class ConditionalsContextBuilder
         }
         $planBlocks['plan_other'] = !in_array($plan, self::PLANS, true);
         $decisions[]              = $this->decide($context, 'string (one of N)', "'" . $plan . "'", '$plan === $option / !in_array($plan, $plans, true)', $planBlocks);
+
+        // Raw typed values for the expression conditionals of the template ("order.total > 100", …).
+        $context['order'] = [
+            'total'    => $total,
+            'country'  => $country,
+            'is_vip'   => $isVip,
+            'status'   => $status,
+            'due_date' => $dueDate,
+            'discount' => $discount,
+            'notes'    => $notes,
+            'lines'    => array_map(static fn (array $line): string => $line['code'], $lines),
+            'plan'     => $plan,
+        ];
 
         return ['context' => $context, 'decisions' => $decisions];
     }

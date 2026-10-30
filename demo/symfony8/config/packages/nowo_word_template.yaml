@@ -27,3 +27,10 @@ nowo_word_template:
 
     # Suffix that closes the conditional end marker (after the block name).
     conditional_endif_closing: '}'
+
+    # Expression conditionals (bundle 1.8, opt-in): ${#if order.total > 100} … ${#endif}
+    # evaluated in the template; named blocks above keep working. See docs/USAGE.md "Expression conditionals".
+    conditional_expressions:
+        enabled: true
+        on_error: exception
+        timezone: Europe/Madrid
