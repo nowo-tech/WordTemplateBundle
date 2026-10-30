@@ -40,6 +40,13 @@ services:
             $conditionalExpressionsEnabled: '%nowo_word_template.conditional_expressions.enabled%'
             $conditionalExpressionsOnError: '%nowo_word_template.conditional_expressions.on_error%'
             $conditionalExpressionEvaluator: '@Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator'
+            $loopsEnabled: '%nowo_word_template.loops.enabled%'
+            $loopMaxIterations: '%nowo_word_template.loops.max_iterations%'
+            $loopMaxTotalIterations: '%nowo_word_template.loops.max_total_iterations%'
+            $loopForOpening: '%nowo_word_template.loop_for_opening%'
+            $loopForClosing: '%nowo_word_template.loop_for_closing%'
+            $loopEndforOpening: '%nowo_word_template.loop_endfor_opening%'
+            $loopEndforClosing: '%nowo_word_template.loop_endfor_closing%'
         tags:
             - { name: monolog.logger, channel: word_template }
 

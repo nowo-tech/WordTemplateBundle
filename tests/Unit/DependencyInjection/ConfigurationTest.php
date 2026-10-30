@@ -118,4 +118,18 @@ final class ConfigurationTest extends TestCase
             'conditional_expressions' => ['on_error' => 'ignore'],
         ]]);
     }
+
+    public function testLoopsDefaultsAndCustom(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), []);
+        self::assertSame(['enabled' => false, 'max_iterations' => 1000, 'max_total_iterations' => 10000], $config['loops']);
+        self::assertSame(['${#for', '}', '${#endfor', '}'], [$config['loop_for_opening'], $config['loop_for_closing'], $config['loop_endfor_opening'], $config['loop_endfor_closing']]);
+
+        $config = (new Processor())->processConfiguration(new Configuration(), [[
+            'loops'            => ['enabled' => true, 'max_iterations' => 50, 'max_total_iterations' => 500],
+            'loop_for_opening' => '[[#for',
+        ]]);
+        self::assertSame(['enabled' => true, 'max_iterations' => 50, 'max_total_iterations' => 500], $config['loops']);
+        self::assertSame('[[#for', $config['loop_for_opening']);
+    }
 }

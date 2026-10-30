@@ -65,3 +65,19 @@ nowo_word_template:
         functions:
             allow: ~        # null = all; e.g. [upper, lower, length]
             deny: []        # e.g. [now, date]
+
+    # Loops (opt-in, since 1.8): ${#for line in order.lines} … ${#endfor}
+    # Repeats the paragraphs between the markers (or the table rows, when the markers sit in rows of their own)
+    # once per element; ${line.name} and ${loop.index} are filled per iteration. The iterable is an expression
+    # (same language, functions and on_error as conditional_expressions).
+    loop_for_opening: '${#for'
+    loop_for_closing: '}'
+    loop_endfor_opening: '${#endfor'
+    loop_endfor_closing: '}'
+    loops:
+        # false = loop markers stay as literal text.
+        enabled: false
+        # Maximum elements of one loop.
+        max_iterations: 1000
+        # Maximum iterations of all loops of one merge (nested loops multiply).
+        max_total_iterations: 10000

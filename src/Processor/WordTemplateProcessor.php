@@ -14,6 +14,7 @@ use Nowo\WordTemplateBundle\Expression\ConditionalExpressionErrorMode;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionReport;
 use Nowo\WordTemplateBundle\Expression\ExpressionVariables;
+use Nowo\WordTemplateBundle\Expression\LoopSettings;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
@@ -39,10 +40,12 @@ use function chmod;
 use function count;
 use function hrtime;
 use function implode;
+use function in_array;
 use function ini_get;
 use function is_bool;
 use function preg_match;
 use function preg_quote;
+use function preg_split;
 use function round;
 use function sprintf;
 use function str_starts_with;
@@ -69,6 +72,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
 
     private ConditionalExpressionErrorMode $expressionErrorMode;
 
+    private LoopSettings $loopSettings;
+
     /**
      * @param string $macroOpening placeholder opening delimiter
      * @param string $macroClosing placeholder closing delimiter
@@ -83,6 +88,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      * @param bool $conditionalExpressionsEnabled true applies {@code ${#if <expression>}} … {@code ${#endif}} blocks (opt-in)
      * @param string $conditionalExpressionsOnError {@code exception}, {@code hide} or {@code keep} ({@see ConditionalExpressionErrorMode})
      * @param ConditionalExpressionEvaluator|null $conditionalExpressionEvaluator parser / evaluator (max length, functions); null = defaults
+     * @param bool $loopsEnabled true repeats {@code ${#for item in items}} … {@code ${#endfor}} blocks (opt-in)
+     * @param int $loopMaxIterations maximum number of iterations of one loop
+     * @param int $loopMaxTotalIterations maximum number of iterations of all loops of one merge
+     * @param string $loopForOpening opening delimiter of loop markers
+     * @param string $loopForClosing closing delimiter of loop markers
+     * @param string $loopEndforOpening opening delimiter of loop end markers
+     * @param string $loopEndforClosing closing delimiter of loop end markers
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -98,7 +110,15 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         private bool $conditionalExpressionsEnabled = false,
         string $conditionalExpressionsOnError = 'exception',
         ?ConditionalExpressionEvaluator $conditionalExpressionEvaluator = null,
+        private bool $loopsEnabled = false,
+        int $loopMaxIterations = LoopSettings::DEFAULT_MAX_ITERATIONS,
+        int $loopMaxTotalIterations = LoopSettings::DEFAULT_MAX_TOTAL_ITERATIONS,
+        string $loopForOpening = '${#for',
+        string $loopForClosing = '}',
+        string $loopEndforOpening = '${#endfor',
+        string $loopEndforClosing = '}',
     ) {
+        $this->loopSettings        = new LoopSettings($loopForOpening, $loopForClosing, $loopEndforOpening, $loopEndforClosing, $macroOpening, $macroClosing, $loopMaxIterations, $loopMaxTotalIterations);
         $this->logger              = $logger ?? new NullLogger();
         $this->expressionErrorMode = ConditionalExpressionErrorMode::from($conditionalExpressionsOnError);
         $this->expressionEvaluator = $conditionalExpressionEvaluator ?? new ConditionalExpressionEvaluator();
@@ -123,14 +143,40 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         }
 
         $markerPattern = $this->conditionalMarkerVariablePattern();
-        if ($markerPattern === null) {
-            return array_values($variables);
+        if ($markerPattern !== null) {
+            $variables = array_filter($variables, static fn (string $name): bool => preg_match($markerPattern, $name) !== 1);
         }
 
-        return array_values(array_filter(
-            $variables,
-            static fn (string $name): bool => preg_match($markerPattern, $name) !== 1,
-        ));
+        if ($this->loopsEnabled) {
+            $loopVariables = $this->loopVariables($templatePath);
+            $variables     = array_filter($variables, static fn (string $name): bool => !in_array(preg_split('/[.\[]/', $name)[0] ?? $name, $loopVariables, true));
+        }
+
+        return array_values($variables);
+    }
+
+    /**
+     * Names introduced by the template's loops ({@code item}, {@code key}, {@code loop}): their placeholders are filled
+     * by the loops, not by the context.
+     *
+     * @return list<string>
+     */
+    private function loopVariables(string $templatePath): array
+    {
+        $processor  = $this->openTemplate($templatePath);
+        $applicator = $this->createExpressionApplicator(true);
+        $names      = [];
+
+        try {
+            foreach ($processor->documentPartXmls() as $xml) {
+                $names = [...$names, ...$applicator->discoverLoopVariables($xml)];
+            }
+        } finally {
+            // @igor-ignore - Not shared worker service state.
+            $processor->removeTemporaryDocument();
+        }
+
+        return $names;
     }
 
     /**
@@ -141,7 +187,11 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     private function conditionalMarkerVariablePattern(): ?string
     {
         $prefixes = [];
-        foreach ([$this->conditionalIfOpening, $this->conditionalEndifOpening] as $opening) {
+        $openings = [$this->conditionalIfOpening, $this->conditionalEndifOpening];
+        if ($this->loopsEnabled) {
+            $openings = [...$openings, $this->loopSettings->forOpening, $this->loopSettings->endforOpening];
+        }
+        foreach ($openings as $opening) {
             if ($this->macroOpening === '' || !str_starts_with($opening, $this->macroOpening)) {
                 continue;
             }
@@ -168,7 +218,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     public function listConditionalBlocks(string $templatePath): array
     {
         $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->conditionalExpressionsEnabled ? $this->createExpressionApplicator() : $this->createConditionalApplicator();
+        $applicator = $this->conditionalExpressionsEnabled ? $this->createExpressionApplicator(true) : $this->createConditionalApplicator();
         $names      = [];
 
         try {
@@ -195,14 +245,36 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     public function listConditionalExpressions(string $templatePath): array
     {
-        $processor   = $this->openTemplate($templatePath);
-        $applicator  = $this->createExpressionApplicator();
-        $expressions = [];
+        return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverExpressions($xml));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return list<string>
+     */
+    public function listLoops(string $templatePath): array
+    {
+        return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverLoops($xml));
+    }
+
+    /**
+     * Unique strings returned by {@code $inspect} for every part (main, headers, footers).
+     *
+     * @param callable(ConditionalExpressionApplicator, string): list<string> $inspect
+     *
+     * @return list<string>
+     */
+    private function inspectParts(string $templatePath, callable $inspect): array
+    {
+        $processor  = $this->openTemplate($templatePath);
+        $applicator = $this->createExpressionApplicator(true);
+        $found      = [];
 
         try {
             foreach ($processor->documentPartXmls() as $xml) {
-                foreach ($applicator->discoverExpressions($xml) as $expression) {
-                    $expressions[$expression] = true;
+                foreach ($inspect($applicator, $xml) as $item) {
+                    $found[$item] = true;
                 }
             }
         } finally {
@@ -210,7 +282,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $processor->removeTemporaryDocument();
         }
 
-        return array_keys($expressions);
+        return array_keys($found);
     }
 
     /**
@@ -223,24 +295,16 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     public function lintConditionalExpressions(string $templatePath, array $variableNames): array
     {
         $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->createExpressionApplicator();
+        $applicator = $this->createExpressionApplicator(true);
         $problems   = [];
 
         try {
             foreach ($processor->documentPartXmls() as $xml) {
-                $problems = [...$problems, ...$applicator->findProblems($xml)];
+                $problems = [...$problems, ...$applicator->lint($xml, $variableNames)];
             }
         } finally {
             // @igor-ignore - Not shared worker service state.
             $processor->removeTemporaryDocument();
-        }
-
-        foreach ($this->listConditionalExpressions($templatePath) as $expression) {
-            try {
-                $this->expressionEvaluator->lint($expression, $variableNames);
-            } catch (ConditionalExpressionException $e) {
-                $problems[] = $e;
-            }
         }
 
         return $problems;
@@ -405,11 +469,11 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     private function applyConditionalExpressions(TemplateProcessorBridge $processor, array $context, string $templatePath): void
     {
-        if (!$this->conditionalExpressionsEnabled) {
+        if (!$this->conditionalExpressionsEnabled && !$this->loopsEnabled) {
             return;
         }
 
-        $applicator = $this->createExpressionApplicator();
+        $applicator = $this->createExpressionApplicator(false);
         $variables  = ExpressionVariables::fromContext($context);
         $report     = new ConditionalExpressionReport();
         $processor->transformDocumentParts(static fn (string $xml): string => $applicator->apply($xml, $variables, $report));
@@ -425,7 +489,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         }
     }
 
-    private function createExpressionApplicator(): ConditionalExpressionApplicator
+    /**
+     * @param bool $inspection true recognises conditionals and loops whatever the configuration (listing / linting)
+     */
+    private function createExpressionApplicator(bool $inspection): ConditionalExpressionApplicator
     {
         return new ConditionalExpressionApplicator(
             $this->conditionalIfOpening,
@@ -434,6 +501,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $this->conditionalEndifClosing,
             $this->expressionEvaluator,
             $this->expressionErrorMode,
+            $inspection || $this->conditionalExpressionsEnabled,
+            $inspection || $this->loopsEnabled ? $this->loopSettings : null,
         );
     }
 

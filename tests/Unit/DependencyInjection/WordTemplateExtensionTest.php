@@ -96,6 +96,23 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame('%nowo_word_template.conditional_expressions.enabled%', $container->getDefinition(WordTemplateProcessor::class)->getArgument('$conditionalExpressionsEnabled'));
     }
 
+    public function testLoadSetsLoopParameters(): void
+    {
+        $container = new ContainerBuilder();
+        (new WordTemplateExtension())->load([
+            ['loops' => ['enabled' => true, 'max_iterations' => 7, 'max_total_iterations' => 70], 'loop_endfor_opening' => '${#done'],
+        ], $container);
+
+        self::assertTrue($container->getParameter(Configuration::ALIAS . '.loops.enabled'));
+        self::assertSame(7, $container->getParameter(Configuration::ALIAS . '.loops.max_iterations'));
+        self::assertSame(70, $container->getParameter(Configuration::ALIAS . '.loops.max_total_iterations'));
+        self::assertSame('${#for', $container->getParameter(Configuration::ALIAS . '.loop_for_opening'));
+        self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.loop_for_closing'));
+        self::assertSame('${#done', $container->getParameter(Configuration::ALIAS . '.loop_endfor_opening'));
+        self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.loop_endfor_closing'));
+        self::assertSame('%nowo_word_template.loops.enabled%', $container->getDefinition(WordTemplateProcessor::class)->getArgument('$loopsEnabled'));
+    }
+
     public function testGetAlias(): void
     {
         self::assertSame(Configuration::ALIAS, (new WordTemplateExtension())->getAlias());
