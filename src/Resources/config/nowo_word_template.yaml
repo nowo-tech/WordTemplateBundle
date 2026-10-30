@@ -55,7 +55,8 @@ nowo_word_template:
         # false = expression markers stay as literal text (1.7 behaviour).
         enabled: false
         # exception: throw ConditionalExpressionException (invalid syntax, unknown variable, bad layout)
-        # hide: remove the block; keep: leave markers as text. hide / keep log a warning.
+        # hide: remove the block whose expression fails (bad marker layouts are left as text);
+        # keep: leave markers as text. hide / keep log a warning.
         on_error: exception
         # Maximum length of one expression (characters).
         max_length: 500

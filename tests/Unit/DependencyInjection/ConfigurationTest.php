@@ -110,6 +110,23 @@ final class ConfigurationTest extends TestCase
         self::assertSame(['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]], $config['conditional_expressions']);
     }
 
+    public function testConditionalExpressionsRejectInvalidTimezone(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('must be a valid PHP time zone identifier');
+
+        (new Processor())->processConfiguration(new Configuration(), [[
+            'conditional_expressions' => ['timezone' => 'Europe/Madird'],
+        ]]);
+    }
+
+    public function testConditionalExpressionsAcceptUtc(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), [['conditional_expressions' => ['timezone' => 'UTC']]]);
+
+        self::assertSame('UTC', $config['conditional_expressions']['timezone']);
+    }
+
     public function testConditionalExpressionsRejectUnknownErrorMode(): void
     {
         $this->expectException(InvalidConfigurationException::class);
