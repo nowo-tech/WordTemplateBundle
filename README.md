@@ -7,6 +7,7 @@
 Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`TemplateProcessor`](https://phpoffice.github.io/PHPWord/docs/classes/PhpOffice-PhpWord-TemplateProcessor.html)) using a **PHP context array**:
 - **Scalars** (strings, numbers, booleans, null) → `setValue` on placeholders such as `${client_name}` or `${client.city}` when you nest arrays (flattened to dot keys).
 - **Expression conditionals** *(1.8, opt-in)* → `${#if total > 1000}` … `${#endif}`: the condition lives in the template and is evaluated against the context (operators, `in`, `matches`, Twig-like functions such as `upper()`, `length()`, `date()`), sandboxed — see **[Conditionals](#conditionals)** below.
+- **Loops** *(1.8, opt-in)* → `${#for line in lines}` … `${#endfor}` repeats paragraphs or whole table rows per element, with `${line.name}`, `${loop.index}` and conditions inside — see **[Loops](#loops)** below.
 - **`ConditionalBlock`** → `${#if block}` … `${#endif block}` named regions (**several** sibling and **nested** blocks supported); show or remove from PHP. Markers split across Word runs are healed before apply. For named blocks you pass a `bool` — see **[Conditionals by data type](docs/USAGE.md#conditionals-by-data-type)** for how to derive it from `bool`, `int`, `float`, `string`, `null`, arrays, dates, enums, Doctrine relations and request/form data, the "else" and "one of N" patterns, and where markers may go in Word.
 - **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines (**several independent tables** in one `.docx` via distinct anchors; one `TableRows` per table row).
 - **`HtmlContent`** → rich fragments (paragraphs, bold/italic, tables inside HTML, etc.) via PHPWord `Html::addHtml` embedded as a complex block (lists `<ul>`/`<ol>` may require extra numbering setup in PHPWord; prefer plain paragraphs or combine with [HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle) for full HTML pipelines).
@@ -65,11 +66,42 @@ Rendered by the demo (`make docx-previews`, LibreOffice) — template in Word �
 | **Named block (PHP)** | **Dates** | |
 | [![Named block](docs/images/demo/docx-named-block.webp)](docs/images/demo/docx-named-block.webp) | [![Dates](docs/images/demo/docx-dates.webp)](docs/images/demo/docx-dates.webp) | |
 
+## Loops
+
+*(1.8, opt-in: `nowo_word_template.loops.enabled: true`)* — repeat paragraphs, or whole table rows when the markers sit in rows of their own:
+
+**In Word** (each `|` line is a table row):
+
+```text
+| # | Item | Amount |
+| ${#for line in lines} |
+| ${loop.index} | ${line.name} | ${line.amount} |
+| ${#endfor} |
+| Total | | ${total} |
+```
+
+**In PHP:**
+
+```php
+$document = $processor->process($templatePath, [
+    'lines' => [['name' => 'Anchor bolts', 'amount' => 40], ['name' => 'Brackets', 'amount' => 25.5]],
+    'total' => 65.5,
+]);
+```
+
+**Result:** one row per line (`1 | Anchor bolts | 40`, `2 | Brackets | 25.5`), then `Total | | 65.5`.
+
+Twig-like `loop.index`, `index0`, `revindex`, `first`, `last`, `length`, `parent`; `${#for key, value in map}`; `${#if …}` and nested loops inside the body see the loop variables; iteration caps protect workers. Full reference: [USAGE — Loops](docs/USAGE.md#loops).
+
+| Invoice rows + conditional row | Nested loops | Loop variables |
+|---|---|---|
+| [![Invoice rows](docs/images/demo/docx-loop-invoice.webp)](docs/images/demo/docx-loop-invoice.webp) | [![Nested loops](docs/images/demo/docx-loop-nested.webp)](docs/images/demo/docx-loop-nested.webp) | [![Loop variables](docs/images/demo/docx-loop-paragraphs.webp)](docs/images/demo/docx-loop-paragraphs.webp) |
+
 Demo pages (`demo/symfony8`):
 
-| Template form | Conditionals (named + expression decisions) | Expression examples (Word / PHP / result) |
-|---|---|---|
-| [![Template form](docs/images/demo/home.webp)](docs/images/demo/home.webp) | [![Conditionals page](docs/images/demo/conditionals.webp)](docs/images/demo/conditionals.webp) | [![Expression examples](docs/images/demo/expression-examples.webp)](docs/images/demo/expression-examples.webp) |
+| Template form | Conditionals (named + expression decisions) | Expression examples (Word / PHP / result) | Loops |
+|---|---|---|---|
+| [![Template form](docs/images/demo/home.webp)](docs/images/demo/home.webp) | [![Conditionals page](docs/images/demo/conditionals.webp)](docs/images/demo/conditionals.webp) | [![Expression examples](docs/images/demo/expression-examples.webp)](docs/images/demo/expression-examples.webp) | [![Loops](docs/images/demo/loops.webp)](docs/images/demo/loops.webp) |
 
 ![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
 
@@ -129,7 +161,7 @@ cd demo/symfony8 && cp .env.example .env && make up   # Symfony 8, port 8021
 
 Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 
-The demo has three pages: `/` fills a template discovered with `listVariables()` (scalars, `HtmlContent`, `TableRows`, nested conditionals, images); `/conditionals` shows one form field per PHP type, the `ConditionalBlock` decision each one produces and the expression conditionals of the same template, and downloads the merged `.docx`; `/conditionals/examples` shows each expression case as Word text, PHP context and result, with the template and the generated `.docx` to download. Playwright: `make -C demo/symfony8 test-e2e`, `demo-screenshots`, `docx-previews`.
+The demo has four pages (the fourth, `/loops`, shows invoice-style row loops, loop variables, nested loops, maps and empty lists the same way): `/` fills a template discovered with `listVariables()` (scalars, `HtmlContent`, `TableRows`, nested conditionals, images); `/conditionals` shows one form field per PHP type, the `ConditionalBlock` decision each one produces and the expression conditionals of the same template, and downloads the merged `.docx`; `/conditionals/examples` shows each expression case as Word text, PHP context and result, with the template and the generated `.docx` to download. Playwright: `make -C demo/symfony8 test-e2e`, `demo-screenshots`, `docx-previews`.
 
 ## Documentation
 
@@ -138,6 +170,7 @@ The demo has three pages: `/` fills a template discovered with `listVariables()`
 - [Usage](docs/USAGE.md)
   - [Conditionals by data type](docs/USAGE.md#conditionals-by-data-type) — bool/int/float/string/null/array/date/enum/Doctrine/request examples, pitfalls, missing blocks, marker placement
   - [Expression conditionals](docs/USAGE.md#expression-conditionals) — `${#if total > 1000}` … `${#endif}`: operators, data types, [functions reference](docs/USAGE.md#functions-reference), nesting, errors, security
+  - [Loops](docs/USAGE.md#loops) — `${#for line in lines}` … `${#endfor}`: paragraphs, table rows, loop variables, nesting, limits
 - [Contributing](docs/CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Changelog](docs/CHANGELOG.md)

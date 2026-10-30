@@ -14,6 +14,11 @@ Root key: `nowo_word_template`.
 | `conditional_if_closing` | `}` | Closing delimiter for conditional opening markers. |
 | `conditional_endif_opening` | `${#endif` | Opening delimiter for conditional end markers (before the block name). |
 | `conditional_endif_closing` | `}` | Closing delimiter for conditional end markers. |
+| `loop_for_opening` / `loop_for_closing` | `${#for` / `}` | Delimiters of loop markers (`${#for item in items}`). |
+| `loop_endfor_opening` / `loop_endfor_closing` | `${#endfor` / `}` | Delimiters of loop end markers (`${#endfor}`). |
+| `loops.enabled` | `false` | Opt-in (1.8): expand `${#for item in items}` … `${#endfor}`. See [Loops](#loops). |
+| `loops.max_iterations` | `1000` | Maximum elements of one loop. |
+| `loops.max_total_iterations` | `10000` | Maximum iterations of all loops of one merge together (nested loops multiply). |
 | `conditional_expressions.enabled` | `false` | Opt-in (1.8): evaluate `${#if <expression>}` … `${#endif}` blocks (nameless end marker). When `false`, expression markers stay as literal text. See [Conditional expressions](#conditional-expressions). |
 | `conditional_expressions.on_error` | `exception` | `exception`, `hide` or `keep`: what happens with an invalid expression, an unknown variable, a bad function argument or a marker layout the bundle cannot apply. |
 | `conditional_expressions.max_length` | `500` | Maximum length of one expression, in characters (1–10000). |
@@ -86,6 +91,28 @@ nowo_word_template:
 - `on_error: hide` / `keep` log one `warning` per merge with the number of errors (see [Logging](#logging)); `exception` throws `ConditionalExpressionException` (logged as `Word template merge rejected.`).
 
 Full syntax, operators, data types and the function reference: [USAGE.md — Expression conditionals](USAGE.md#expression-conditionals).
+
+### Loops
+
+```yaml
+nowo_word_template:
+    loops:
+        enabled: true
+        max_iterations: 1000
+        max_total_iterations: 10000
+    # optional, defaults shown
+    loop_for_opening: '${#for'
+    loop_for_closing: '}'
+    loop_endfor_opening: '${#endfor'
+    loop_endfor_closing: '}'
+```
+
+- The iterable of `${#for item in <expression>}` is evaluated by the same evaluator as conditional expressions (functions, `max_length`, `functions.allow` / `deny`), and loop errors follow `conditional_expressions.on_error`.
+- `loops.enabled` is independent from `conditional_expressions.enabled`: `${#if …}` inside loop bodies is only evaluated when expressions are enabled too.
+- Placeholders of loop variables (`${line.name}`, `${loop.index}`) are written with the `macro_opening` / `macro_closing` delimiters.
+- An expanded document part is limited to 32 MiB of XML.
+
+Full reference: [USAGE.md — Loops](USAGE.md#loops).
 
 ### Logging
 

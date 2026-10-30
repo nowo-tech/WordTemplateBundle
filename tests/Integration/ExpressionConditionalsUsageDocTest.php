@@ -45,7 +45,7 @@ use const ENT_XML1;
 use const PREG_SET_ORDER;
 
 /**
- * Executable companion of docs/USAGE.md "Expression conditionals".
+ * Executable companion of docs/USAGE.md "Expression conditionals" and "Loops".
  *
  * Every table row with an "In Word" marker, a PHP context and a result (kept / removed / throws) is rendered
  * through a real .docx; every "In Word / In PHP / Result" example marked with {@code <!-- expr-example -->}
@@ -85,7 +85,7 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
     public function testEnoughRowsAndExamplesAreDocumented(): void
     {
         self::assertGreaterThanOrEqual(80, count(iterator_to_array(self::documentedRows())));
-        self::assertGreaterThanOrEqual(5, count(self::examples()));
+        self::assertGreaterThanOrEqual(10, count(self::examples()));
     }
 
     #[DataProvider('documentedRows')]
@@ -115,7 +115,7 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
      */
     private static function examples(): array
     {
-        $section  = self::section();
+        $section  = self::section() . "\n" . self::section('Loops');
         $examples = [];
         $offset   = 0;
 
@@ -158,7 +158,7 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
         self::assertInstanceOf(ProcessedDocument::class, $document);
 
         try {
-            self::assertSame(implode(' ', explode("\n", $result)), $this->text($document->path()));
+            self::assertSame($this->flatten(implode(' ', explode("\n", $result))), $this->flatten($this->text($document->path())));
         } finally {
             $document->dispose();
             @unlink($templatePath);
@@ -195,6 +195,14 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
         }
     }
 
+    /**
+     * Table rows are written "| a | b |" in the docs: compare without the pipes.
+     */
+    private function flatten(string $text): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', str_replace('|', ' ', $text)));
+    }
+
     private function processor(): WordTemplateProcessor
     {
         $clock = new MockClock('2026-10-30 12:00:00', 'Europe/Madrid');
@@ -202,6 +210,7 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
         return new WordTemplateProcessor(
             conditionalExpressionsEnabled: true,
             conditionalExpressionEvaluator: new ConditionalExpressionEvaluator(functionProviders: [new BuiltinExpressionFunctions($clock, 'Europe/Madrid')]),
+            loopsEnabled: true,
         );
     }
 
@@ -217,8 +226,21 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
         try {
             $pw      = new PhpWord();
             $section = $pw->addSection();
+            $table   = null;
             foreach ($paragraphs as $paragraph) {
-                $section->addText($paragraph);
+                if (!str_starts_with($paragraph, '|')) {
+                    $table = null;
+                    $section->addText($paragraph);
+
+                    continue;
+                }
+
+                // "| a | b |" lines are the rows of one table.
+                $table ??= $section->addTable();
+                $table->addRow();
+                foreach (explode('|', substr(trim($paragraph), 1, -1)) as $cell) {
+                    $table->addCell(3000)->addText(trim($cell));
+                }
             }
             IOFactory::createWriter($pw, 'Word2007')->save($path);
         } finally {
@@ -241,11 +263,11 @@ final class ExpressionConditionalsUsageDocTest extends TestCase
         return trim((string) preg_replace('/\s+/', ' ', html_entity_decode($text, ENT_QUOTES | ENT_XML1)));
     }
 
-    private static function section(): string
+    private static function section(string $title = 'Expression conditionals'): string
     {
         $usage = file_get_contents(dirname(__DIR__, 2) . '/docs/USAGE.md');
-        if (!is_string($usage) || preg_match('/\n## Expression conditionals\n(.*?)\n## /s', $usage, $section) !== 1) {
-            throw new RuntimeException('docs/USAGE.md has no "Expression conditionals" section.');
+        if (!is_string($usage) || preg_match('/\n## ' . $title . '\n(.*?)\n## /s', $usage, $section) !== 1) {
+            throw new RuntimeException('docs/USAGE.md has no "' . $title . '" section.');
         }
 
         return $section[1];

@@ -51,13 +51,17 @@
   [USAGE.md — Expression conditionals](USAGE.md#expression-conditionals) and validate existing templates first with
   `lintConditionalExpressions()` — a stray `${#endif}` or an unclosed non-name `${#if …}` is reported as an error in the
   default `on_error: exception` mode.
+- **Loops — opt-in, no action required.** `${#for item in items}` … `${#endfor}` is only expanded with
+  `nowo_word_template.loops.enabled: true`; see [USAGE.md — Loops](USAGE.md#loops). `TableRows` keeps working unchanged.
 - **New dependencies** pulled in automatically: `symfony/expression-language`, `symfony/cache`, `symfony/clock`.
 - **Context values** — backed enums, pure enums and `DateTimeInterface` are now accepted (value / case name /
   `'Y-m-d'`) instead of throwing `InvalidContextValueException`. If you relied on that exception, convert the values
   yourself before calling `process()`; if you want another date format in a placeholder, pass a formatted string.
 - `listVariables()` no longer returns `#endif` for a nameless `${#endif}` marker.
 - If you subclass `WordTemplateProcessor`, its constructor gained three optional trailing parameters
-  (`$conditionalExpressionsEnabled`, `$conditionalExpressionsOnError`, `$conditionalExpressionEvaluator`).
+  (`$conditionalExpressionsEnabled`, `$conditionalExpressionsOnError`, `$conditionalExpressionEvaluator`) plus the
+  loop parameters (`$loopsEnabled`, `$loopMaxIterations`, `$loopMaxTotalIterations`, `$loopForOpening`, `$loopForClosing`,
+  `$loopEndforOpening`, `$loopEndforClosing`).
 
 - Named conditionals are unchanged. If your templates rely on
   `ConditionalBlock`, read [USAGE.md — Conditionals by data type](USAGE.md#conditionals-by-data-type): it documents that a

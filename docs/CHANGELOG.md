@@ -65,18 +65,31 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - Backed enums (value), pure enums (case name) and `DateTimeInterface` (`'Y-m-d'`) are accepted in the context (they were
   rejected with `InvalidContextValueException` before) and render as such in placeholders.
 - New runtime dependencies: `symfony/expression-language`, `symfony/cache`, `symfony/clock` (`^7.4 || ^8.0`).
+- **Loops (opt-in).** `${#for item in <expression>}` … `${#endfor}` (and `${#for key, item in …}`) repeat the paragraphs
+  between the markers — or whole table rows when the markers sit in rows of their own — once per element of a list or
+  map; `${item.name}`, `${key}` and Twig-like `${loop.index}`, `index0`, `revindex`, `revindex0`, `first`, `last`,
+  `length`, `parent` are filled per iteration and are variables of the `${#if …}` / `${#for …}` blocks inside the body
+  (processed outside-in with scoping). Enable with `nowo_word_template.loops.enabled: true`; limits
+  `loops.max_iterations` (1000) and `loops.max_total_iterations` (10000, nested loops multiply), 32 MiB per expanded
+  part; delimiters `loop_for_opening` / `loop_for_closing` / `loop_endfor_opening` / `loop_endfor_closing`.
+- Expression blocks whose markers sit in different rows of the same table keep or remove whole rows.
+- `ConditionalExpressionInspectorInterface::listLoops()`; `lintConditionalExpressions()` checks loop heads and knows the
+  loop variables inside loop bodies.
 
 ### Changed
 
 - `listVariables()` also omits the nameless `${#endif}` marker.
 - With `conditional_expressions.enabled: true`, `listConditionalBlocks()` returns named blocks only (expression blocks
   are listed by `listConditionalExpressions()`).
+- With `loops.enabled: true`, `listVariables()` omits loop markers and the placeholders of loop variables
+  (`${line.name}`, `${loop.index}`).
 
 ### Documentation
 
 - `docs/USAGE.md` — new **Expression conditionals** section (enable, classification rule, exposed values, operators,
   data types, function reference and Twig mapping, host functions, nesting / else / one of N, PHP vs template, errors
-  and error modes, linting, security); README conditionals section with screenshots; CONFIGURATION, UPGRADING,
+  and error modes, linting, security) and **Loops** section (paragraph and row loops, loop variables, maps and keys,
+  nesting, empty lists, errors and limits); README conditionals and loops sections with screenshots; CONFIGURATION, UPGRADING,
   SECURITY (threat table) and FRANKENPHP-WORKER-AUDIT updated.
 
 - `docs/USAGE.md` — new **Conditionals by data type** section: how to turn `bool`, `?bool`, `int`/`?int`, `float`,

@@ -178,6 +178,29 @@ final class LoopsIntegrationTest extends TestCase
         $limited->process($template, ['total' => [1, 2, 3]]);
     }
 
+    public function testConditionOnWholeTableRows(): void
+    {
+        $template = $this->template(static function (PhpWord $pw): void {
+            $table = $pw->addSection()->addTable();
+            foreach ([['Item', 'Amount'], ['${#if show_discount}'], ['Discount', '-${discount}'], ['${#endif}'], ['Total', '${total}']] as $cells) {
+                $table->addRow();
+                foreach ($cells as $cell) {
+                    $table->addCell(3000)->addText($cell);
+                }
+            }
+        });
+
+        foreach ([[true, 'Item Amount Discount -5 Total 95'], [false, 'Item Amount Total 95']] as [$show, $expected]) {
+            $out = (new WordTemplateProcessor(conditionalExpressionsEnabled: true))->process($template, ['show_discount' => $show, 'discount' => 5, 'total' => 95]);
+
+            try {
+                self::assertSame($expected, $this->text($out->path(), 'word/document.xml'));
+            } finally {
+                $out->dispose();
+            }
+        }
+    }
+
     public function testListingAndLinting(): void
     {
         $template = $this->template(static function (PhpWord $pw): void {

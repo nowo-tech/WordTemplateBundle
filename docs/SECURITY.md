@@ -86,6 +86,8 @@ Opt-in (`conditional_expressions.enabled`, default `false`). A template can carr
 | ReDoS through `matches` | Patterns run through `preg_match` and are bounded by PHP's `pcre.backtrack_limit` / `pcre.recursion_limit` (and the PCRE JIT stack): a pathological pattern fails with an evaluation error instead of hanging. The merge `timeout` still applies around the whole merge. No amplification: one `preg_match` per evaluated operator, no template-controlled loop. |
 | Silent wrong output | Default `on_error: exception`: unknown variables, typos, non-bool results and invalid marker layouts throw `ConditionalExpressionException`; `hide` / `keep` are explicit choices and are logged (count only). |
 | Log leakage | Logs carry the template file name, the error mode and the error count — never expressions or values. |
+| Loops: output / CPU amplification (`${#for a in xs}${#for b in xs}…`) | Opt-in (`loops.enabled`). `loops.max_iterations` per loop (1000), `loops.max_total_iterations` for all loops of a merge (10000 — nested loops multiply, so the product is capped), 32 MiB per expanded document part, plus the merge `timeout`. Loops only iterate over context values (or function results, themselves capped); no recursion: nesting depth is the nesting of markers in the template. |
+| Loops: injection through values | Loop placeholders are XML-escaped before they are written into the document. |
 
 Residual risk: a template author can still choose what to show from the values the host passes (that is the feature). Keep `enabled: false`, or restrict `functions.allow`, when templates come from untrusted users and the decision must stay in PHP.
 

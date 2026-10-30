@@ -61,11 +61,11 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Processor/PhpWordHtmlState.php` | Scopes PHPWord global `Html` parser state to one merge (worker safety) | FR-PROC-007 |
 | `Processor/ConditionalExpressionInspectorInterface.php` | List / lint expression conditionals ([002](../002-expression-conditionals/spec.md)) | FR-EXPR-040 |
 
-## Expression conditionals ([`002-expression-conditionals`](../002-expression-conditionals/spec.md))
+## Expression conditionals and loops ([`002`](../002-expression-conditionals/spec.md), [`003`](../003-template-loops/spec.md))
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `Util/ConditionalExpressionApplicator.php` | Marker pairing, classification, layout checks, outside-in rendering | FR-EXPR-001, FR-EXPR-003, FR-EXPR-031 |
+| `Util/ConditionalExpressionApplicator.php` | Marker pairing, classification, layout checks (rows), outside-in scoped rendering of conditionals and loops | FR-EXPR-001, FR-EXPR-003, FR-EXPR-031, FR-LOOP-004, FR-LOOP-005 |
 | `Expression/ExpressionBlock.php` | One expression block (offsets, regions) | FR-EXPR-001, FR-EXPR-003 |
 | `Expression/ExpressionTextNormalizer.php` | Entities, smart quotes, dashes, spaces | FR-EXPR-004 |
 | `Expression/SandboxedExpressionLanguage.php` | ExpressionLanguage without default functions | FR-EXPR-010 |
@@ -78,6 +78,8 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Expression/BuiltinExpressionFunctions.php` | Built-in functions, clock / time zone | FR-EXPR-020, FR-EXPR-021, FR-EXPR-023 |
 | `Expression/ExpressionFunctionProviderInterface.php` | Host function providers (autoconfigured tag) | FR-EXPR-022 |
 | `Expression/ExpressionFunctionError.php` | Bad function input | FR-EXPR-020, FR-EXPR-030 |
+| `Expression/LoopSettings.php` | Loop delimiters and limits ([003](../003-template-loops/spec.md)) | FR-LOOP-001, FR-LOOP-006 |
+| `Util/MarkerStack.php` | Bracket matching of if / for markers per scan | FR-EXPR-001, FR-LOOP-001 |
 
 ## Symfony config
 
@@ -96,8 +98,8 @@ This file proves that **every production source artifact** under `src/` is refer
 | Runtime | 1 | 1 |
 | Exceptions | 6 | 6 |
 | Document processing | 6 | 6 |
-| Expression conditionals | 13 | 13 |
+| Expression conditionals and loops | 15 | 15 |
 | Symfony config | 2 | 2 |
-| **Total production sources** | **40** | **40** |
+| **Total production sources** | **42** | **42** |
 
-Audit: `git ls-files src | wc -l` → 40.
+Audit: `git ls-files src | wc -l` → 42.
