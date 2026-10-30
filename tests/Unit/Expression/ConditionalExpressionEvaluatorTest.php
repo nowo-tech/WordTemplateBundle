@@ -77,6 +77,7 @@ final class ConditionalExpressionEvaluatorTest extends TestCase
         yield 'empty list' => ['covers != []', $ctx, true];
         yield 'ternary' => ['(qty > 1 ? total : 0) > 100', $ctx, true];
         yield 'range' => ['qty in 1..5', $ctx, true];
+        yield 'largest allowed range' => ['qty in 1..10000', $ctx, true];
         yield 'literal true' => ['true', $ctx, true];
     }
 
@@ -111,6 +112,12 @@ final class ConditionalExpressionEvaluatorTest extends TestCase
         yield 'not boolean int' => ['qty', ['qty' => 1], 'got int'];
         yield 'empty' => ['', [], 'is empty'];
         yield 'too long' => [str_repeat('a', 501), [], 'longer than the allowed 500 characters'];
+        // SEC-004 BQ M1: the range operator would allocate the whole list.
+        yield 'huge range in count()' => ['count(1..100000000) > 0', [], 'a range (a..b) may hold at most 10000 numbers'];
+        yield 'huge range with in' => ['5 in 1..100000000', [], 'a range (a..b) may hold at most 10000 numbers'];
+        yield 'range span just over' => ['5 in 0..10000', [], 'at most 10000 numbers'];
+        yield 'range from a variable' => ['5 in 1..n', ['n' => 3], 'a range (a..b) needs two integer literals'];
+        yield 'range of floats' => ['5 in 1.5..9', [], 'needs two integer literals'];
         yield 'write attempt' => ['client.country = 1', ['client' => ['country' => 'ES']], 'is invalid'];
     }
 

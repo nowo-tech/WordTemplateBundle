@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use function array_map;
 use function html_entity_decode;
 use function implode;
+use function ini_get;
 use function preg_replace;
 use function str_replace;
 use function strip_tags;
@@ -203,6 +204,24 @@ final class ConditionalExpressionApplicatorTest extends TestCase
         $this->expectException(ConditionalExpressionException::class);
         $this->expectExceptionMessage('Conditional expression "missing > 1" uses the unknown variable "missing"');
         $this->applicator()->apply($xml, ['b' => true], new ConditionalExpressionReport());
+    }
+
+    public function testPcreFailureFailsClosed(): void
+    {
+        $jit       = ini_get('pcre.jit');
+        $backtrack = ini_get('pcre.backtrack_limit');
+        ini_set('pcre.jit', '0');
+        ini_set('pcre.backtrack_limit', '1');
+
+        try {
+            $this->applicator(ConditionalExpressionErrorMode::Hide)->apply(self::doc('${#if a}', 'x', '${#endif}'), ['a' => false], new ConditionalExpressionReport());
+            self::fail('ConditionalExpressionException expected');
+        } catch (ConditionalExpressionException $e) {
+            self::assertStringContainsString('Conditional markers could not be scanned', $e->getMessage());
+        } finally {
+            ini_set('pcre.jit', (string) $jit);
+            ini_set('pcre.backtrack_limit', (string) $backtrack);
+        }
     }
 
     public function testCustomDelimiters(): void

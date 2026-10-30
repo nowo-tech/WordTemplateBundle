@@ -76,6 +76,14 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - `ConditionalExpressionInspectorInterface::listLoops()`; `lintConditionalExpressions()` checks loop heads and knows the
   loop variables inside loop bodies.
 
+### Security
+
+- Hardening of the unreleased expression conditionals after the REQ-SEC-004 review (Appendix BQ): the `..` range
+  operator only accepts integer literals with a span below 10,000 (`count(1..100000000)` exhausted memory);
+  `number_format()` accepts at most 20 decimals and `replace()`, `join()`, `number_format()` check the result size before
+  building it; date formats are limited to 100 bytes; function errors no longer echo argument values; a PCRE failure
+  while scanning markers fails closed.
+
 ### Documentation
 
 - `docs/USAGE.md` — new **Expression conditionals** section (enable, classification rule, exposed values, operators,

@@ -827,6 +827,7 @@ Notes:
 - `>` and `<` are stored by Word as `&gt;` / `&lt;`; the bundle decodes them. Markers split by Word into several runs (spell-check, partial formatting) are healed first, as for named blocks.
 - `matches` takes a PCRE pattern between delimiters. A backslash must be written twice (`'/^\\w+$/'`) because the string literal unescapes it once, and the pattern cannot contain `}` (the closing delimiter), so `{5}` quantifiers are not available — repeat the class (`[0-9][0-9][0-9]`) or decide in PHP. Patterns are bounded by PHP's `pcre.backtrack_limit` / `pcre.recursion_limit` (a pattern that hits them is an evaluation error, not a hang).
 - The expression cannot contain the closing delimiter (`}` by default), so hash literals (`{a: 1}`) are not available inside a marker.
+- A range (`18..64`) is only accepted between two **integer literals** and may hold at most 10,000 numbers (`1..100000000` or `1..n` are errors): the whole list is built in memory.
 - `|` is the bitwise OR operator of ExpressionLanguage, **not** a Twig filter: write `upper(name)`, not `name|upper` (see the [Twig mapping](#twig-filters-and-tests-as-functions)).
 - The result must be a **bool**: `${#if notes}` with a string is an error (`must evaluate to true or false, got string`). Compare explicitly: `notes != ''`, `qty > 0`, `not empty(lines)`.
 
@@ -869,7 +870,7 @@ The date rows assume today is **2026-10-30** (`now()` and `date()` read the Symf
 
 ### Functions reference
 
-Functions are called like in PHP or Twig: `upper(name)`. They are the **only** callable surface of a template: pure, no I/O, arguments validated (a wrong type is an [error](#errors)), strings limited to 64 KiB and lists to 10,000 elements. `constant()`, `enum()` and every PHP function are **not** available.
+Functions are called like in PHP or Twig: `upper(name)`. They are the **only** callable surface of a template: pure, no I/O, arguments validated (a wrong type is an [error](#errors)), strings limited to 64 KiB and lists to 10,000 elements — sizes are checked **before** a result is built (`replace()`, `join()`, `number_format()` with at most 20 decimals, date formats up to 100 bytes). `constant()`, `enum()` and every PHP function are **not** available.
 
 | Function | Twig equivalent | In Word | Context (PHP) | Result |
 |----------|-----------------|---------|---------------|--------|
@@ -1131,7 +1132,7 @@ With two lines the table shows both rows and "No items" is removed; with `[]` on
 | bad function argument | `${#if upper(lines) == ''}` | `['lines' => ['A']]` | throws `upper() expects a string, got array` |
 | missing list index | `${#if lines[5] == 'x'}` | `['lines' => ['A']]` | throws `could not be evaluated` |
 
-Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Layout problems are errors too: a `${#endif}` with no open block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that cuts table cells / rows / content controls in half (for example opening in one cell and closing in another cell of the same row).
+Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Messages contain template text (the expression, variable and function names, argument types) but never context values, so they can be shown to template authors. Layout problems are errors too: a `${#endif}` with no open block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that cuts table cells / rows / content controls in half (for example opening in one cell and closing in another cell of the same row).
 
 **Whole table rows** — when the opening and the closing marker sit in rows of their own of the same table, an expression block keeps or removes the rows between them (the two marker rows are always removed), exactly like [row loops](#repeat-table-rows):
 
