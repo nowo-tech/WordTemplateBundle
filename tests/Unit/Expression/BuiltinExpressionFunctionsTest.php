@@ -62,6 +62,8 @@ final class BuiltinExpressionFunctionsTest extends TestCase
         yield 'length of list' => ['length(tags) == 3'];
         yield 'length of map' => ['length(client) == 3'];
         yield 'replace' => ["replace(name, 'acme', 'ACME') == 'ACME industries'"];
+        yield 'replace with numeric map keys' => ["replace('a1b2', {'1': 'one', '2': 'two'}) == 'aonebtwo'"];
+        yield 'replace with a list (index keys)' => ["replace('0-1', ['zero', 'one']) == 'zero-one'"];
         yield 'replace with map' => ["replace(name, {'acme': 'Acme', 'industries': 'Inc.'}) == 'Acme Inc.'"];
         yield 'slice string' => ["slice(city, 0, 3) == 'MÁL'"];
         yield 'slice string to end' => ["slice(city, -2) == 'GA'"];

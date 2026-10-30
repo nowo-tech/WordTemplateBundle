@@ -71,8 +71,9 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - Hardening of the unreleased expression conditionals after the REQ-SEC-004 review (Appendix BQ): the `..` range
   operator only accepts integer literals with a span below 10,000 (`count(1..100000000)` exhausted memory);
   `number_format()` accepts at most 20 decimals and `replace()`, `join()`, `number_format()` check the result size before
-  building it; date formats are limited to 100 bytes; function errors no longer echo argument values; a PCRE failure
-  while scanning markers fails closed.
+  building it; date formats are limited to 100 bytes; error messages no longer echo context values (function arguments,
+  dynamic map keys / list indexes, regexes read from values); a PCRE failure while scanning markers fails closed.
+  `replace()` accepts maps with numeric keys again.
 
 ### Documentation
 

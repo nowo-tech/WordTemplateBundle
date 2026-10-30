@@ -151,7 +151,7 @@ final readonly class ConditionalExpressionEvaluator
         try {
             $result = $this->language->evaluate($parsed, $variables);
         } catch (UnknownVariableError $e) {
-            throw ConditionalExpressionException::unknownVariable($expression, $e->variable);
+            throw ConditionalExpressionException::unknownVariable($expression, $e->safeVariable($expression));
         } catch (Throwable $e) {
             throw ConditionalExpressionException::evaluationFailed($expression, $e);
         } finally {
