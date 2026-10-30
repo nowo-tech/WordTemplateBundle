@@ -119,6 +119,7 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 
 - Inline `#if` markers mid-paragraph (use a **scalar** computed in PHP for “word A or B” in one line).
 - Markers spanning table cells/rows, overlapping pairs, same-name nesting, footnotes / endnotes / comments.
+- Loops: specified in [`003-template-loops`](../003-template-loops/spec.md) (opt-in since 1.8).
 - Template-side expression evaluation for **named** blocks (expression blocks closed by a nameless `${#endif}` are specified in [`002-expression-conditionals`](../002-expression-conditionals/spec.md), opt-in since 1.8).
 - Word VBA execution.
 
@@ -144,7 +145,7 @@ ${#endif optional_funding}
 
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**40/40** mapped, audited 2026-10-30).
+- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**45/45** mapped, audited 2026-10-30).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: `composer qa` / `make release-check` pass in CI (PHPUnit, PHPStan).
 - **SC-004**: No Packagist-visible behavior change without spec, inventory, and test updates.
@@ -156,6 +157,6 @@ ${#endif optional_funding}
 | Check | Command |
 | --- | --- |
 | Full QA | `make release-check` or `composer qa` |
-| Code inventory audit | `git ls-files src \| wc -l` → 40 |
+| Code inventory audit | `git ls-files src \| wc -l` → 45 |
 
 When changing behavior, update this spec, `code-inventory.md`, integrator docs, and tests.

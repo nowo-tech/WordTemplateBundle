@@ -8,12 +8,15 @@ use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Exception\PathNotAllowedException;
 use Nowo\WordTemplateBundle\Exception\ProcessingTimedOutException;
+use Nowo\WordTemplateBundle\Exception\TemplateLimitExceededException;
 use Nowo\WordTemplateBundle\Exception\TemplateNotFoundException;
 use Nowo\WordTemplateBundle\Exception\WordTemplateExceptionInterface;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionErrorMode;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionReport;
+use Nowo\WordTemplateBundle\Expression\ExpressionLimits;
 use Nowo\WordTemplateBundle\Expression\ExpressionVariables;
+use Nowo\WordTemplateBundle\Expression\LoopSettings;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\ImageSource;
@@ -39,15 +42,24 @@ use function chmod;
 use function count;
 use function hrtime;
 use function implode;
+use function in_array;
 use function ini_get;
 use function is_bool;
+use function is_scalar;
+use function mb_ord;
+use function mb_substr;
 use function preg_match;
 use function preg_quote;
+use function preg_replace;
+use function preg_replace_callback;
+use function preg_split;
 use function round;
 use function sprintf;
 use function str_starts_with;
 use function strlen;
+use function strtr;
 use function substr;
+use function substr_count;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -69,6 +81,19 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
 
     private ConditionalExpressionErrorMode $expressionErrorMode;
 
+    private LoopSettings $loopSettings;
+
+    private ExpressionLimits $expressionLimits;
+
+    /**
+     * Escape character of merged values: {@see self::INERT_ESCAPE} + {@see self::INERT_ESCAPE} stands for itself and
+     * {@see self::INERT_ESCAPE} + {@see self::INERT_MACRO} for the first character of {@code macro_opening}, until
+     * {@see self::restoreInertMacros()} writes the parts. Escaping makes the scheme collision-free for any user input.
+     */
+    private const INERT_ESCAPE = "\u{E000}";
+
+    private const INERT_MACRO = "\u{E001}";
+
     /**
      * @param string $macroOpening placeholder opening delimiter
      * @param string $macroClosing placeholder closing delimiter
@@ -83,6 +108,17 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      * @param bool $conditionalExpressionsEnabled true applies {@code ${#if <expression>}} … {@code ${#endif}} blocks (opt-in)
      * @param string $conditionalExpressionsOnError {@code exception}, {@code hide} or {@code keep} ({@see ConditionalExpressionErrorMode})
      * @param ConditionalExpressionEvaluator|null $conditionalExpressionEvaluator parser / evaluator (max length, functions); null = defaults
+     * @param bool $loopsEnabled true repeats {@code ${#for item in items}} … {@code ${#endfor}} blocks (opt-in)
+     * @param int $loopMaxIterations maximum number of iterations of one loop
+     * @param int $loopMaxTotalIterations maximum number of iterations of all loops of one merge
+     * @param string $loopForOpening opening delimiter of loop markers
+     * @param string $loopForClosing closing delimiter of loop markers
+     * @param string $loopEndforOpening opening delimiter of loop end markers
+     * @param string $loopEndforClosing closing delimiter of loop end markers
+     * @param int $conditionalExpressionsMaxMarkers maximum expression / loop markers per document part
+     * @param int $conditionalExpressionsMaxDepth maximum nesting depth of expression blocks and loops
+     * @param int $conditionalExpressionsMaxEvaluations maximum expression evaluations per merge
+     * @param int $loopMaxOutputBytes maximum bytes produced by all loops of one merge
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -98,7 +134,20 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         private bool $conditionalExpressionsEnabled = false,
         string $conditionalExpressionsOnError = 'exception',
         ?ConditionalExpressionEvaluator $conditionalExpressionEvaluator = null,
+        private bool $loopsEnabled = false,
+        int $loopMaxIterations = LoopSettings::DEFAULT_MAX_ITERATIONS,
+        int $loopMaxTotalIterations = LoopSettings::DEFAULT_MAX_TOTAL_ITERATIONS,
+        string $loopForOpening = '${#for',
+        string $loopForClosing = '}',
+        string $loopEndforOpening = '${#endfor',
+        string $loopEndforClosing = '}',
+        int $conditionalExpressionsMaxMarkers = ExpressionLimits::DEFAULT_MAX_MARKERS,
+        int $conditionalExpressionsMaxDepth = ExpressionLimits::DEFAULT_MAX_DEPTH,
+        int $conditionalExpressionsMaxEvaluations = ExpressionLimits::DEFAULT_MAX_EVALUATIONS,
+        int $loopMaxOutputBytes = ExpressionLimits::DEFAULT_MAX_OUTPUT_BYTES,
     ) {
+        $this->expressionLimits    = new ExpressionLimits($conditionalExpressionsMaxMarkers, $conditionalExpressionsMaxDepth, $conditionalExpressionsMaxEvaluations, $loopMaxOutputBytes);
+        $this->loopSettings        = new LoopSettings($loopForOpening, $loopForClosing, $loopEndforOpening, $loopEndforClosing, $macroOpening, $macroClosing, $loopMaxIterations, $loopMaxTotalIterations);
         $this->logger              = $logger ?? new NullLogger();
         $this->expressionErrorMode = ConditionalExpressionErrorMode::from($conditionalExpressionsOnError);
         $this->expressionEvaluator = $conditionalExpressionEvaluator ?? new ConditionalExpressionEvaluator();
@@ -123,14 +172,27 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         }
 
         $markerPattern = $this->conditionalMarkerVariablePattern();
-        if ($markerPattern === null) {
-            return array_values($variables);
+        if ($markerPattern !== null) {
+            $variables = array_filter($variables, static fn (string $name): bool => preg_match($markerPattern, $name) !== 1);
         }
 
-        return array_values(array_filter(
-            $variables,
-            static fn (string $name): bool => preg_match($markerPattern, $name) !== 1,
-        ));
+        if ($this->loopsEnabled) {
+            $loopVariables = $this->loopVariables($templatePath);
+            $variables     = array_filter($variables, static fn (string $name): bool => !in_array(preg_split('/[.\[]/', $name)[0] ?? $name, $loopVariables, true));
+        }
+
+        return array_values($variables);
+    }
+
+    /**
+     * Names introduced by the template's loops ({@code item}, {@code key}, {@code loop}): their placeholders are filled
+     * by the loops, not by the context.
+     *
+     * @return list<string>
+     */
+    private function loopVariables(string $templatePath): array
+    {
+        return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverLoopVariables($xml));
     }
 
     /**
@@ -141,7 +203,11 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     private function conditionalMarkerVariablePattern(): ?string
     {
         $prefixes = [];
-        foreach ([$this->conditionalIfOpening, $this->conditionalEndifOpening] as $opening) {
+        $openings = [$this->conditionalIfOpening, $this->conditionalEndifOpening];
+        if ($this->loopsEnabled) {
+            $openings = [...$openings, $this->loopSettings->forOpening, $this->loopSettings->endforOpening];
+        }
+        foreach ($openings as $opening) {
             if ($this->macroOpening === '' || !str_starts_with($opening, $this->macroOpening)) {
                 continue;
             }
@@ -167,8 +233,12 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     public function listConditionalBlocks(string $templatePath): array
     {
+        if ($this->conditionalExpressionsEnabled) {
+            return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverBlockNames($xml));
+        }
+
         $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->conditionalExpressionsEnabled ? $this->createExpressionApplicator() : $this->createConditionalApplicator();
+        $applicator = $this->createConditionalApplicator();
         $names      = [];
 
         try {
@@ -195,22 +265,69 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     public function listConditionalExpressions(string $templatePath): array
     {
-        $processor   = $this->openTemplate($templatePath);
-        $applicator  = $this->createExpressionApplicator();
-        $expressions = [];
+        return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverExpressions($xml));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return list<string>
+     */
+    public function listLoops(string $templatePath): array
+    {
+        return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverLoops($xml));
+    }
+
+    /**
+     * Unique strings returned by {@code $inspect} for every part (main, headers, footers).
+     *
+     * @param callable(ConditionalExpressionApplicator, string): list<string> $inspect
+     *
+     * @return list<string>
+     */
+    private function inspectParts(string $templatePath, callable $inspect): array
+    {
+        /* @var list<string> */
+        return $this->withTimeLimit(function (ProcessDeadline $deadline) use ($templatePath, $inspect): array {
+            $processor  = $this->openTemplate($templatePath);
+            $applicator = $this->createExpressionApplicator(true, $deadline);
+            $found      = [];
+
+            try {
+                foreach ($processor->documentPartXmls() as $xml) {
+                    foreach ($inspect($applicator, $xml) as $item) {
+                        $found[$item] = true;
+                    }
+                }
+            } finally {
+                // @igor-ignore - Not shared worker service state.
+                $processor->removeTemporaryDocument();
+            }
+
+            return array_keys($found);
+        });
+    }
+
+    /**
+     * Runs a template inspection under the same {@code timeout} as {@see self::process()} (set_time_limit plus a
+     * cooperative deadline), so validating an uploaded template cannot pin a worker.
+     *
+     * @template T
+     *
+     * @param callable(ProcessDeadline): T $inspection
+     *
+     * @return T
+     */
+    private function withTimeLimit(callable $inspection): mixed
+    {
+        $previousMaxExecution = (int) ini_get('max_execution_time');
+        set_time_limit($this->timeout);
 
         try {
-            foreach ($processor->documentPartXmls() as $xml) {
-                foreach ($applicator->discoverExpressions($xml) as $expression) {
-                    $expressions[$expression] = true;
-                }
-            }
+            return $inspection($this->createDeadline());
         } finally {
-            // @igor-ignore - Not shared worker service state.
-            $processor->removeTemporaryDocument();
+            set_time_limit($previousMaxExecution);
         }
-
-        return array_keys($expressions);
     }
 
     /**
@@ -222,28 +339,23 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     public function lintConditionalExpressions(string $templatePath, array $variableNames): array
     {
-        $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->createExpressionApplicator();
-        $problems   = [];
+        /* @var list<ConditionalExpressionException> */
+        return $this->withTimeLimit(function (ProcessDeadline $deadline) use ($templatePath, $variableNames): array {
+            $processor  = $this->openTemplate($templatePath);
+            $applicator = $this->createExpressionApplicator(true, $deadline);
+            $problems   = [];
 
-        try {
-            foreach ($processor->documentPartXmls() as $xml) {
-                $problems = [...$problems, ...$applicator->findProblems($xml)];
-            }
-        } finally {
-            // @igor-ignore - Not shared worker service state.
-            $processor->removeTemporaryDocument();
-        }
-
-        foreach ($this->listConditionalExpressions($templatePath) as $expression) {
             try {
-                $this->expressionEvaluator->lint($expression, $variableNames);
-            } catch (ConditionalExpressionException $e) {
-                $problems[] = $e;
+                foreach ($processor->documentPartXmls() as $xml) {
+                    $problems = [...$problems, ...$applicator->lint($xml, $variableNames)];
+                }
+            } finally {
+                // @igor-ignore - Not shared worker service state.
+                $processor->removeTemporaryDocument();
             }
-        }
 
-        return $problems;
+            return $problems;
+        });
     }
 
     /**
@@ -281,7 +393,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $this->applyConditionalBlocks($processor, $flat);
             $deadline->assertNotTimedOut();
 
-            $this->applyConditionalExpressions($processor, $context, $templatePath);
+            $this->applyConditionalExpressions($processor, $context, $templatePath, $deadline);
             $deadline->assertNotTimedOut();
 
             foreach ($flat as $value) {
@@ -291,22 +403,12 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
                 }
             }
 
+            $this->assertPlaceholderBudget($processor, $flat);
+
+            // Scalars first: HtmlContent / images are inserted afterwards, so text inside an HtmlContent can never be
+            // filled by a later setValue() (a "${key}" typed in HTML stays literal).
             foreach ($flat as $key => $value) {
-                if ($value instanceof ConditionalBlock || $value instanceof TableRows) {
-                    continue;
-                }
-
-                if ($value instanceof HtmlContent) {
-                    $this->applyHtml($processor, $key, $value, $htmlImages);
-                    $deadline->assertNotTimedOut();
-
-                    continue;
-                }
-
-                if ($value instanceof ImageSource) {
-                    $this->applyImage($processor, $key, $value, $templatePath);
-                    $deadline->assertNotTimedOut();
-
+                if ($value instanceof ConditionalBlock || $value instanceof TableRows || $value instanceof HtmlContent || $value instanceof ImageSource) {
                     continue;
                 }
 
@@ -314,6 +416,18 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
                 $processor->setValue($key, $this->stringify($value));
                 $deadline->assertNotTimedOut();
             }
+
+            foreach ($flat as $key => $value) {
+                if ($value instanceof HtmlContent) {
+                    $this->applyHtml($processor, $key, $value, $htmlImages);
+                    $deadline->assertNotTimedOut();
+                } elseif ($value instanceof ImageSource) {
+                    $this->applyImage($processor, $key, $value, $templatePath);
+                    $deadline->assertNotTimedOut();
+                }
+            }
+
+            $this->restoreInertMacros($processor);
 
             $target    = $outputPath ?? $this->makeTempOutputPath();
             $temporary = $outputPath === null;
@@ -403,13 +517,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      *
      * @param array<string, mixed> $context
      */
-    private function applyConditionalExpressions(TemplateProcessorBridge $processor, array $context, string $templatePath): void
+    private function applyConditionalExpressions(TemplateProcessorBridge $processor, array $context, string $templatePath, ProcessDeadline $deadline): void
     {
-        if (!$this->conditionalExpressionsEnabled) {
+        if (!$this->conditionalExpressionsEnabled && !$this->loopsEnabled) {
             return;
         }
 
-        $applicator = $this->createExpressionApplicator();
+        $applicator = $this->createExpressionApplicator(false, $deadline);
         $variables  = ExpressionVariables::fromContext($context);
         $report     = new ConditionalExpressionReport();
         $processor->transformDocumentParts(static fn (string $xml): string => $applicator->apply($xml, $variables, $report));
@@ -425,7 +539,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         }
     }
 
-    private function createExpressionApplicator(): ConditionalExpressionApplicator
+    /**
+     * @param bool $inspection true recognises conditionals and loops whatever the configuration (listing / linting)
+     */
+    private function createExpressionApplicator(bool $inspection, ?ProcessDeadline $deadline = null): ConditionalExpressionApplicator
     {
         return new ConditionalExpressionApplicator(
             $this->conditionalIfOpening,
@@ -434,6 +551,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $this->conditionalEndifClosing,
             $this->expressionEvaluator,
             $this->expressionErrorMode,
+            $inspection || $this->conditionalExpressionsEnabled,
+            $inspection || $this->loopsEnabled ? $this->loopSettings : null,
+            $this->expressionLimits,
+            $deadline,
         );
     }
 
@@ -490,6 +611,40 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         $processor->setImageValue($macroKey, $replace);
     }
 
+    /**
+     * With expression blocks or loops enabled, a template can repeat a placeholder many times (directly or through a
+     * loop body): the bytes PHPWord would write for all copies of all scalar placeholders are checked against
+     * {@code loops.max_output_bytes} before any setValue() call.
+     *
+     * @param array<string, mixed> $flat
+     */
+    private function assertPlaceholderBudget(TemplateProcessorBridge $processor, array $flat): void
+    {
+        if (!$this->conditionalExpressionsEnabled && !$this->loopsEnabled) {
+            return;
+        }
+
+        $parts = $processor->documentPartXmls();
+        $bytes = 0;
+        foreach ($flat as $key => $value) {
+            if ($value === null || is_scalar($value) || $value instanceof Stringable) {
+                $macro = $this->macroOpening . $key . $this->macroClosing;
+                foreach ($parts as $xml) {
+                    $bytes += substr_count($xml, $macro) * strlen((string) $value);
+                }
+            }
+        }
+
+        if ($bytes > $this->expressionLimits->maxOutputBytes) {
+            throw new TemplateLimitExceededException(sprintf('The placeholders of the document would write %d bytes of values; the limit (loops.max_output_bytes) is %d.', $bytes, $this->expressionLimits->maxOutputBytes));
+        }
+    }
+
+    /**
+     * Value for PHPWord setValue(): characters invalid in XML are dropped, and every first character of the placeholder
+     * opening (e.g. {@code $}) inside the value is made inert so the value — alone or next to another value — cannot be
+     * replaced by a later setValue() (restored by {@see self::restoreInertMacros()}).
+     */
     private function stringify(string|Stringable|int|float|bool|null $value): string
     {
         if (is_bool($value)) {
@@ -500,7 +655,27 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             return '';
         }
 
-        return (string) $value;
+        $string = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) $value);
+
+        $pairs = [self::INERT_ESCAPE => self::INERT_ESCAPE . self::INERT_ESCAPE, mb_substr($this->macroOpening, 0, 1) => self::INERT_ESCAPE . self::INERT_MACRO];
+        unset($pairs['']); // empty macro_opening: only the escape character is escaped
+
+        return strtr($string, $pairs);
+    }
+
+    /**
+     * Decodes the escaped values: the escape pair becomes the escape character again, the inert macro character is
+     * written as a numeric character reference (same text in Word, never read as a placeholder).
+     */
+    private function restoreInertMacros(TemplateProcessorBridge $processor): void
+    {
+        $first     = mb_substr($this->macroOpening, 0, 1);
+        $reference = $first === '' ? '' : '&#' . mb_ord($first) . ';';
+        $processor->transformDocumentParts(static fn (string $xml): string => (string) preg_replace_callback(
+            '/' . self::INERT_ESCAPE . '([' . self::INERT_ESCAPE . self::INERT_MACRO . '])/u',
+            static fn (array $match): string => $match[1] === self::INERT_ESCAPE ? self::INERT_ESCAPE : $reference,
+            $xml,
+        ));
     }
 
     protected function persistTemplate(TemplateProcessor $processor, string $target): void

@@ -131,13 +131,36 @@ final readonly class ConditionalExpressionEvaluator
     }
 
     /**
-     * Evaluates an expression against exposed variables ({@see ExpressionVariables::fromContext()}).
+     * Evaluates a condition against exposed variables ({@see ExpressionVariables::fromContext()}); the result must be a bool.
      *
      * @param array<string, mixed> $variables
      *
      * @throws ConditionalExpressionException
      */
     public function evaluate(string $expression, array $variables): bool
+    {
+        $result = $this->evaluateValue($expression, $variables);
+
+        $root = $this->parse($expression)->getNodes();
+        if (is_int($result) && $root instanceof BinaryNode && $root->attributes['operator'] === 'matches') {
+            $result = $result === 1;
+        }
+
+        if (!is_bool($result)) {
+            throw ConditionalExpressionException::notBoolean($expression, get_debug_type($result));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Evaluates an expression and returns its value as is (e.g. the list a loop iterates over).
+     *
+     * @param array<string, mixed> $variables
+     *
+     * @throws ConditionalExpressionException
+     */
+    public function evaluateValue(string $expression, array $variables): mixed
     {
         $parsed = $this->parse($expression);
         $this->assertKnownNames($parsed, $expression, array_keys($variables));
@@ -149,7 +172,7 @@ final readonly class ConditionalExpressionEvaluator
         });
 
         try {
-            $result = $this->language->evaluate($parsed, $variables);
+            return $this->language->evaluate($parsed, $variables);
         } catch (UnknownVariableError $e) {
             throw ConditionalExpressionException::unknownVariable($expression, $e->safeVariable($expression));
         } catch (Throwable $e) {
@@ -157,17 +180,6 @@ final readonly class ConditionalExpressionEvaluator
         } finally {
             restore_error_handler();
         }
-
-        $root = $parsed->getNodes();
-        if (is_int($result) && $root instanceof BinaryNode && $root->attributes['operator'] === 'matches') {
-            $result = $result === 1;
-        }
-
-        if (!is_bool($result)) {
-            throw ConditionalExpressionException::notBoolean($expression, get_debug_type($result));
-        }
-
-        return $result;
     }
 
     /**

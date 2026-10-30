@@ -60,9 +60,31 @@ nowo_word_template:
         on_error: exception
         # Maximum length of one expression (characters).
         max_length: 500
+        # Resource limits (exceeding them always throws TemplateLimitExceededException):
+        max_markers: 2000        # expression / loop markers per document part
+        max_depth: 32            # nesting depth of blocks and loops
+        max_evaluations: 100000  # expression evaluations per merge
         # Time zone of now() / date(); null = PHP default. "Now" comes from the Symfony clock.
         timezone: null
         # Restrict functions (built-ins + host providers tagged nowo_word_template.expression_function_provider).
         functions:
             allow: ~        # null = all; e.g. [upper, lower, length]
             deny: []        # e.g. [now, date]
+
+    # Loops (opt-in, since 1.8): ${#for line in order.lines} … ${#endfor}
+    # Repeats the paragraphs between the markers (or the table rows, when the markers sit in rows of their own)
+    # once per element; ${line.name} and ${loop.index} are filled per iteration. The iterable is an expression
+    # (same language, functions and on_error as conditional_expressions).
+    loop_for_opening: '${#for'
+    loop_for_closing: '}'
+    loop_endfor_opening: '${#endfor'
+    loop_endfor_closing: '}'
+    loops:
+        # false = loop markers stay as literal text.
+        enabled: false
+        # Maximum elements of one loop.
+        max_iterations: 1000
+        # Maximum iterations of all loops of one merge (nested loops multiply).
+        max_total_iterations: 10000
+        # Maximum bytes produced by all loops of one merge (all parts), checked before rendering.
+        max_output_bytes: 33554432

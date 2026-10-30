@@ -98,16 +98,16 @@ final class ConfigurationTest extends TestCase
     {
         $config = (new Processor())->processConfiguration(new Configuration(), []);
 
-        self::assertSame(['enabled' => false, 'on_error' => 'exception', 'max_length' => 500, 'timezone' => null, 'functions' => ['allow' => null, 'deny' => []]], $config['conditional_expressions']);
+        self::assertSame(['enabled' => false, 'on_error' => 'exception', 'max_length' => 500, 'max_markers' => 2000, 'max_depth' => 32, 'max_evaluations' => 100000, 'timezone' => null, 'functions' => ['allow' => null, 'deny' => []]], $config['conditional_expressions']);
     }
 
     public function testConditionalExpressionsCustom(): void
     {
         $config = (new Processor())->processConfiguration(new Configuration(), [[
-            'conditional_expressions' => ['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]],
+            'conditional_expressions' => ['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'max_markers' => 2000, 'max_depth' => 32, 'max_evaluations' => 100000, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]],
         ]]);
 
-        self::assertSame(['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]], $config['conditional_expressions']);
+        self::assertSame(['enabled' => true, 'on_error' => 'hide', 'max_length' => 200, 'max_markers' => 2000, 'max_depth' => 32, 'max_evaluations' => 100000, 'timezone' => 'Europe/Madrid', 'functions' => ['allow' => ['upper'], 'deny' => ['now']]], $config['conditional_expressions']);
     }
 
     public function testConditionalExpressionsRejectInvalidTimezone(): void
@@ -134,5 +134,19 @@ final class ConfigurationTest extends TestCase
         (new Processor())->processConfiguration(new Configuration(), [[
             'conditional_expressions' => ['on_error' => 'ignore'],
         ]]);
+    }
+
+    public function testLoopsDefaultsAndCustom(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), []);
+        self::assertSame(['enabled' => false, 'max_iterations' => 1000, 'max_total_iterations' => 10000, 'max_output_bytes' => 33554432], $config['loops']);
+        self::assertSame(['${#for', '}', '${#endfor', '}'], [$config['loop_for_opening'], $config['loop_for_closing'], $config['loop_endfor_opening'], $config['loop_endfor_closing']]);
+
+        $config = (new Processor())->processConfiguration(new Configuration(), [[
+            'loops'            => ['enabled' => true, 'max_iterations' => 50, 'max_total_iterations' => 500],
+            'loop_for_opening' => '[[#for',
+        ]]);
+        self::assertSame(['enabled' => true, 'max_iterations' => 50, 'max_total_iterations' => 500, 'max_output_bytes' => 33554432], $config['loops']);
+        self::assertSame('[[#for', $config['loop_for_opening']);
     }
 }

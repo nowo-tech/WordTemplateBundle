@@ -125,16 +125,20 @@ final readonly class ExpressionExampleRunner
             $section = $phpWord->addSection(['marginTop' => 700, 'marginBottom' => 700, 'marginLeft' => 900, 'marginRight' => 900]);
             $section->addText($example['title'], ['bold' => true, 'size' => 16, 'color' => '1F3864']);
 
+            $table = null;
             foreach ($example['word'] as $line) {
                 if (str_starts_with($line, '|')) {
-                    $table = $section->addTable(['borderSize' => 6, 'borderColor' => 'A0AEC0', 'cellMargin' => 80]);
+                    // Consecutive "| a | b |" lines are the rows of one table.
+                    $table ??= $section->addTable(['borderSize' => 6, 'borderColor' => 'A0AEC0', 'cellMargin' => 80]);
                     $table->addRow();
-                    foreach (array_map(trim(...), explode('|', trim($line, '|'))) as $cell) {
-                        $table->addCell(3000)->addText($cell);
+                    foreach (array_map(trim(...), explode('|', substr(trim($line), 1, -1))) as $cell) {
+                        $table->addCell(2400)->addText($cell, str_starts_with($cell, '${#') ? ['color' => '2B6CB0', 'name' => 'Consolas', 'size' => 12] : []);
                     }
 
                     continue;
                 }
+
+                $table = null;
 
                 $isMarker = str_starts_with($line, '${#');
                 $section->addText($line, $isMarker ? ['color' => '2B6CB0', 'name' => 'Consolas', 'size' => 13] : []);

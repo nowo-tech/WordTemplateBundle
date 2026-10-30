@@ -65,6 +65,16 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - Backed enums (value), pure enums (case name) and `DateTimeInterface` (`'Y-m-d'`) are accepted in the context (they were
   rejected with `InvalidContextValueException` before) and render as such in placeholders.
 - New runtime dependencies: `symfony/expression-language`, `symfony/cache`, `symfony/clock` (`^7.4 || ^8.0`).
+- **Loops (opt-in).** `${#for item in <expression>}` … `${#endfor}` (and `${#for key, item in …}`) repeat the paragraphs
+  between the markers — or whole table rows when the markers sit in rows of their own — once per element of a list or
+  map; `${item.name}`, `${key}` and Twig-like `${loop.index}`, `index0`, `revindex`, `revindex0`, `first`, `last`,
+  `length`, `parent` are filled per iteration and are variables of the `${#if …}` / `${#for …}` blocks inside the body
+  (processed outside-in with scoping). Enable with `nowo_word_template.loops.enabled: true`; limits
+  `loops.max_iterations` (1000) and `loops.max_total_iterations` (10000, nested loops multiply), `loops.max_output_bytes`
+  (32 MiB for the whole merge); delimiters `loop_for_opening` / `loop_for_closing` / `loop_endfor_opening` / `loop_endfor_closing`.
+- Expression blocks whose markers sit in different rows of the same table keep or remove whole rows.
+- `ConditionalExpressionInspectorInterface::listLoops()`; `lintConditionalExpressions()` checks loop heads and knows the
+  loop variables inside loop bodies.
 
 ### Security
 
@@ -74,12 +84,23 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   building it; date formats are limited to 100 bytes; error messages no longer echo context values (function arguments,
   dynamic map keys / list indexes, regexes read from values); a PCRE failure while scanning markers fails closed.
   `replace()` accepts maps with numeric keys again and bounds its work (search strings × subject bytes).
+- Loops and expression blocks (REQ-SEC-004 Appendix BQ M2, M3, L1, L2): one output byte budget for all loops and parts of
+  a merge (`loops.max_output_bytes`, 32 MiB), checked before a loop renders; linear marker layout analysis with
+  `conditional_expressions.max_markers` (2000 per part), `max_depth` (32) and `max_evaluations` (100,000 per merge), which
+  always throw the new `TemplateLimitExceededException`; the merge `timeout` is checked while rendering and the
+  inspection APIs run under it; values printed by loops **and by ordinary placeholders** can no longer be read as
+  placeholders again — alone or next to another value (`'$'` + `'{other}'`) — because every `$` in a value is written
+  as `&#36;` (collision-free internal escaping), `HtmlContent` and images are inserted after the scalar placeholders so
+  `${key}` inside HTML stays literal, and XML-invalid control characters are dropped from values. With expression
+  blocks or loops enabled, all copies of the scalar placeholders are checked against `loops.max_output_bytes` before
+  PHPWord writes them.
 
 ### Documentation
 
 - `docs/USAGE.md` — new **Expression conditionals** section (enable, classification rule, exposed values, operators,
   data types, function reference and Twig mapping, host functions, nesting / else / one of N, PHP vs template, errors
-  and error modes, linting, security); README conditionals section with screenshots; CONFIGURATION, UPGRADING,
+  and error modes, linting, security) and **Loops** section (paragraph and row loops, loop variables, maps and keys,
+  nesting, empty lists, errors and limits); README conditionals and loops sections with screenshots; CONFIGURATION, UPGRADING,
   SECURITY (threat table) and FRANKENPHP-WORKER-AUDIT updated.
 
 - `docs/USAGE.md` — new **Conditionals by data type** section: how to turn `bool`, `?bool`, `int`/`?int`, `float`,
@@ -114,6 +135,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   `bin/console app:conditionals:export-examples`; Playwright e2e (`make test-e2e`), page screenshots
   (`make demo-screenshots`) and LibreOffice-rendered "template → generated document" previews (`make docx-previews`)
   under `docs/images/demo/`.
+- New `/loops` page: an invoice whose lines are repeated table rows with a conditional discount row, loop variables,
+  nested loops, a map and an empty list, with downloads, e2e and previews.
 
 ### Changed
 
@@ -121,6 +144,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - `listVariables()` also omits the nameless `${#endif}` marker.
 - With `conditional_expressions.enabled: true`, `listConditionalBlocks()` returns named blocks only (expression blocks
   are listed by `listConditionalExpressions()`).
+- With `loops.enabled: true`, `listVariables()` omits loop markers and the placeholders of loop variables
+  (`${line.name}`, `${loop.index}`).
 ## [1.7.1] - 2026-10-29
 ### Security
 

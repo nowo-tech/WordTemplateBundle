@@ -1,14 +1,14 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}WordTemplate — expression examples{% endblock %}
+{% block title %}WordTemplate — {{ section|lower }}{% endblock %}
 
 {% block body %}
-  <h1>Expression conditionals — worked examples</h1>
+  <h1>{{ heading }}</h1>
   <p class="lead">
     Each card is a small template built from the &ldquo;In Word&rdquo; text (one paragraph per line, markers in blue)
     merged with the PHP context next to it. Download the template and the generated document to open them in Word.
-    The same cases are documented and tested in the bundle's <code>docs/USAGE.md</code> (&ldquo;Expression conditionals&rdquo;);
-    this demo enables them with <code>nowo_word_template.conditional_expressions.enabled: true</code>.
+    The same cases are documented and tested in the bundle's <code>docs/USAGE.md</code> (&ldquo;{{ section }}&rdquo;);
+    this demo enables them with <code>nowo_word_template.{{ flag }}: true</code>. Lines starting with <code>|</code> are table rows.
   </p>
   {% for example in examples %}
     <div class="card mb-3" data-testid="example-{{ example.id }}" id="example-{{ example.id }}">

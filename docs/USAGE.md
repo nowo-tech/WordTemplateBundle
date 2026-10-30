@@ -58,6 +58,15 @@ With those defaults, scalar placeholders look like `${client_name}` and conditio
   - [When to compute in PHP, when in the template](#when-to-compute-in-php-when-in-the-template)
   - [Errors](#errors)
   - [Security](#security)
+- [Loops](#loops) *(1.8, opt-in)*
+  - [Enable loops](#enable-loops)
+  - [Repeat paragraphs](#repeat-paragraphs)
+  - [Repeat table rows](#repeat-table-rows)
+  - [Loop variables](#loop-variables)
+  - [Maps, keys and functions](#maps-keys-and-functions)
+  - [Conditions inside a loop and nested loops](#conditions-inside-a-loop-and-nested-loops)
+  - [Empty lists](#empty-lists)
+  - [Loop errors and limits](#loop-errors-and-limits)
 - [Combined example (scalars + 2 tables + 2 conditionals)](#combined-example-scalars--2-tables--2-conditionals)
 - [Context types (summary)](#context-types-summary)
 - [Listing placeholders and conditional blocks](#listing-placeholders-and-conditional-blocks)
@@ -1123,7 +1132,17 @@ With two lines the table shows both rows and "No items" is removed; with `[]` on
 | bad function argument | `${#if upper(lines) == ''}` | `['lines' => ['A']]` | throws `upper() expects a string, got array` |
 | missing list index | `${#if lines[5] == 'x'}` | `['lines' => ['A']]` | throws `could not be evaluated` |
 
-Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Messages contain template text (the expression, variable and function names, argument types) but never context values, so they can be shown to template authors. Layout problems are errors too: a `${#endif}` with no open block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that crosses table cells / rows / content controls.
+Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Messages contain template text (the expression, variable and function names, argument types) but never context values, so they can be shown to template authors. Layout problems are errors too: a `${#endif}` with no open block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that cuts table cells / rows / content controls in half (for example opening in one cell and closing in another cell of the same row).
+
+**Whole table rows** — when the opening and the closing marker sit in rows of their own of the same table, an expression block keeps or removes the rows between them (the two marker rows are always removed), exactly like [row loops](#repeat-table-rows):
+
+```text
+| Item | Amount |
+| ${#if show_discount} |
+| Discount | -${discount} |
+| ${#endif} |
+| Total | ${total} |
+```
 
 `conditional_expressions.on_error` decides what happens:
 
@@ -1155,6 +1174,254 @@ foreach ($problems as $problem) {
 ### Security
 
 Expressions are written by template authors. Treat an uploaded template like code with a tiny API: it can only read the values you put in the context and call the [functions](#functions-reference) (built-in or yours). There is no `constant()`, `enum()`, method call, property access on real objects, filesystem or network access. Expressions are limited to `max_length` characters, parsed expressions are cached in a bounded in-memory pool (256 entries per worker), function inputs and outputs are size-capped, and `matches` is bounded by PCRE's backtrack / recursion limits. See [SECURITY.md](SECURITY.md#expression-conditionals).
+
+## Loops
+
+*Since 1.8 — opt-in.* Repeat part of the document once per element of a list, directly from the template:
+
+```text
+${#for line in lines}
+${loop.index}. ${line.name} — ${line.amount} EUR
+${#endfor}
+```
+
+A loop opens with `${#for <item> in <expression>}` and closes with `${#endfor}` (the nearest open loop). The iterable is an [expression](#expression-conditionals) — a context variable (`lines`), a nested value (`order.lines`) or a function result (`slice(lines, 0, 5)`) — evaluated with the same language, functions, error mode and security rules. Every example of this section is executed by `tests/Integration/ExpressionConditionalsUsageDocTest.php`.
+
+### Enable loops
+
+```yaml
+# config/packages/nowo_word_template.yaml
+nowo_word_template:
+    loops:
+        enabled: true               # default false: loop markers stay as literal text
+        max_iterations: 1000        # elements of one loop
+        max_total_iterations: 10000 # all loops of one merge together (nested loops multiply)
+        max_output_bytes: 33554432  # XML produced by all loops of one merge, checked before rendering
+    conditional_expressions:
+        enabled: true               # needed for ${#if …} inside loop bodies (and everywhere else)
+        on_error: exception         # also applies to loops
+```
+
+Loops have their own switch: with `loops.enabled: true` and `conditional_expressions.enabled: false`, loops are expanded and `${#if …}` expression markers stay as text. The loop markers have their own delimiters (`loop_for_opening: '${#for'`, `loop_for_closing: '}'`, `loop_endfor_opening: '${#endfor'`, `loop_endfor_closing: '}'`) — see [CONFIGURATION.md](CONFIGURATION.md#loops).
+
+### Repeat paragraphs
+
+Each marker sits in its own paragraph; the paragraphs between them are repeated. Inside the body, `${line.name}` reads the current element (dot access for maps, `${row[0]}` for lists) and `${loop.index}` the position.
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+Order ${number}
+${#for line in lines}
+${loop.index}. ${line.name} — ${line.amount} EUR
+${#endfor}
+Total: ${total} EUR
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'number' => 'F-2026-001',
+    'lines'  => [
+        ['name' => 'Anchor bolts', 'amount' => 40],
+        ['name' => 'Brackets', 'amount' => 25.5],
+    ],
+    'total'  => 65.5,
+]);
+```
+
+**Result:**
+
+```text
+Order F-2026-001
+1. Anchor bolts — 40 EUR
+2. Brackets — 25.5 EUR
+Total: 65.5 EUR
+```
+
+Values are printed like other placeholders (`true` → `1`, `false` → `0`, `null` → empty, enums → value, dates → `Y-m-d`) and XML-escaped. A value is never read as a template again: `${…}` inside a value (an order line typed by a customer, say) is printed as typed, not replaced by another context value — neither alone nor next to another value (every `$` of a value is written as `&#36;`, which Word shows as `$`) — and characters that are invalid in XML are dropped — this also applies to ordinary placeholders since 1.8. A list or a map cannot be printed: print one of its values or loop over it.
+
+### Repeat table rows
+
+When the opening and the closing marker sit **in rows of their own** of the same table, the rows between them are repeated and the two marker rows are removed. Any number of rows can be repeated together.
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+| Item | Amount |
+| ${#for line in lines} |
+| ${line.name} | ${line.amount} |
+| ${#endfor} |
+| Total | ${total} |
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'lines' => [
+        ['name' => 'Anchor bolts', 'amount' => 40],
+        ['name' => 'Brackets', 'amount' => 25.5],
+    ],
+    'total' => 65.5,
+]);
+```
+
+**Result:**
+
+```text
+| Item | Amount |
+| Anchor bolts | 40 |
+| Brackets | 25.5 |
+| Total | 65.5 |
+```
+
+(In the Word example each `|` line is one table row.) Row loops and [`TableRows`](#one-table-with-several-columns-tablerows) are independent: keep using `TableRows` for existing templates, use a loop when the template should decide (conditions per row, nested lists, several rows per element). Do not put a `TableRows` anchor inside a loop body.
+
+Markers in the **same** cell repeat paragraphs inside that cell; an opening marker in one row and the closing marker in another **cell of the same row** is an error (the block would cut the row).
+
+### Loop variables
+
+| Placeholder / variable | Value | Twig |
+|------------------------|-------|------|
+| `${item}` / `item` | the current element (the name is yours: `line`, `order`, …) | same |
+| `${key}` / `key` | with `${#for key, item in items}`: the list index (0-based) or the map key | `for key, item in items` |
+| `${loop.index}` | position, starting at 1 | same |
+| `${loop.index0}` | position, starting at 0 | same |
+| `${loop.revindex}` / `${loop.revindex0}` | positions from the end (1-based / 0-based) | same |
+| `${loop.first}` / `${loop.last}` | `1` for the first / last element, else `0` (bools in expressions) | same |
+| `${loop.length}` | number of elements | same |
+| `${loop.parent.index}` | in a nested loop, the `loop` of the enclosing loop (`loop.parent.parent…` further out) | Twig's `loop.parent` is the parent *context* (`loop.parent.loop.index`) |
+
+The same names are variables of every `${#if …}` and nested `${#for …}` inside the body. **Shadowing:** a loop variable hides a context key with the same name inside the body only (an inner `loop` hides the outer one — use `loop.parent`). Outside the body, `${item}` is an ordinary placeholder again.
+
+### Maps, keys and functions
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+${#for code, label in countries}
+${code}: ${label}
+${#endfor}
+${#for tag in slice(tags, 0, 2)}
+#${tag}
+${#endfor}
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'countries' => ['ES' => 'Spain', 'PT' => 'Portugal'],
+    'tags'      => ['urgent', 'export', 'fragile'],
+]);
+```
+
+**Result:**
+
+```text
+ES: Spain
+PT: Portugal
+#urgent
+#export
+```
+
+### Conditions inside a loop and nested loops
+
+Blocks are processed outside-in with the loop variables in scope, so a condition can test the current element, and an inner loop can iterate over a list of the current element.
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+${#for order in orders}
+Order ${order.id}
+${#if order.urgent}
+Ship today.
+${#endif}
+${#for line in order.lines}
+${loop.parent.index}.${loop.index} ${line}
+${#endfor}
+${#endfor}
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'orders' => [
+        ['id' => 'A-7', 'urgent' => true, 'lines' => ['Bolts', 'Nuts']],
+        ['id' => 'B-8', 'urgent' => false, 'lines' => ['Crane']],
+    ],
+]);
+```
+
+**Result:**
+
+```text
+Order A-7
+Ship today.
+1.1 Bolts
+1.2 Nuts
+Order B-8
+2.1 Crane
+```
+
+A loop inside a removed `${#if …}` is never evaluated, and a `${#if …}` around the whole loop is the way to skip a heading when the list is empty.
+
+### Empty lists
+
+An empty list removes the whole block (including the marker paragraphs). There is no `${#else}`; add the opposite condition:
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+Order lines
+${#for line in lines}
+${line}
+${#endfor}
+${#if length(lines) == 0}
+No items in this order.
+${#endif}
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'lines' => [],
+]);
+```
+
+**Result:**
+
+```text
+Order lines
+No items in this order.
+```
+
+### Loop errors and limits
+
+| Problem | Result (`on_error: exception`) |
+|---------|-------------------------------|
+| the iterable is not a list or a map (`${#for x in total}` with an int) | `ConditionalExpressionException`: `must iterate over a list or a map, got int` |
+| unknown iterable / typo (`${#for x in itms}`) | `uses the unknown variable "itms"` |
+| more than `loops.max_iterations` elements | `has 1500 items; the limit is 1000` |
+| all loops together above `loops.max_total_iterations` (e.g. 200 orders × 100 lines) | `exceed the allowed 10000 iterations (nested loops multiply)` |
+| all loops of the merge above `loops.max_output_bytes` (32 MiB) — checked before a loop renders | `would produce more than 33554432 bytes of document XML` |
+| more than `max_markers` (2000) markers in one part, nesting deeper than `max_depth` (32), more than `max_evaluations` (100,000) evaluations | `TemplateLimitExceededException` — always thrown, whatever `on_error` says |
+| `${item.missing}` | `uses the unknown variable "item.missing"` |
+| `${item}` holding a list / map | `not a printable value` |
+| `${#endfor}` without loop, loop never closed, `${#for items}` (no `in`), `${#endif}` closing a loop | layout error (`there is no open loop to close`, `the loop is never closed`, `a loop needs "item in <expression>"`, `it cannot close the loop`) |
+
+With `on_error: hide` a failing loop is removed (a failing placeholder prints empty); with `keep` the loop is left as text (a failing placeholder stays as typed). `null` is not iterable — write `${#for x in default(items, [])}` when a list may be missing.
+
+`listLoops()` returns the loop heads of a template (`['line in lines', 'key, line in order.lines']`), `listVariables()` omits the loop markers and the placeholders of loop variables when loops are enabled, and `lintConditionalExpressions()` checks loop heads too, knowing the loop variables inside each body.
 
 ---
 

@@ -206,7 +206,7 @@ find src -type f ! -path '*/assets/dist/*' ! -name '*.test.ts' | wc -l
 
 The **Total production sources** row in `code-inventory.md` must match this count.
 
-In **WordTemplateBundle**, the baseline inventory covers **40/40** files (including the files of [`specs/002-expression-conditionals/`](../specs/002-expression-conditionals/spec.md)) — see [`specs/001-baseline/code-inventory.md`](../specs/001-baseline/code-inventory.md).
+In **WordTemplateBundle**, the baseline inventory covers **45/45** files (including the files of [`specs/002-expression-conditionals/`](../specs/002-expression-conditionals/spec.md) and [`specs/003-template-loops/`](../specs/003-template-loops/spec.md)) — see [`specs/001-baseline/code-inventory.md`](../specs/001-baseline/code-inventory.md).
 
 ---
 

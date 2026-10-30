@@ -760,6 +760,15 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     conditional_if_closing?: scalar|Param|null, // Closing delimiter for conditional opening markers. // Default: "}"
  *     conditional_endif_opening?: scalar|Param|null, // Opening delimiter for conditional end markers (before the block name). // Default: "${#endif"
  *     conditional_endif_closing?: scalar|Param|null, // Closing delimiter for conditional end markers. // Default: "}"
+ *     loop_for_opening?: scalar|Param|null, // Opening delimiter for loop markers (before "item in items"). // Default: "${#for"
+ *     loop_for_closing?: scalar|Param|null, // Closing delimiter for loop markers. // Default: "}"
+ *     loop_endfor_opening?: scalar|Param|null, // Opening delimiter for loop end markers. // Default: "${#endfor"
+ *     loop_endfor_closing?: scalar|Param|null, // Closing delimiter for loop end markers. // Default: "}"
+ *     loops?: array{ // Loops: ${#for item in items} … ${#endfor} repeat paragraphs (or table rows) per element; the iterable is an expression (same language, functions and on_error as conditional_expressions). Opt-in.
+ *         enabled?: bool|Param, // When false (default) loop markers are left untouched. // Default: false
+ *         max_iterations?: int|Param, // Maximum number of elements one loop may iterate over. // Default: 1000
+ *         max_total_iterations?: int|Param, // Maximum number of iterations of all loops of one merge together (nested loops multiply). // Default: 10000
+ *     },
  *     conditional_expressions?: array{ // Expression conditionals: ${#if total > 0} … ${#endif} (nameless end marker), evaluated with a function-less Symfony ExpressionLanguage against the context. Opt-in.
  *         enabled?: bool|Param, // When false (default) expression markers are left untouched, as in 1.7. // Default: false
  *         on_error?: "exception"|"hide"|"keep"|Param, // Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block; keep = leave the markers as text (hide and keep log a warning). // Default: "exception"

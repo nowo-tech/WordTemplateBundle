@@ -20,6 +20,7 @@ use ZipArchive;
 use function array_map;
 use function bin2hex;
 use function html_entity_decode;
+use function implode;
 use function is_string;
 use function preg_replace;
 use function random_bytes;
@@ -267,10 +268,11 @@ final class ExpressionConditionalsIntegrationTest extends TestCase
 
         $problems = array_map(static fn (ConditionalExpressionException $e): string => $e->getMessage(), $enabled->lintConditionalExpressions($template, ['total']));
         self::assertCount(4, $problems);
-        self::assertStringContainsString('"${#endif}": there is no open block to close', $problems[0]);
-        self::assertStringContainsString('"${#if status == “paid”}": the block is never closed', $problems[1]);
-        self::assertStringContainsString('unknown variable "client"', $problems[2]);
-        self::assertStringContainsString('"missing >" is invalid', $problems[3]);
+        $all = implode("\n", $problems);
+        self::assertStringContainsString('"${#endif}": there is no open block to close', $all);
+        self::assertStringContainsString('"${#if status == “paid”}": the block is never closed', $all);
+        self::assertStringContainsString('unknown variable "client"', $all);
+        self::assertStringContainsString('"missing >" is invalid', $all);
 
         self::assertCount(3, $enabled->lintConditionalExpressions($template, ['total', 'client']));
     }

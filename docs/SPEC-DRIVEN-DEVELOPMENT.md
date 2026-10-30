@@ -37,6 +37,7 @@ The sections above/below state **behavior**; this subsection states **intent** i
 | US-08 | **As a** integrator, **I want** to pass `ConditionalBlock` for `${#if name}` … `${#endif name}` regions **so that** whole paragraphs or sections appear or disappear from PHP. |
 | US-09 | **As a** integrator, **I want** nested conditional blocks and separate `conditional_*` delimiters **so that** inner regions resolve before outer ones and markers can differ from scalar placeholders. |
 | US-10 | **As a** template author, **I want** to write the condition in Word (`${#if total > 1000}` … `${#endif}`) with Twig-like functions **so that** simple document rules do not need PHP changes (opt-in; [`specs/002-expression-conditionals`](../specs/002-expression-conditionals/spec.md)). |
+| US-11 | **As a** template author, **I want** to repeat paragraphs or table rows per element (`${#for line in lines}` … `${#endfor}`) **so that** invoices and lists are laid out in Word (opt-in; [`specs/003-template-loops`](../specs/003-template-loops/spec.md)). |
 
 **Out of scope for these stories:** running Word VBA; inline `#if` inside a single paragraph (use a computed scalar instead); `elseif` / `else` in template syntax (write the opposite expression).
 

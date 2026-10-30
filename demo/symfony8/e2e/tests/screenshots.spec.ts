@@ -46,4 +46,9 @@ test.describe('WordTemplate demo screenshots', () => {
     await shoot(page, '/conditionals/examples', 'expression-examples', 1650);
     await expect(page.locator('[data-testid="example-result"]').first()).toBeVisible();
   });
+
+  test('loops — invoice rows, loop variables, nested loops', async ({ page }) => {
+    await shoot(page, '/loops', 'loops', 1650);
+    await expect(page.locator('[data-testid="example-result"]').first()).toBeVisible();
+  });
 });

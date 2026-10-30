@@ -14,6 +14,15 @@ Root key: `nowo_word_template`.
 | `conditional_if_closing` | `}` | Closing delimiter for conditional opening markers. |
 | `conditional_endif_opening` | `${#endif` | Opening delimiter for conditional end markers (before the block name). |
 | `conditional_endif_closing` | `}` | Closing delimiter for conditional end markers. |
+| `loop_for_opening` / `loop_for_closing` | `${#for` / `}` | Delimiters of loop markers (`${#for item in items}`). |
+| `loop_endfor_opening` / `loop_endfor_closing` | `${#endfor` / `}` | Delimiters of loop end markers (`${#endfor}`). |
+| `loops.enabled` | `false` | Opt-in (1.8): expand `${#for item in items}` … `${#endfor}`. See [Loops](#loops). |
+| `loops.max_iterations` | `1000` | Maximum elements of one loop. |
+| `loops.max_total_iterations` | `10000` | Maximum iterations of all loops of one merge together (nested loops multiply). |
+| `loops.max_output_bytes` | `33554432` | Maximum bytes of document XML produced by all loops of one merge (all parts together); checked before rendering. With expression blocks or loops enabled it also bounds the values written into all copies of the scalar placeholders. |
+| `conditional_expressions.max_markers` | `2000` | Maximum expression / loop markers per document part (body, each header, each footer). |
+| `conditional_expressions.max_depth` | `32` | Maximum nesting depth of expression blocks and loops. |
+| `conditional_expressions.max_evaluations` | `100000` | Maximum expression evaluations of one merge (loops re-evaluate their bodies). |
 | `conditional_expressions.enabled` | `false` | Opt-in (1.8): evaluate `${#if <expression>}` … `${#endif}` blocks (nameless end marker). When `false`, expression markers stay as literal text. See [Conditional expressions](#conditional-expressions). |
 | `conditional_expressions.on_error` | `exception` | `exception`, `hide` or `keep`: what happens with an invalid expression, an unknown variable, a bad function argument or a marker layout the bundle cannot apply. `hide` removes a block whose expression fails; a block with a bad marker layout cannot be delimited and is left as text in `hide` and `keep` (use `exception`, the default, to fail closed). |
 | `conditional_expressions.max_length` | `500` | Maximum length of one expression, in characters (1–10000). |
@@ -82,10 +91,33 @@ nowo_word_template:
 - The nameless end marker is the `conditional_endif_opening` + `conditional_endif_closing` delimiters without a name (`${#endif}` by default) — there is no separate setting.
 - `now()` / `date()` read the Symfony `clock` service when it exists (FrameworkBundle registers it), so `MockClock` freezes them in tests; otherwise the system clock.
 - Host functions: services implementing `Nowo\WordTemplateBundle\Expression\ExpressionFunctionProviderInterface` are autoconfigured with the `nowo_word_template.expression_function_provider` tag; built-ins are registered with priority 1000, so a host function with the same name (default priority 0) replaces the built-in. An unknown name in `allow` / `deny` is a configuration error raised when the evaluator is built.
+- `max_markers`, `max_depth` and `max_evaluations` always throw `TemplateLimitExceededException` (whatever `on_error` says). The merge `timeout` is also checked while blocks and loops are rendered, and `listConditionalExpressions()`, `listLoops()`, `listConditionalBlocks()`, `listVariables()` and `lintConditionalExpressions()` run under the same `timeout` (`ProcessingTimedOutException`).
 - Parsed expressions are cached per evaluator service in a bounded in-memory pool (256 entries), so a FrankenPHP worker never grows without limit.
 - `on_error: hide` / `keep` log one `warning` per merge with the number of errors (see [Logging](#logging)); `exception` throws `ConditionalExpressionException` (logged as `Word template merge rejected.`).
 
 Full syntax, operators, data types and the function reference: [USAGE.md — Expression conditionals](USAGE.md#expression-conditionals).
+
+### Loops
+
+```yaml
+nowo_word_template:
+    loops:
+        enabled: true
+        max_iterations: 1000
+        max_total_iterations: 10000
+    # optional, defaults shown
+    loop_for_opening: '${#for'
+    loop_for_closing: '}'
+    loop_endfor_opening: '${#endfor'
+    loop_endfor_closing: '}'
+```
+
+- The iterable of `${#for item in <expression>}` is evaluated by the same evaluator as conditional expressions (functions, `max_length`, `functions.allow` / `deny`), and loop errors follow `conditional_expressions.on_error`.
+- `loops.enabled` is independent from `conditional_expressions.enabled`: `${#if …}` inside loop bodies is only evaluated when expressions are enabled too.
+- Placeholders of loop variables (`${line.name}`, `${loop.index}`) are written with the `macro_opening` / `macro_closing` delimiters.
+- `loops.max_output_bytes` (default 32 MiB) is **one budget for the whole merge** (all loops, all parts), checked before a loop renders (body size × iterations) and while it renders.
+
+Full reference: [USAGE.md — Loops](USAGE.md#loops).
 
 ### Logging
 

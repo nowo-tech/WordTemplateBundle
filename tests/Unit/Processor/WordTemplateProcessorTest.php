@@ -47,6 +47,34 @@ final class WordTemplateProcessorTest extends TestCase
         }
     }
 
+    public function testTemplateInspectionRunsUnderTheDeadline(): void
+    {
+        $tpl = $this->createTemplate(static function (PhpWord $pw): void {
+            $pw->addSection()->addText('${#if a > 1}');
+        });
+
+        $processor = new ExpiredDeadlineWordTemplateProcessor(timeout: 1, conditionalExpressionsEnabled: true, loopsEnabled: true);
+
+        try {
+            foreach ([
+                static fn (): array => $processor->lintConditionalExpressions($tpl, []),
+                static fn (): array => $processor->listLoops($tpl),
+                static fn (): array => $processor->listConditionalExpressions($tpl),
+                static fn (): array => $processor->listConditionalBlocks($tpl),
+                static fn (): array => $processor->listVariables($tpl),
+            ] as $inspect) {
+                try {
+                    $inspect();
+                    self::fail('ProcessingTimedOutException expected');
+                } catch (ProcessingTimedOutException $e) {
+                    self::assertStringContainsString('timed out after 1 seconds', $e->getMessage());
+                }
+            }
+        } finally {
+            @unlink($tpl);
+        }
+    }
+
     /**
      * @param callable(PhpWord): void $build
      */

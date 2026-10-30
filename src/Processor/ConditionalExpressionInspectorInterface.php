@@ -7,9 +7,10 @@ namespace Nowo\WordTemplateBundle\Processor;
 use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
 
 /**
- * Inspects the expression conditionals ({@code ${#if <expression>}} … {@code ${#endif}}) of a .docx template,
- * so hosts can validate templates (e.g. on upload) before merging them. Works whether or not
- * {@code conditional_expressions.enabled} is set.
+ * Inspects the expression conditionals ({@code ${#if <expression>}} … {@code ${#endif}}) and loops
+ * ({@code ${#for item in items}} … {@code ${#endfor}}) of a .docx template, so hosts can validate templates (e.g. on
+ * upload) before merging them. Works whether or not {@code conditional_expressions.enabled} / {@code loops.enabled}
+ * are set.
  */
 interface ConditionalExpressionInspectorInterface
 {
@@ -22,8 +23,16 @@ interface ConditionalExpressionInspectorInterface
     public function listConditionalExpressions(string $templatePath): array;
 
     /**
-     * Checks every expression block without merging: layout problems (stray or missing end markers, markers sharing
-     * a paragraph, blocks crossing table cells), syntax, forbidden constructs, length and unknown variables.
+     * Returns the unique loop heads of the template ({@code item in items}, {@code key, line in order.lines}), normalised.
+     *
+     * @return list<string>
+     */
+    public function listLoops(string $templatePath): array;
+
+    /**
+     * Checks every expression block and loop without merging: layout problems (stray or missing end markers, markers sharing
+     * a paragraph, blocks crossing table cells, invalid loop heads), syntax, forbidden constructs, length and unknown
+     * variables — the loop variables ({@code item}, {@code key}, {@code loop}) are known inside each loop body.
      *
      * @param list<string> $variableNames top-level names the context will provide (e.g. {@code client} for {@code client.country})
      *
