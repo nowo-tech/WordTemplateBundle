@@ -13,6 +13,7 @@ This document describes the **attack surface**, **threats**, and **controls** fo
   - [HTML images (SSRF / local file read)](#html-images-ssrf--local-file-read)
   - [Image path abuse](#image-path-abuse)
   - [Dependency vulnerabilities](#dependency-vulnerabilities)
+  - [Expression conditionals](#expression-conditionals)
 - [Logging and secrets](#logging-and-secrets)
 - [Cryptography](#cryptography)
 - [Reporting](#reporting)
@@ -36,6 +37,7 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 | Context values | Application / stored user data | Escaped as OOXML text during `WordTemplateProcessor::process()` via PHPWord `Settings::setOutputEscapingEnabled(true)` (restored after merge). |
 | HTML in `HtmlContent` | Application | Parsed into OOXML; treat as untrusted if sourced from end users. `<img src>` is filtered (see below). |
 | Image paths in `ImageSource` | Application | Path traversal / sensitive file read if paths are user-controlled. |
+| Expressions in `${#if …}` markers (opt-in) | Template author — possibly an end user when the host lets users upload templates | Evaluated by a sandboxed Symfony ExpressionLanguage; see [Expression conditionals](#expression-conditionals). |
 
 ## Threats and mitigations
 
@@ -69,6 +71,23 @@ It does **not** expose HTTP routes by itself; the host application controls auth
 ### Dependency vulnerabilities
 
 - **Mitigation**: Run `composer audit` before releases; track PHPWord and Symfony advisories.
+
+### Expression conditionals
+
+Opt-in (`conditional_expressions.enabled`, default `false`). A template can carry `${#if <expression>}` … `${#endif}`; the expression is parsed and evaluated by the bundle.
+
+| Threat | Mitigation |
+|--------|------------|
+| Code execution / reading PHP state (`constant('…')`, `enum(…)`, calling PHP functions) | ExpressionLanguage's default functions are not registered (`SandboxedExpressionLanguage`); expressions are only evaluated, never compiled to PHP or `eval()`'d. The **only callables** are the whitelisted pure built-ins (`BuiltinExpressionFunctions`) and host functions explicitly tagged `nowo_word_template.expression_function_provider`; `functions.allow` / `deny` restrict both. |
+| Object traversal (`client.getPassword()`, `user.roles`, service objects) | Only scalars, lists and read-only maps built from the context reach the template (`ExpressionVariables`); entities and other objects are never exposed. Method calls are rejected at parse time; maps are read-only. |
+| Information disclosure through the context | The template can read every identifier-named top-level context key. Do not put secrets in the merge context of user-uploaded templates; validate uploads with `lintConditionalExpressions()` and a list of allowed variable names. |
+| Denial of service — huge expressions | `max_length` (default 500 characters). Parsed expressions are cached in a bounded pool (256 entries per evaluator). |
+| Denial of service — functions | Function inputs and outputs are capped (64 KiB strings, 10,000 elements); arguments are type-checked (`ExpressionFunctionError`). |
+| ReDoS through `matches` | Patterns run through `preg_match` and are bounded by PHP's `pcre.backtrack_limit` / `pcre.recursion_limit` (and the PCRE JIT stack): a pathological pattern fails with an evaluation error instead of hanging. The merge `timeout` still applies around the whole merge. No amplification: one `preg_match` per evaluated operator, no template-controlled loop. |
+| Silent wrong output | Default `on_error: exception`: unknown variables, typos, non-bool results and invalid marker layouts throw `ConditionalExpressionException`; `hide` / `keep` are explicit choices and are logged (count only). |
+| Log leakage | Logs carry the template file name, the error mode and the error count — never expressions or values. |
+
+Residual risk: a template author can still choose what to show from the values the host passes (that is the feature). Keep `enabled: false`, or restrict `functions.allow`, when templates come from untrusted users and the decision must stay in PHP.
 
 ## Logging and secrets
 

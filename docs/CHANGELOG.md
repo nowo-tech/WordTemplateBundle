@@ -43,7 +43,41 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Added
+
+- **Expression conditionals (opt-in).** `${#if <expression>}` … `${#endif}` — a **nameless** end marker makes the block an
+  expression evaluated against the context with a sandboxed Symfony ExpressionLanguage (`==`, `!=`, `===`, `!==`, `<`,
+  `>`, `<=`, `>=`, `and`/`or`/`not`, `in`/`not in`, `matches`, `starts with`/`ends with`, `contains`, arithmetic,
+  `??`, `?.`, ranges). Named blocks (`${#if name}` … `${#endif name}` + `ConditionalBlock`) are unchanged; the
+  classification is syntactic (nameless vs named end marker). Enable with
+  `nowo_word_template.conditional_expressions.enabled: true` (default `false`: no behaviour change).
+- Built-in, Twig-named **expression functions** (`lower`, `upper`, `capitalize`, `title`, `trim`, `length`, `replace`,
+  `slice`, `starts_with`, `ends_with`, `abs`, `round`, `floor`, `ceil`, `min`, `max`, `number_format`, `count`, `keys`,
+  `first`, `last`, `join`, `empty`, `default`, `is_null`, `is_defined`, `now`, `date`, `date_diff_days`); `now()` /
+  `date()` use the Symfony clock and `conditional_expressions.timezone`. Host functions via
+  `ExpressionFunctionProviderInterface` (autoconfigured tag `nowo_word_template.expression_function_provider`);
+  `conditional_expressions.functions.allow` / `deny`.
+- `conditional_expressions.on_error` (`exception` default, `hide`, `keep`) and `conditional_expressions.max_length`;
+  new `ConditionalExpressionException` (implements `WordTemplateExceptionInterface`).
+- `ConditionalExpressionInspectorInterface` (implemented by `WordTemplateProcessor`):
+  `listConditionalExpressions()` and `lintConditionalExpressions()` to validate templates before merging.
+- Word typographic quotes (`‘ ’ “ ”`), dashes, non-breaking spaces and split runs inside expression markers are normalised.
+- Backed enums (value), pure enums (case name) and `DateTimeInterface` (`'Y-m-d'`) are accepted in the context (they were
+  rejected with `InvalidContextValueException` before) and render as such in placeholders.
+- New runtime dependencies: `symfony/expression-language`, `symfony/cache`, `symfony/clock` (`^7.4 || ^8.0`).
+
+### Changed
+
+- `listVariables()` also omits the nameless `${#endif}` marker.
+- With `conditional_expressions.enabled: true`, `listConditionalBlocks()` returns named blocks only (expression blocks
+  are listed by `listConditionalExpressions()`).
+
 ### Documentation
+
+- `docs/USAGE.md` — new **Expression conditionals** section (enable, classification rule, exposed values, operators,
+  data types, function reference and Twig mapping, host functions, nesting / else / one of N, PHP vs template, errors
+  and error modes, linting, security); README conditionals section with screenshots; CONFIGURATION, UPGRADING,
+  SECURITY (threat table) and FRANKENPHP-WORKER-AUDIT updated.
 
 - `docs/USAGE.md` — new **Conditionals by data type** section: how to turn `bool`, `?bool`, `int`/`?int`, `float`,
   `string`/`?string`, `null`/optional values, arrays, `DateTimeInterface`, backed enums, Doctrine relations/collections and
@@ -56,6 +90,13 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   Linked from the README.
 
 ### Tests
+
+- Unit tests for the classifier/applicator (mixed nesting, layout errors per mode, split runs, smart quotes, custom
+  delimiters), the evaluator (every operator, failures), every built-in function (happy path, bad types, size caps,
+  allow/deny, host providers) and the exposure rules; `.docx` integration tests (body, table cell, header, footer,
+  functions, error modes, listing/linting, kernel wiring with an autoconfigured host provider).
+- `tests/Integration/ExpressionConditionalsUsageDocTest.php` renders every operator / data-type / function / error row of
+  the new USAGE section through a real `.docx` and runs every "In Word / In PHP / Result" example as written.
 
 - `tests/Integration/ConditionalsUsageDocTest.php` executes every documented expression (asserting the snippet is present
   in `docs/USAGE.md`) and renders the documented patterns and edge cases through real `.docx` templates, so the docs

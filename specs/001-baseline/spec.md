@@ -3,7 +3,7 @@
 **Feature Branch**: `001-baseline`  
 **Created**: 2026-07-07  
 **Status**: Active  
-**Last updated**: 2026-07-22  
+**Last updated**: 2026-10-30  
 **Input**: Backfill GitHub Spec Kit baseline documenting 100% of production code in `src/`.
 
 **Related docs**: [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPMENT.md), [`docs/CONFIGURATION.md`](../../docs/CONFIGURATION.md), [`docs/USAGE.md`](../../docs/USAGE.md)  
@@ -62,7 +62,7 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 
 ### Processing
 
-- **FR-PROC-001**: `WordTemplateProcessorInterface` — `process()`, `listVariables()`, `listConditionalBlocks()`.
+- **FR-PROC-001**: `WordTemplateProcessorInterface` — `process()`, `listVariables()`, `listConditionalBlocks()`; `WordTemplateProcessor` also implements `ConditionalExpressionInspectorInterface` ([002](../002-expression-conditionals/spec.md)).
 - **FR-PROC-002**: `WordTemplateProcessor` — opens template with configured delimiters; applies **conditional blocks first** (inside-out), then `TableRows`, then scalars / `HtmlContent` / `ImageSource`; enforces configured `timeout`.
 - **FR-PROC-003**: `ProcessedDocument` — path/stream accessors and `dispose()`.
 - **FR-PROC-004**: `listVariables()` omits conditional marker names (`#if …`, `#endif …`); paint fields inside conditionals are included.
@@ -119,7 +119,7 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 
 - Inline `#if` markers mid-paragraph (use a **scalar** computed in PHP for “word A or B” in one line).
 - Markers spanning table cells/rows, overlapping pairs, same-name nesting, footnotes / endnotes / comments.
-- Template-side expression evaluation.
+- Template-side expression evaluation for **named** blocks (expression blocks closed by a nameless `${#endif}` are specified in [`002-expression-conditionals`](../002-expression-conditionals/spec.md), opt-in since 1.8).
 - Word VBA execution.
 
 **Template authoring (defaults)**
@@ -144,7 +144,7 @@ ${#endif optional_funding}
 
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**25/25** mapped, audited 2026-10-20).
+- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**40/40** mapped, audited 2026-10-30).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: `composer qa` / `make release-check` pass in CI (PHPUnit, PHPStan).
 - **SC-004**: No Packagist-visible behavior change without spec, inventory, and test updates.
@@ -156,6 +156,6 @@ ${#endif optional_funding}
 | Check | Command |
 | --- | --- |
 | Full QA | `make release-check` or `composer qa` |
-| Code inventory audit | `git ls-files src \| wc -l` → 25 |
+| Code inventory audit | `git ls-files src \| wc -l` → 40 |
 
 When changing behavior, update this spec, `code-inventory.md`, integrator docs, and tests.

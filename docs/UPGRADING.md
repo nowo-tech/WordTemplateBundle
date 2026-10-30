@@ -45,7 +45,21 @@
 
 ## Unreleased
 
-- No code or configuration change needed: documentation, tests and demo only. If your templates rely on
+- **Expression conditionals — opt-in, no action required.** Nothing changes unless you set
+  `nowo_word_template.conditional_expressions.enabled: true`. Then `${#if <expression>}` … `${#endif}` (nameless end
+  marker) is evaluated in the template; named blocks keep working as before. Read
+  [USAGE.md — Expression conditionals](USAGE.md#expression-conditionals) and validate existing templates first with
+  `lintConditionalExpressions()` — a stray `${#endif}` or an unclosed non-name `${#if …}` is reported as an error in the
+  default `on_error: exception` mode.
+- **New dependencies** pulled in automatically: `symfony/expression-language`, `symfony/cache`, `symfony/clock`.
+- **Context values** — backed enums, pure enums and `DateTimeInterface` are now accepted (value / case name /
+  `'Y-m-d'`) instead of throwing `InvalidContextValueException`. If you relied on that exception, convert the values
+  yourself before calling `process()`; if you want another date format in a placeholder, pass a formatted string.
+- `listVariables()` no longer returns `#endif` for a nameless `${#endif}` marker.
+- If you subclass `WordTemplateProcessor`, its constructor gained three optional trailing parameters
+  (`$conditionalExpressionsEnabled`, `$conditionalExpressionsOnError`, `$conditionalExpressionEvaluator`).
+
+- Named conditionals are unchanged. If your templates rely on
   `ConditionalBlock`, read [USAGE.md — Conditionals by data type](USAGE.md#conditionals-by-data-type): it documents that a
   block without a `ConditionalBlock` in the context is left in the output as literal text and that a marker sharing its
   paragraph with other text is not (fully) supported — check your templates with `listConditionalBlocks()`.

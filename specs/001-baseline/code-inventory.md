@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/word-template-bundle`  
-**Last audited**: 2026-10-20
+**Last audited**: 2026-10-30
 
 This file proves that **every production source artifact** under `src/` is referenced by the baseline specification (PHP + YAML only; no TypeScript or build outputs).
 
@@ -48,6 +48,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Exception/TemplateNotFoundException.php` | Domain exception | FR-ERR-001 |
 | `Exception/WordTemplateExceptionInterface.php` | Domain exception | FR-ERR-001 |
 | `Exception/PathNotAllowedException.php` | Path outside `allowed_roots` | FR-ERR-001, FR-SEC-001 |
+| `Exception/ConditionalExpressionException.php` | Invalid expression conditional ([002](../002-expression-conditionals/spec.md)) | FR-ERR-001, FR-EXPR-030 |
 
 ## Document processing
 
@@ -58,6 +59,25 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Processor/WordTemplateProcessorInterface.php` | Processor contract | FR-PROC-001 |
 | `Result/ProcessedDocument.php` | Processed document result | FR-PROC-003 |
 | `Processor/PhpWordHtmlState.php` | Scopes PHPWord global `Html` parser state to one merge (worker safety) | FR-PROC-007 |
+| `Processor/ConditionalExpressionInspectorInterface.php` | List / lint expression conditionals ([002](../002-expression-conditionals/spec.md)) | FR-EXPR-040 |
+
+## Expression conditionals ([`002-expression-conditionals`](../002-expression-conditionals/spec.md))
+
+| Source file | Spec section | Requirement IDs |
+| --- | --- | --- |
+| `Util/ConditionalExpressionApplicator.php` | Marker pairing, classification, layout checks, outside-in rendering | FR-EXPR-001, FR-EXPR-003, FR-EXPR-031 |
+| `Expression/ExpressionBlock.php` | One expression block (offsets, regions) | FR-EXPR-001, FR-EXPR-003 |
+| `Expression/ExpressionTextNormalizer.php` | Entities, smart quotes, dashes, spaces | FR-EXPR-004 |
+| `Expression/SandboxedExpressionLanguage.php` | ExpressionLanguage without default functions | FR-EXPR-010 |
+| `Expression/ConditionalExpressionEvaluator.php` | Parse, check, evaluate, bounded cache, function registry | FR-EXPR-010, FR-EXPR-012, FR-EXPR-013, FR-EXPR-022 |
+| `Expression/ConditionalExpressionErrorMode.php` | `on_error` modes | FR-EXPR-031 |
+| `Expression/ConditionalExpressionReport.php` | Per-merge collector of swallowed errors | FR-EXPR-031 |
+| `Expression/ExpressionVariables.php` | Context → expression variables | FR-EXPR-011 |
+| `Expression/ExpressionMap.php` | Read-only map (dot / bracket access) | FR-EXPR-011 |
+| `Expression/UnknownVariableError.php` | Missing map key | FR-EXPR-011, FR-EXPR-030 |
+| `Expression/BuiltinExpressionFunctions.php` | Built-in functions, clock / time zone | FR-EXPR-020, FR-EXPR-021, FR-EXPR-023 |
+| `Expression/ExpressionFunctionProviderInterface.php` | Host function providers (autoconfigured tag) | FR-EXPR-022 |
+| `Expression/ExpressionFunctionError.php` | Bad function input | FR-EXPR-020, FR-EXPR-030 |
 
 ## Symfony config
 
@@ -74,9 +94,10 @@ This file proves that **every production source artifact** under `src/` is refer
 | Domain models | 4 | 4 |
 | Support utilities | 5 | 5 |
 | Runtime | 1 | 1 |
-| Exceptions | 5 | 5 |
-| Document processing | 5 | 5 |
+| Exceptions | 6 | 6 |
+| Document processing | 6 | 6 |
+| Expression conditionals | 13 | 13 |
 | Symfony config | 2 | 2 |
-| **Total production sources** | **25** | **25** |
+| **Total production sources** | **40** | **40** |
 
-Audit: `git ls-files src | wc -l` → 25.
+Audit: `git ls-files src | wc -l` → 40.
