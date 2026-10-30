@@ -37,7 +37,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * @psalm-type ArgumentsType = list<mixed>|array<string, mixed>
  * @psalm-type CallType = array<string, ArgumentsType>|array{0:string, 1?:ArgumentsType, 2?:bool}|array{method:string, arguments?:ArgumentsType, returns_clone?:bool}
  * @psalm-type TagsType = list<string|array<string, array<string, mixed>>> // arrays inside the list must have only one element, with the tag name as the key
- * @psalm-type CallbackType = string|array{0:string|ReferenceConfigurator,1:string}|\Closure|ReferenceConfigurator
+ * @psalm-type CallbackType = string|array{0:string|ReferenceConfigurator,1:string}|\Closure|ReferenceConfigurator|ExpressionConfigurator
  * @psalm-type DeprecationType = array{package: string, version: string, message?: string}
  * @psalm-type DefaultsType = array{
  *     public?: bool,
@@ -760,6 +760,16 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     conditional_if_closing?: scalar|Param|null, // Closing delimiter for conditional opening markers. // Default: "}"
  *     conditional_endif_opening?: scalar|Param|null, // Opening delimiter for conditional end markers (before the block name). // Default: "${#endif"
  *     conditional_endif_closing?: scalar|Param|null, // Closing delimiter for conditional end markers. // Default: "}"
+ *     conditional_expressions?: array{ // Expression conditionals: ${#if total > 0} … ${#endif} (nameless end marker), evaluated with a function-less Symfony ExpressionLanguage against the context. Opt-in.
+ *         enabled?: bool|Param, // When false (default) expression markers are left untouched, as in 1.7. // Default: false
+ *         on_error?: "exception"|"hide"|"keep"|Param, // Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block; keep = leave the markers as text (hide and keep log a warning). // Default: "exception"
+ *         max_length?: int|Param, // Maximum length of one expression in characters. // Default: 500
+ *         timezone?: scalar|Param|null, // Time zone of now() / date() (e.g. "Europe/Madrid"); null = PHP default time zone. "Now" comes from the Symfony clock service when available. // Default: null
+ *         functions?: array{ // Restrict the expression functions (built-ins and host providers tagged nowo_word_template.expression_function_provider).
+ *             allow?: null|list<scalar|Param|null>,
+ *             deny?: list<scalar|Param|null>,
+ *         },
+ *     },
  * }
  * @psalm-type NowoHotReloadConfig = array{
  *     enabled?: bool|Param, // Master switch. When false, nothing is injected even if FRANKENPHP_HOT_RELOAD is set. // Default: true

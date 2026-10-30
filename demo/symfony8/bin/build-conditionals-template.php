@@ -5,13 +5,16 @@ declare(strict_types=1);
 /*
  * Builds public/demo/conditionals-tpl.docx — the template of the "Conditionals by data type" demo page.
  * Every ${#if …} / ${#endif …} marker sits alone in its own paragraph (docs/USAGE.md "Where markers can go in Word").
+ * The last section uses expression conditionals (${#if <expression>} … ${#endif}, docs/USAGE.md "Expression conditionals").
  *
  * Usage (inside the demo container): php bin/build-conditionals-template.php
  */
 
+use App\Conditionals\ConditionalsContextBuilder;
 use PhpOffice\PhpWord\Element\Section;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Settings;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -93,7 +96,17 @@ $block($section, 'plan_pro', ['Plan: Pro.']);
 $block($section, 'plan_enterprise', ['Plan: Enterprise.']);
 $block($section, 'plan_other', ['Plan: not recognised — please contact sales.']);
 
+$section->addTitle('Expression conditionals — decided in the template (bundle 1.8)', 2);
+$section->addText('Each block below ends with a nameless end marker (#endif without a name): the condition is evaluated by the bundle against the "order" values of the context (config conditional_expressions.enabled: true).', ['italic' => true, 'color' => '4A5568']);
+foreach (ConditionalsContextBuilder::EXPRESSIONS as $expression => $text) {
+    $section->addText('${#if ' . $expression . '}');
+    $section->addText($text);
+    $section->addText('${#endif}');
+}
+
 $target = dirname(__DIR__) . '/public/demo/conditionals-tpl.docx';
+// Expressions contain "<", ">" and "&": escape them while writing the template XML.
+Settings::setOutputEscapingEnabled(true);
 IOFactory::createWriter($phpWord, 'Word2007')->save($target);
 
 echo 'Written ' . $target . \PHP_EOL;

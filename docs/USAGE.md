@@ -46,6 +46,18 @@ With those defaults, scalar placeholders look like `${client_name}` and conditio
   - [Same block name used several times](#same-block-name-used-several-times)
   - [What happens when…](#what-happens-when)
   - [Where markers can go in Word](#where-markers-can-go-in-word)
+- [Expression conditionals](#expression-conditionals) *(1.8, opt-in)*
+  - [Enable expression conditionals](#enable-expression-conditionals)
+  - [First example](#first-example)
+  - [Named block or expression? The classification rule](#named-block-or-expression-the-classification-rule)
+  - [What the expression can read](#what-the-expression-can-read)
+  - [Operators](#operators)
+  - [Expressions by data type](#expressions-by-data-type)
+  - [Functions reference](#functions-reference)
+  - [Nesting, "else" and one of N](#nesting-else-and-one-of-n)
+  - [When to compute in PHP, when in the template](#when-to-compute-in-php-when-in-the-template)
+  - [Errors](#errors)
+  - [Security](#security)
 - [Combined example (scalars + 2 tables + 2 conditionals)](#combined-example-scalars--2-tables--2-conditionals)
 - [Context types (summary)](#context-types-summary)
 - [Listing placeholders and conditional blocks](#listing-placeholders-and-conditional-blocks)
@@ -254,13 +266,15 @@ Nested blocks resolve **inside-out** (deepest first). There is no `else` / `else
 
 ## Conditionals by data type
 
-The template never evaluates an expression: everything between `${#if ` and `}` is a **block name**, not a condition (`${#if total > 0}` does not compare anything). Visibility is always decided in PHP and handed over as a **`bool`**:
+With named blocks the template never evaluates an expression: everything between `${#if ` and `}` is a **block name**, not a condition (`${#if total > 0}` … `${#endif total > 0}` does not compare anything). Visibility is decided in PHP and handed over as a **`bool`**:
 
 ```php
 Nowo\WordTemplateBundle\Model\ConditionalBlock::__construct(string $blockName, bool $visible)
 ```
 
-So every conditional boils down to one question: *how do I turn my value into a reliable `true` / `false`?* This section answers it for every common PHP type. Each expression in the tables is copied verbatim into `tests/Integration/ConditionalsUsageDocTest.php`, which runs it against sample values (and renders a real `.docx` for the patterns further down) — if an expression here and the test drift apart, the suite fails.
+> Since 1.8 the template can also carry the condition: `${#if total > 0}` … `${#endif}` (nameless end marker) with [expression conditionals](#expression-conditionals) (opt-in). The PHP rules below still apply — they are the same decisions — and [When to compute in PHP, when in the template](#when-to-compute-in-php-when-in-the-template) helps choose.
+
+So every named conditional boils down to one question: *how do I turn my value into a reliable `true` / `false`?* This section answers it for every common PHP type. Each expression in the tables is copied verbatim into `tests/Integration/ConditionalsUsageDocTest.php`, which runs it against sample values (and renders a real `.docx` for the patterns further down) — if an expression here and the test drift apart, the suite fails.
 
 Quick reference (details and pitfalls in the subsections):
 
@@ -628,7 +642,7 @@ $context['plan_other'] = new ConditionalBlock('plan_other', !in_array($plan, $pl
 | Placeholders inside a hidden block | Removed with the region; their values are ignored (no error) — except `TableRows`, see [above](#show-a-table-or-a-no-items-message-depending-on-its-rows). |
 | `${#if Annex}` vs `ConditionalBlock('annex', …)` | Names are currently matched case-insensitively, but `listConditionalBlocks()` returns them as typed (`Annex`). Do not rely on it: use the exact same spelling (lowercase `snake_case` recommended). |
 | Dotted names (`${#if invoice.paid}`) | Supported; the `ConditionalBlock` name is the full string (`'invoice.paid'`), independent of the context key. |
-| `${#if total > 0}` | Not an expression: it is a block literally named `total > 0` (and Word stores `>` as `&gt;`). Use a plain name and decide in PHP. |
+| `${#if total > 0}` … `${#endif total > 0}` | Not an expression: it is a block literally named `total > 0` (and Word stores `>` as `&gt;`). Use a plain name and decide in PHP — or close it with a nameless `${#endif}` and enable [expression conditionals](#expression-conditionals). |
 
 To fail fast instead of shipping literal markers, compare the names in the template with the blocks you build:
 
@@ -664,6 +678,483 @@ $result = $processor->process($templatePath, ['blocks' => $blocks] + $values);
 | Properly nested pairs | ✅ | Resolved inside-out (see [Nested conditionals](#nested-conditionals)). |
 | Overlapping pairs (`#if a`, `#if b`, `#endif a`, `#endif b`) | ❌ | Unsupported — damages the document. |
 | Marker split across runs by Word (spell-check, partial formatting) | ✅ | Healed before applying (`BrokenMacroNormalizer`). |
+
+## Expression conditionals
+
+*Since 1.8 — opt-in.* Instead of deciding every block in PHP, the template can carry the condition itself:
+
+```text
+${#if total > 1000}
+Orders above 1,000 EUR ship for free.
+${#endif}
+```
+
+The block opens with `${#if <expression>}` and closes with a **nameless** `${#endif}`. The expression is evaluated against the context you already pass to `process()`, with [Symfony ExpressionLanguage](https://symfony.com/doc/current/components/expression_language.html) syntax and a small set of [functions](#functions-reference). Named blocks (`${#if annex}` … `${#endif annex}` + `ConditionalBlock`) keep working exactly as before, in the same document.
+
+Every example in this section is executed by `tests/Integration/ExpressionConditionalsUsageDocTest.php`: each row of the operator, data-type, function and error tables is rendered through a real `.docx`, and each "In Word / In PHP / Result" example is run as written. If the docs and the code drift apart, the suite fails.
+
+### Enable expression conditionals
+
+```yaml
+# config/packages/nowo_word_template.yaml
+nowo_word_template:
+    conditional_expressions:
+        enabled: true          # default false: expression markers stay as literal text (1.7 behaviour)
+        on_error: exception    # exception | hide | keep — see "Errors"
+        max_length: 500        # characters per expression
+        timezone: null         # time zone of now() / date(); null = PHP default
+        functions:
+            allow: ~           # null = every function; or a list, e.g. [upper, lower, length]
+            deny: []           # e.g. [now, date]
+```
+
+All options are described in [CONFIGURATION.md](CONFIGURATION.md#conditional-expressions). Without `enabled: true` nothing changes: a `${#if total > 1000}` marker is left in the document as literal text, as in 1.7.
+
+### First example
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+Invoice ${number}
+${#if total > 1000}
+Orders above 1,000 EUR ship for free.
+${#endif}
+Thank you.
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'number' => 'F-2026-001',
+    'total'  => 1500,
+]);
+```
+
+**Result:**
+
+```text
+Invoice F-2026-001
+Orders above 1,000 EUR ship for free.
+Thank you.
+```
+
+With `'total' => 900` the middle paragraph is removed. As with named blocks, each marker must sit **alone in its own paragraph**, and the two marker paragraphs are always removed from the output.
+
+### Named block or expression? The classification rule
+
+The rule is **syntactic** and does not depend on the context:
+
+- Markers are paired like brackets, in document order (main part, each header and each footer separately).
+- A **nameless** `${#endif}` closes the nearest open `${#if …}` → that block is an **expression block**, evaluated by the bundle.
+- A **named** `${#endif name}` closes the nearest open `${#if name}` (same name, case-insensitive) → that block is a **named block**, shown or hidden by a `ConditionalBlock('name', …)` exactly as before. Without a matching `ConditionalBlock`, a named block stays as literal text (unchanged behaviour).
+
+| In Word | Kind | Decided by |
+|---------|------|------------|
+| `${#if annex}` … `${#endif annex}` | named block | `new ConditionalBlock('annex', $bool)` |
+| `${#if annex}` … `${#endif}` | expression (`annex` is a variable) | the `annex` variable — or `ConditionalBlock('annex', …)`, see below |
+| `${#if total > 1000}` … `${#endif}` | expression | the `total` variable |
+| `${#if total > 1000}` … `${#endif total > 1000}` | named block literally called `total > 1000` (1.7 behaviour) | a `ConditionalBlock` with that name |
+
+An identifier-only expression such as `${#if is_vip}` … `${#endif}` reads the bool variable `is_vip`. If the context has no `is_vip` key but has a `ConditionalBlock` named `is_vip`, its visibility is used — so existing `ConditionalBlock` decisions can be combined in expressions (`${#if annex and total > 0}`). A context key with the same name wins over a block.
+
+### What the expression can read
+
+The **top-level keys** of the context are the variables. A key must be an identifier (`[A-Za-z_][A-Za-z0-9_]*`) to be usable (`'client-name'` is not; use `client_name`).
+
+| Context value | Seen by the expression as | Example |
+|---------------|---------------------------|---------|
+| `int`, `float`, `string`, `bool`, `null` | the same value | `qty > 0` |
+| associative array | a read-only map: `client.country` or `client['country']` | `client.address.city == 'Madrid'` |
+| list (`array_is_list()`, **including `[]`**) | a PHP list: `lines[0]`, `'fire' in covers` | `length(lines) > 3` |
+| `Stringable` | its string | `company == 'ACME'` |
+| backed enum | its **value** (also in `${placeholders}` since 1.8) | `status == 'paid'` |
+| pure enum | its **case name** | `priority == 'High'` |
+| `DateTimeInterface` | a `'Y-m-d'` string, the calendar day in the object's own time zone (also in `${placeholders}` since 1.8) | `due_date < today` |
+| `ConditionalBlock` | not a value; its **visibility** is exposed as a bool under its block name (when that name is an identifier and no context key uses it) | `annex and is_vip` |
+| `TableRows`, `HtmlContent`, `ImageSource`, other objects | not exposed (pass a plain value next to them, e.g. `'lines_count' => count($lines)`) | — |
+
+- An empty array is a list, so `options.annex` fails on `'options' => []`; the bracket form `options['annex'] ?? false` works for both.
+- Reading a variable or a map key that does not exist is an error (`unknown variable "client.zip"`) — use `client.zip ?? ''` or `is_defined('client.zip')` when a key is optional.
+- Method calls (`client.getName()`) and property access on real objects are impossible: only the values above reach the template.
+- `DateTimeInterface` values are compared as `'Y-m-d'` strings, which order correctly (`'2026-10-01' < '2026-10-30'`). Pass "today" from a clock (`'today' => $clock->now()`) or use [`now()`](#functions-reference). For time-of-day decisions, compute the bool in PHP.
+
+### Operators
+
+| Operator | In Word | Context (PHP) | Result |
+|----------|---------|---------------|--------|
+| `==` equal (loose) | `${#if qty == 3}` | `['qty' => 3]` | ✅ kept |
+| `==` int vs numeric string | `${#if qty == '3'}` | `['qty' => 3]` | ✅ kept |
+| `===` identical (type too) | `${#if qty === '3'}` | `['qty' => 3]` | ❌ removed |
+| `!=` not equal | `${#if country != 'PT'}` | `['country' => 'ES']` | ✅ kept |
+| `!==` not identical | `${#if qty !== 3}` | `['qty' => 3]` | ❌ removed |
+| `<` | `${#if qty < 3}` | `['qty' => 3]` | ❌ removed |
+| `>` | `${#if total > 1000}` | `['total' => 1500]` | ✅ kept |
+| `<=` | `${#if qty <= 3}` | `['qty' => 3]` | ✅ kept |
+| `>=` | `${#if total >= 1000}` | `['total' => 999.99]` | ❌ removed |
+| `and` / `&&` | `${#if is_vip and total > 100}` | `['is_vip' => true, 'total' => 150]` | ✅ kept |
+| `or` / `\|\|` | `${#if is_vip or total > 10000}` | `['is_vip' => false, 'total' => 150]` | ❌ removed |
+| `not` / `!` | `${#if not is_vip}` | `['is_vip' => false]` | ✅ kept |
+| `in` (strict) | `${#if country in ['ES', 'PT']}` | `['country' => 'PT']` | ✅ kept |
+| `in` a context list | `${#if 'fire' in covers}` | `['covers' => ['theft', 'fire']]` | ✅ kept |
+| `not in` | `${#if 'flood' not in covers}` | `['covers' => ['theft', 'fire']]` | ✅ kept |
+| `in` a range | `${#if age in 18..64}` | `['age' => 65]` | ❌ removed |
+| `contains` | `${#if subject contains 'URGENT'}` | `['subject' => 'Re: URGENT renewal']` | ✅ kept |
+| `starts with` | `${#if iban starts with 'ES'}` | `['iban' => 'ES00 TEST']` | ✅ kept |
+| `ends with` | `${#if email ends with '@example.com'}` | `['email' => 'jane@example.com']` | ✅ kept |
+| `matches` (PCRE) | `${#if zip matches '/^28[0-9]+$/'}` | `['zip' => '28001']` | ✅ kept |
+| arithmetic `+ - * / %` | `${#if paid - due < 0}` | `['paid' => 80, 'due' => 100]` | ✅ kept |
+| `~` string concatenation | `${#if country ~ '-' ~ zip == 'ES-28001'}` | `['country' => 'ES', 'zip' => '28001']` | ✅ kept |
+| `? :` ternary | `${#if (is_vip ? 0 : 5) == 0}` | `['is_vip' => true]` | ✅ kept |
+| `??` null coalescing | `${#if (discount ?? 0) > 0}` | `['discount' => null]` | ❌ removed |
+| `?.` null-safe access | `${#if client?.vat == null}` | `['client' => null]` | ✅ kept |
+| parentheses | `${#if (a or b) and c}` | `['a' => false, 'b' => true, 'c' => true]` | ✅ kept |
+| `"double"` or `'single'` quotes | `${#if plan == "pro"}` | `['plan' => 'pro']` | ✅ kept |
+
+Notes:
+
+- String literals use straight quotes. **Word's AutoCorrect turns them into typographic quotes** (`‘pro’`, `“pro”`) while you type; the bundle converts `‘ ’ ‚ ‛ ′` to `'` and `“ ” „ ‟ ″ « »` to `"` before parsing, as well as en/em dashes and the minus sign (`–`, `—`, `−`) to `-`, non-breaking and other special spaces to plain spaces, and drops zero-width characters. A side effect: a literal cannot contain a typographic apostrophe (write `"O'Brien"` with double quotes).
+- `>` and `<` are stored by Word as `&gt;` / `&lt;`; the bundle decodes them. Markers split by Word into several runs (spell-check, partial formatting) are healed first, as for named blocks.
+- `matches` takes a PCRE pattern between delimiters. A backslash must be written twice (`'/^\\w+$/'`) because the string literal unescapes it once, and the pattern cannot contain `}` (the closing delimiter), so `{5}` quantifiers are not available — repeat the class (`[0-9][0-9][0-9]`) or decide in PHP. Patterns are bounded by PHP's `pcre.backtrack_limit` / `pcre.recursion_limit` (a pattern that hits them is an evaluation error, not a hang).
+- The expression cannot contain the closing delimiter (`}` by default), so hash literals (`{a: 1}`) are not available inside a marker.
+- A range (`18..64`) is only accepted between two **integer literals** and may hold at most 10,000 numbers (`1..100000000` or `1..n` are errors): the whole list is built in memory.
+- `|` is the bitwise OR operator of ExpressionLanguage, **not** a Twig filter: write `upper(name)`, not `name|upper` (see the [Twig mapping](#twig-filters-and-tests-as-functions)).
+- The result must be a **bool**: `${#if notes}` with a string is an error (`must evaluate to true or false, got string`). Compare explicitly: `notes != ''`, `qty > 0`, `not empty(lines)`.
+
+### Expressions by data type
+
+The [rules of the PHP section](#conditionals-by-data-type) apply here too (`0` vs `null`, float rounding, `'0'` strings). The same decisions written in the template:
+
+| Type | Show the block when… | In Word | Context (PHP) | Result |
+|------|---------------------|---------|---------------|--------|
+| `bool` | the flag is set | `${#if is_vip}` | `['is_vip' => true]` | ✅ kept |
+| `bool` | the flag is not set ("else") | `${#if not is_vip}` | `['is_vip' => true]` | ❌ removed |
+| `?bool` | explicitly `true` (`null` = unknown → hidden) | `${#if accepted === true}` | `['accepted' => null]` | ❌ removed |
+| `?bool` | still unknown | `${#if accepted === null}` | `['accepted' => null]` | ✅ kept |
+| `int` | strictly positive | `${#if qty > 0}` | `['qty' => -2]` | ❌ removed |
+| `int` | inside a range | `${#if age >= 18 and age < 65}` | `['age' => 18]` | ✅ kept |
+| `?int` | set, **0 included** | `${#if discount !== null}` | `['discount' => 0]` | ✅ kept |
+| `?int` | set and positive | `${#if (discount ?? 0) > 0}` | `['discount' => 0]` | ❌ removed |
+| `float` | positive at cent precision | `${#if round(total, 2) > 0}` | `['total' => 0.004]` | ❌ removed |
+| `float` | two amounts equal (tolerance) | `${#if abs(paid - due) < 0.005}` | `['paid' => 0.1 + 0.2, 'due' => 0.3]` | ✅ kept |
+| `string` | not blank | `${#if trim(notes) != ''}` | `['notes' => '   ']` | ❌ removed |
+| `string` | a code is present, **`'0'` included** | `${#if code !== ''}` | `['code' => '0']` | ✅ kept |
+| `string` | equals, case-insensitive (UTF-8) | `${#if lower(city) == 'málaga'}` | `['city' => 'MÁLAGA']` | ✅ kept |
+| `?string` | nullable and not blank | `${#if trim(default(notes, '')) != ''}` | `['notes' => null]` | ❌ removed |
+| `null` | an optional value is present | `${#if guarantor != null}` | `['guarantor' => null]` | ❌ removed |
+| map | a nested value | `${#if client.country == 'ES'}` | `['client' => ['country' => 'ES']]` | ✅ kept |
+| map | an optional key (bracket form also works when the array is empty) | `${#if (options['annex'] ?? false) === true}` | `['options' => []]` | ❌ removed |
+| map | a key exists, even null | `${#if is_defined('payment.iban')}` | `['payment' => ['iban' => null]]` | ✅ kept |
+| list | has elements | `${#if lines != []}` | `['lines' => []]` | ❌ removed |
+| list | more than N elements | `${#if length(lines) > 3}` | `['lines' => [1, 2, 3]]` | ❌ removed |
+| list | contains a value (strict) | `${#if 'fire' in covers}` | `['covers' => ['theft', 'fire']]` | ✅ kept |
+| `DateTimeInterface` | a due date is in the past | `${#if due_date < today}` | `['due_date' => new DateTimeImmutable('2026-10-29 18:00'), 'today' => new DateTimeImmutable('2026-10-30')]` | ✅ kept |
+| `DateTimeInterface` | a date is today | `${#if signed_at == now()}` | `['signed_at' => new DateTimeImmutable('2026-10-30 08:00')]` | ✅ kept |
+| `DateTimeInterface` | expires within 30 days | `${#if expires_at <= date('+30 days')}` | `['expires_at' => new DateTimeImmutable('2026-12-01')]` | ❌ removed |
+| `?DateTimeInterface` | an optional date is set | `${#if signed_at != null}` | `['signed_at' => null]` | ❌ removed |
+| backed enum | one case | `${#if status == 'paid'}` | `['status' => InvoiceStatus::Paid]` | ✅ kept |
+| backed enum | any of several cases | `${#if status in ['draft', 'overdue']}` | `['status' => InvoiceStatus::Paid]` | ❌ removed |
+| `ConditionalBlock` | combine a PHP decision with a value | `${#if annex and total > 0}` | `['blocks' => [new ConditionalBlock('annex', true)], 'total' => 10]` | ✅ kept |
+
+The date rows assume today is **2026-10-30** (`now()` and `date()` read the Symfony clock). Enums use `enum InvoiceStatus: string { case Draft = 'draft'; case Paid = 'paid'; case Overdue = 'overdue'; }`.
+
+### Functions reference
+
+Functions are called like in PHP or Twig: `upper(name)`. They are the **only** callable surface of a template: pure, no I/O, arguments validated (a wrong type is an [error](#errors)), strings limited to 64 KiB and lists to 10,000 elements — sizes are checked **before** a result is built (`replace()`, `join()`, `number_format()` with at most 20 decimals, date formats up to 100 bytes). `constant()`, `enum()` and every PHP function are **not** available.
+
+| Function | Twig equivalent | In Word | Context (PHP) | Result |
+|----------|-----------------|---------|---------------|--------|
+| `lower(s)` | `s\|lower` | `${#if lower(country) == 'es'}` | `['country' => 'ES']` | ✅ kept |
+| `upper(s)` | `s\|upper` | `${#if upper(name) == 'ACME'}` | `['name' => 'Acme']` | ✅ kept |
+| `capitalize(s)` | `s\|capitalize` | `${#if capitalize(city) == 'Málaga'}` | `['city' => 'MÁLAGA']` | ✅ kept |
+| `title(s)` | `s\|title` | `${#if title(name) == 'Acme Industries'}` | `['name' => 'acme industries']` | ✅ kept |
+| `trim(s[, chars])` | `s\|trim` | `${#if trim(code) == 'ES-01'}` | `['code' => '  ES-01 ']` | ✅ kept |
+| `length(x)` (string: characters, list/map: elements) | `x\|length` | `${#if length(city) == 6}` | `['city' => 'Málaga']` | ✅ kept |
+| `replace(s, search, replacement)` / `replace(s, {map})` | `s\|replace({…})` | `${#if replace(iban, ' ', '') == 'ES0012'}` | `['iban' => 'ES00 12']` | ✅ kept |
+| `slice(x, start[, length])` (string or list) | `x\|slice(start, length)` | `${#if slice(iban, 0, 2) == 'ES'}` | `['iban' => 'ES00 12']` | ✅ kept |
+| `starts_with(s, prefix)` | `s starts with prefix` | `${#if starts_with(iban, 'ES')}` | `['iban' => 'PT50 01']` | ❌ removed |
+| `ends_with(s, suffix)` | `s ends with suffix` | `${#if ends_with(email, '.org')}` | `['email' => 'jane@example.org']` | ✅ kept |
+| `abs(n)` | `n\|abs` | `${#if abs(balance) < 0.01}` | `['balance' => -0.004]` | ✅ kept |
+| `round(n[, precision])` | `n\|round(precision)` | `${#if round(total, 2) == 10.01}` | `['total' => 10.006]` | ✅ kept |
+| `floor(n)` / `ceil(n)` | `n\|round(0, 'floor')` / `'ceil'` | `${#if ceil(weight) == 3}` | `['weight' => 2.1]` | ✅ kept |
+| `min(a, b, …)` / `min(list)` | `min(…)` | `${#if min(prices) < 5}` | `['prices' => [10, 2.5, 7]]` | ✅ kept |
+| `max(a, b, …)` / `max(list)` | `max(…)` | `${#if max(qty, 1) == 1}` | `['qty' => 0]` | ✅ kept |
+| `number_format(n[, decimals, point, thousands])` | `n\|number_format` | `${#if number_format(total, 2, ',', '.') == '1.234,50'}` | `['total' => 1234.5]` | ✅ kept |
+| `count(x)` (list or map) | `x\|length` | `${#if count(lines) == 2}` | `['lines' => ['A', 'B']]` | ✅ kept |
+| `keys(x)` | `x\|keys` | `${#if 'iban' in keys(payment)}` | `['payment' => ['iban' => null]]` | ✅ kept |
+| `first(x)` / `last(x)` | `x\|first` / `x\|last` | `${#if first(lines) == 'A'}` | `['lines' => ['A', 'B']]` | ✅ kept |
+| `join(list[, glue])` | `list\|join(glue)` | `${#if join(covers, ', ') == 'fire, theft'}` | `['covers' => ['fire', 'theft']]` | ✅ kept |
+| `empty(x)` (`null`, `''`, `false`, `[]`, empty map; **not** `0`) | `x is empty` | `${#if empty(notes)}` | `['notes' => '']` | ✅ kept |
+| `default(x[, fallback])` (fallback when `x` is empty) | `x\|default(fallback)` | `${#if default(plan, 'basic') == 'basic'}` | `['plan' => null]` | ✅ kept |
+| `is_null(x)` | `x is null` | `${#if is_null(signed_at)}` | `['signed_at' => null]` | ✅ kept |
+| `is_defined('path')` | `x is defined` | `${#if is_defined('client.vat')}` | `['client' => ['name' => 'ACME']]` | ❌ removed |
+| `now([format])` (default `'Y-m-d'`) | `'now'\|date(format)` | `${#if now('m') == '10'}` | `[]` | ✅ kept |
+| `date(value[, format])` (`'Y-m-d'` string, relative text such as `'+30 days'`, or a timestamp) | `value\|date(format)` | `${#if date(due_date, 'N') >= 6}` | `['due_date' => new DateTimeImmutable('2026-10-31')]` | ✅ kept |
+| `date_diff_days(from, to)` (whole days, negative when `to` is earlier) | — | `${#if date_diff_days(now(), due_date) <= 7}` | `['due_date' => new DateTimeImmutable('2026-11-03')]` | ✅ kept |
+
+`now()` / `date()` use the Symfony `clock` service (so tests can freeze time with `MockClock`) and the `conditional_expressions.timezone` time zone. The examples assume now is 2026-10-30 12:00 in `Europe/Madrid`.
+
+#### Twig filters and tests as functions
+
+ExpressionLanguage has no `|filter` syntax (`|` is bitwise OR), so every Twig filter or test becomes a function call:
+
+| Twig | Expression conditional |
+|------|-----------------------|
+| `name\|upper == 'ACME'` | `upper(name) == 'ACME'` |
+| `name\|lower\|trim` | `trim(lower(name))` |
+| `items\|length > 0` | `length(items) > 0` |
+| `items is empty` / `items is not empty` | `empty(items)` / `not empty(items)` |
+| `value is null` | `is_null(value)` or `value == null` |
+| `client.vat is defined` | `is_defined('client.vat')` |
+| `notes\|default('n/a')` | `default(notes, 'n/a')` |
+| `'fire' in covers` | `'fire' in covers` (same operator) |
+| `name starts with 'A'` | `name starts with 'A'` (same operator) or `starts_with(name, 'A')` |
+| `date\|date('Y')` | `date(date, 'Y')` |
+| `total\|number_format(2, ',', '.')` | `number_format(total, 2, ',', '.')` |
+| `items\|join(', ')` | `join(items, ', ')` |
+
+`contains` and `in` are operators (`subject contains 'x'`, `x in list`), so they are not functions.
+
+#### Your own functions
+
+Implement `Nowo\WordTemplateBundle\Expression\ExpressionFunctionProviderInterface` in a service (autoconfigured with the tag `nowo_word_template.expression_function_provider`). Each evaluator receives the exposed variables first, then the arguments; throw `ExpressionFunctionError` on bad input so the [error mode](#errors) applies. Expressions are never compiled, so the compiler can be `BuiltinExpressionFunctions::notCompilable(...)`.
+
+```php
+namespace App\WordTemplate;
+
+use Nowo\WordTemplateBundle\Expression\BuiltinExpressionFunctions;
+use Nowo\WordTemplateBundle\Expression\ExpressionFunctionError;
+use Nowo\WordTemplateBundle\Expression\ExpressionFunctionProviderInterface;
+use Symfony\Component\ExpressionLanguage\ExpressionFunction;
+
+final class VatExpressionFunctions implements ExpressionFunctionProviderInterface
+{
+    public function getFunctions(): array
+    {
+        return [
+            new ExpressionFunction('vat_rate', BuiltinExpressionFunctions::notCompilable(...), static function (array $variables, mixed $country): float {
+                return match ($country) {
+                    'ES'    => 0.21,
+                    'PT'    => 0.23,
+                    default => throw new ExpressionFunctionError('vat_rate() only knows ES and PT.'),
+                };
+            }),
+        ];
+    }
+}
+```
+
+```text
+${#if vat_rate(client.country) > 0.2}
+VAT above 20 % applies.
+${#endif}
+```
+
+Keep host functions pure (no database, HTTP or filesystem access): templates may be uploaded by users in some applications. A host function with the same name as a built-in replaces it. `conditional_expressions.functions.allow` / `deny` apply to built-in and host functions alike (an unknown name there is a configuration error).
+
+### Nesting, "else" and one of N
+
+Expression blocks nest like named ones, and both kinds can be mixed. Blocks are evaluated **outside-in**: the expressions inside a removed block are never evaluated (so `client.vip` below is safe even when `client` is `null`).
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+${#if client != null}
+Customer: ${client.name}
+${#if client.vip}
+Priority support included.
+${#endif}
+${#endif}
+End of offer.
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'client' => ['name' => 'ACME', 'vip' => false],
+]);
+```
+
+**Result:**
+
+```text
+Customer: ACME
+End of offer.
+```
+
+**"else"** — there is no `${#else}`; write the opposite expression. One expression per branch keeps both branches readable in Word:
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+${#if status == 'paid'}
+Thank you, invoice ${number} is paid.
+${#endif}
+${#if status != 'paid'}
+Please pay invoice ${number} before ${due_date}.
+${#endif}
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'number'   => 'F-7',
+    'status'   => InvoiceStatus::Overdue,
+    'due_date' => new DateTimeImmutable('2026-11-15'),
+]);
+```
+
+**Result:**
+
+```text
+Please pay invoice F-7 before 2026-11-15.
+```
+
+**One of N** — one block per option, plus a fallback:
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+${#if plan == 'basic'}
+Plan: Basic.
+${#endif}
+${#if plan == 'pro'}
+Plan: Pro.
+${#endif}
+${#if plan not in ['basic', 'pro']}
+Plan not recognised — please contact sales.
+${#endif}
+```
+
+**In PHP:**
+
+```php
+$result = $processor->process($templatePath, [
+    'plan' => 'pro',
+]);
+```
+
+**Result:**
+
+```text
+Plan: Pro.
+```
+
+**Mixed with named blocks** — the named block is still decided in PHP; the expression inside it reads a plain value:
+
+<!-- expr-example -->
+**In Word:**
+
+```text
+${#if annex}
+Annex
+${#if lines_count == 0}
+No order lines.
+${#endif}
+${#endif annex}
+```
+
+**In PHP:**
+
+```php
+use Nowo\WordTemplateBundle\Model\ConditionalBlock;
+
+$result = $processor->process($templatePath, [
+    'annex'       => new ConditionalBlock('annex', true),
+    'lines_count' => 0,
+]);
+```
+
+**Result:**
+
+```text
+Annex
+No order lines.
+```
+
+**A table only when there are rows** — `TableRows` needs at least one row, so keep it out of the context when the list is empty, and pass the list itself for the expression:
+
+```text
+${#if lines != []}
+| ${line_code} | ${line_desc} |      ← table row cloned by TableRows
+${#endif}
+${#if lines == []}
+No items in this order.
+${#endif}
+```
+
+```php
+use Nowo\WordTemplateBundle\Model\TableRows;
+
+$context = ['lines' => $lines];
+if ($lines !== []) {
+    $context['rows'] = new TableRows('line_code', $lines); // rows: [['line_code' => 'A-1', 'line_desc' => 'Bolts'], …]
+}
+$result = $processor->process($templatePath, $context);
+```
+
+With two lines the table shows both rows and "No items" is removed; with `[]` only "No items in this order." remains (tested in `ExpressionConditionalsIntegrationTest::testTableShownOnlyWhenThereAreRows`).
+
+### When to compute in PHP, when in the template
+
+| Prefer the **template** expression when… | Prefer **PHP** (`ConditionalBlock` or a computed bool) when… |
+|------------------------------------------|---------------------------------------------------------------|
+| the rule is about the document's wording and template authors own it (thresholds, country lists) | the rule is business logic that must be tested and reused (eligibility, pricing, permissions) |
+| it reads values already in the context | it needs entities, relations, services, the database or the request |
+| it is short and readable in Word (`total > 1000`, `status == 'paid'`) | it needs loops, time of day, time-zone conversions or many conditions |
+| the same template serves several apps with different rules | the template is uploaded by end users and you do not want them to change the logic (keep `enabled: false` or restrict `functions.allow`) |
+
+### Errors
+
+| Problem | In Word | Context (PHP) | Result (`on_error: exception`) |
+|---------|---------|---------------|--------------------------------|
+| unknown variable (typo) | `${#if totl > 0}` | `['total' => 5]` | throws `uses the unknown variable "totl"` |
+| unknown map key | `${#if client.vat == ''}` | `['client' => ['name' => 'ACME']]` | throws `uses the unknown variable "client.vat"` |
+| syntax error | `${#if total >}` | `['total' => 5]` | throws `is invalid` |
+| unknown or disabled function | `${#if constant('PHP_VERSION') != ''}` | `[]` | throws `The function "constant" does not exist` |
+| method call | `${#if client.getName() == 'x'}` | `['client' => ['name' => 'x']]` | throws `method calls are not available in templates` |
+| not a bool | `${#if notes}` | `['notes' => 'text']` | throws `must evaluate to true or false, got string` |
+| bad function argument | `${#if upper(lines) == ''}` | `['lines' => ['A']]` | throws `upper() expects a string, got array` |
+| missing list index | `${#if lines[5] == 'x'}` | `['lines' => ['A']]` | throws `could not be evaluated` |
+
+Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Messages contain template text (the expression, variable and function names, argument types) but never context values, so they can be shown to template authors. Layout problems are errors too: a `${#endif}` with no open block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that crosses table cells / rows / content controls.
+
+`conditional_expressions.on_error` decides what happens:
+
+| Mode | Invalid expression | Layout problem | Logged |
+|------|--------------------|----------------|--------|
+| `exception` (default) | `ConditionalExpressionException` — nothing is generated | `ConditionalExpressionException` | warning `Word template merge rejected.` |
+| `hide` | the block is removed (as if `false`) | markers left as literal text | warning with the number of errors |
+| `keep` | markers left as literal text, content kept (inner blocks still evaluated) | markers left as literal text | warning with the number of errors |
+
+Logs never contain context values or expressions — only the template file name, the mode and the error count.
+
+**Validate templates up front** (for example when a user uploads one) with `ConditionalExpressionInspectorInterface`, implemented by the processor service. It works whether or not `enabled` is set:
+
+```php
+use Nowo\WordTemplateBundle\Processor\ConditionalExpressionInspectorInterface;
+
+/** @var ConditionalExpressionInspectorInterface $inspector */
+$expressions = $inspector->listConditionalExpressions($templatePath);
+// ['total > 1000', "status == 'paid'"]
+
+$problems = $inspector->lintConditionalExpressions($templatePath, ['total', 'status', 'client']);
+foreach ($problems as $problem) {
+    echo $problem->getMessage(), "\n"; // e.g. Conditional expression "totl > 0" uses the unknown variable "totl" …
+}
+```
+
+`lintConditionalExpressions()` checks layout, syntax, functions, length and **top-level** variable names (it does not know the keys of your maps). With `enabled: true`, `listConditionalBlocks()` returns only named blocks (the ones you must build a `ConditionalBlock` for).
+
+### Security
+
+Expressions are written by template authors. Treat an uploaded template like code with a tiny API: it can only read the values you put in the context and call the [functions](#functions-reference) (built-in or yours). There is no `constant()`, `enum()`, method call, property access on real objects, filesystem or network access. Expressions are limited to `max_length` characters, parsed expressions are cached in a bounded in-memory pool (256 entries per worker), function inputs and outputs are size-capped, and `matches` is bounded by PCRE's backtrack / recursion limits. See [SECURITY.md](SECURITY.md#expression-conditionals).
 
 ---
 
@@ -742,6 +1233,8 @@ $result->dispose();
 | PHP type | Behaviour |
 |----------|-----------|
 | Scalars / null | `setValue`; booleans become `1` / `0`; null becomes empty string. |
+| Backed / pure enum | Its value / case name (since 1.8). |
+| `DateTimeInterface` | `'Y-m-d'` (since 1.8; pass a formatted string for another format). |
 | Nested arrays | Flattened to dot keys (`client.city`). |
 | `Stringable` | Cast to string. |
 | `TableRows` | One per independent table row; distinct `rowVariable` anchors. |
@@ -768,6 +1261,8 @@ $variables = $processor->listVariables('/srv/templates/offer.docx');
 $blocks = $processor->listConditionalBlocks('/srv/templates/offer.docx');
 // e.g. ['annex', 'vip_section', 'optional_funding']
 ```
+
+**Expression conditionals** (`${#if total > 0}` … `${#endif}`) are listed and checked by `listConditionalExpressions()` / `lintConditionalExpressions()` — see [Errors](#errors). With `conditional_expressions.enabled: true`, `listConditionalBlocks()` returns named blocks only.
 
 Both scan the main document plus headers/footers. Table anchors appear in `listVariables()` as base names (not `#1` / `#2`). Use `listConditionalBlocks()` to know which `ConditionalBlock('name', $visible)` entries you must supply.
 

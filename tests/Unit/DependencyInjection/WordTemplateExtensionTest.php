@@ -6,6 +6,7 @@ namespace Nowo\WordTemplateBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\WordTemplateBundle\DependencyInjection\Configuration;
 use Nowo\WordTemplateBundle\DependencyInjection\WordTemplateExtension;
+use Nowo\WordTemplateBundle\Processor\ConditionalExpressionInspectorInterface;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessor;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -79,6 +80,20 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame('logger', (string) $logger);
         self::assertSame(ContainerInterface::IGNORE_ON_INVALID_REFERENCE, $logger->getInvalidBehavior());
         self::assertSame([['channel' => 'word_template']], $definition->getTag('monolog.logger'));
+    }
+
+    public function testLoadSetsConditionalExpressionParametersAndInspectorAlias(): void
+    {
+        $container = new ContainerBuilder();
+        (new WordTemplateExtension())->load([
+            ['conditional_expressions' => ['enabled' => true, 'on_error' => 'keep', 'max_length' => 80]],
+        ], $container);
+
+        self::assertTrue($container->getParameter(Configuration::ALIAS . '.conditional_expressions.enabled'));
+        self::assertSame('keep', $container->getParameter(Configuration::ALIAS . '.conditional_expressions.on_error'));
+        self::assertSame(80, $container->getParameter(Configuration::ALIAS . '.conditional_expressions.max_length'));
+        self::assertSame(WordTemplateProcessor::class, (string) $container->getAlias(ConditionalExpressionInspectorInterface::class));
+        self::assertSame('%nowo_word_template.conditional_expressions.enabled%', $container->getDefinition(WordTemplateProcessor::class)->getArgument('$conditionalExpressionsEnabled'));
     }
 
     public function testGetAlias(): void

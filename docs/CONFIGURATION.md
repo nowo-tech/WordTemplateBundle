@@ -14,6 +14,12 @@ Root key: `nowo_word_template`.
 | `conditional_if_closing` | `}` | Closing delimiter for conditional opening markers. |
 | `conditional_endif_opening` | `${#endif` | Opening delimiter for conditional end markers (before the block name). |
 | `conditional_endif_closing` | `}` | Closing delimiter for conditional end markers. |
+| `conditional_expressions.enabled` | `false` | Opt-in (1.8): evaluate `${#if <expression>}` … `${#endif}` blocks (nameless end marker). When `false`, expression markers stay as literal text. See [Conditional expressions](#conditional-expressions). |
+| `conditional_expressions.on_error` | `exception` | `exception`, `hide` or `keep`: what happens with an invalid expression, an unknown variable, a bad function argument or a marker layout the bundle cannot apply. `hide` removes a block whose expression fails; a block with a bad marker layout cannot be delimited and is left as text in `hide` and `keep` (use `exception`, the default, to fail closed). |
+| `conditional_expressions.max_length` | `500` | Maximum length of one expression, in characters (1–10000). |
+| `conditional_expressions.timezone` | `null` | Time zone of `now()` / `date()`; `null` = PHP's default time zone. Validated when the configuration is compiled (an unknown identifier is a configuration error). |
+| `conditional_expressions.functions.allow` | `null` | When a list, only these functions are available (built-in and host). |
+| `conditional_expressions.functions.deny` | `[]` | Functions that are never available (e.g. `[now, date]`). |
 
 ### Timeout hierarchy (FrankenPHP-safe)
 
@@ -55,7 +61,31 @@ nowo_word_template:
     conditional_if_closing: '}'
     conditional_endif_opening: '${#endif'
     conditional_endif_closing: '}'
+    conditional_expressions:
+        enabled: false
 ```
+
+### Conditional expressions
+
+```yaml
+nowo_word_template:
+    conditional_expressions:
+        enabled: true
+        on_error: exception      # exception | hide | keep
+        max_length: 500
+        timezone: 'Europe/Madrid'
+        functions:
+            allow: ~             # null = all functions
+            deny: [now, date]    # e.g. keep templates independent of the current date
+```
+
+- The nameless end marker is the `conditional_endif_opening` + `conditional_endif_closing` delimiters without a name (`${#endif}` by default) — there is no separate setting.
+- `now()` / `date()` read the Symfony `clock` service when it exists (FrameworkBundle registers it), so `MockClock` freezes them in tests; otherwise the system clock.
+- Host functions: services implementing `Nowo\WordTemplateBundle\Expression\ExpressionFunctionProviderInterface` are autoconfigured with the `nowo_word_template.expression_function_provider` tag; built-ins are registered with priority 1000, so a host function with the same name (default priority 0) replaces the built-in. An unknown name in `allow` / `deny` is a configuration error raised when the evaluator is built.
+- Parsed expressions are cached per evaluator service in a bounded in-memory pool (256 entries), so a FrankenPHP worker never grows without limit.
+- `on_error: hide` / `keep` log one `warning` per merge with the number of errors (see [Logging](#logging)); `exception` throws `ConditionalExpressionException` (logged as `Word template merge rejected.`).
+
+Full syntax, operators, data types and the function reference: [USAGE.md — Expression conditionals](USAGE.md#expression-conditionals).
 
 ### Logging
 
@@ -78,7 +108,8 @@ monolog:
 | `warning` | `Word template path rejected by nowo_word_template.allowed_roots.` | `path_kind` (`template` / `image` / `output`), `template` |
 | `warning` | `Word template merge dropped HTML images that are not allowed.` | `template`, `dropped_images` |
 | `warning` | `Word template merge timed out.` | `template`, `exception`, `timeout_s` |
-| `warning` | `Word template merge rejected.` | `template`, `exception` (missing template, invalid context value) |
+| `warning` | `Word template merge rejected.` | `template`, `exception` (missing template, invalid context value, invalid conditional expression) |
+| `warning` | `Word template conditional expressions failed and were applied with on_error mode.` | `template`, `on_error` (`hide` / `keep`), `errors` (count) |
 | `error` | `Word template merge failed.` | `template`, `exception` (unexpected failure, e.g. the output cannot be written) |
 
 Every record also has `bundle: word_template` and `action`. Only the template **file name** is logged — never full paths, context values, HTML, image sources or document contents ([SECURITY.md](SECURITY.md#logging-and-secrets)).

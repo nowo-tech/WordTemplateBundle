@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Conditionals\ConditionalsContextBuilder;
+use App\Conditionals\ExpressionExampleRunner;
+use App\Conditionals\ExpressionExamples;
 use App\Form\ConditionalsFormType;
 use App\Model\InvoiceStatus;
 use DateTimeImmutable;
+use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
+use Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator;
+use Nowo\WordTemplateBundle\Expression\ExpressionVariables;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
+use Psr\Clock\ClockInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\ClickableInterface;
@@ -22,20 +28,27 @@ use function is_file;
 use function sprintf;
 
 /**
- * "Conditionals by data type" demo: one form field per PHP type, each turned into
- * {@see ConditionalBlock}s with the expressions of docs/USAGE.md.
+ * "Conditionals" demo: one form field per PHP type, each turned into {@see ConditionalBlock}s with the
+ * expressions of docs/USAGE.md, plus expression conditionals evaluated in the template (1.8).
  * "Preview decisions" shows which blocks are visible; "Download .docx" merges
  * {@code public/demo/conditionals-tpl.docx} (built by {@code bin/build-conditionals-template.php}).
+ * Below the form, each {@see ExpressionExamples} entry shows the Word text, the PHP context and the result,
+ * with the template and the generated document as downloads.
  */
 final class ConditionalsDemoController extends AbstractController
 {
     private const TEMPLATE_FILENAME = 'conditionals-tpl.docx';
 
     #[Route('/conditionals', name: 'demo_conditionals', methods: ['GET', 'POST'])]
-    public function index(Request $request, WordTemplateProcessorInterface $processor, ConditionalsContextBuilder $builder): Response
-    {
+    public function index(
+        Request $request,
+        WordTemplateProcessorInterface $processor,
+        ConditionalsContextBuilder $builder,
+        ConditionalExpressionEvaluator $evaluator,
+        ClockInterface $clock,
+    ): Response {
         $templatePath = $this->templatePath();
-        $now          = new DateTimeImmutable();
+        $now          = DateTimeImmutable::createFromInterface($clock->now());
 
         $form = $this->createForm(ConditionalsFormType::class, [
             'customer_name'  => 'ACME Industries',
@@ -78,9 +91,20 @@ final class ConditionalsDemoController extends AbstractController
             }
         }
 
+        $variables   = ExpressionVariables::fromContext($built['context']);
+        $expressions = [];
+        foreach (ConditionalsContextBuilder::EXPRESSIONS as $expression => $text) {
+            try {
+                $expressions[] = ['expression' => $expression, 'text' => $text, 'visible' => $evaluator->evaluate($expression, $variables), 'error' => null];
+            } catch (ConditionalExpressionException $e) {
+                $expressions[] = ['expression' => $expression, 'text' => $text, 'visible' => false, 'error' => $e->getMessage()];
+            }
+        }
+
         return $this->render('demo/conditionals.html.twig', [
             'form'              => $form,
             'decisions'         => $built['decisions'],
+            'expressions'       => $expressions,
             'submitted'         => $submitted,
             'template_blocks'   => $processor->listConditionalBlocks($templatePath),
             'template_filename' => self::TEMPLATE_FILENAME,
@@ -99,6 +123,40 @@ final class ConditionalsDemoController extends AbstractController
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'Content-Disposition' => 'attachment; filename="' . self::TEMPLATE_FILENAME . '"',
         ]);
+    }
+
+    #[Route('/conditionals/examples', name: 'demo_conditionals_examples', methods: ['GET'])]
+    public function examples(ExpressionExampleRunner $runner, ClockInterface $clock): Response
+    {
+        $examples = [];
+        foreach (ExpressionExamples::all(DateTimeImmutable::createFromInterface($clock->now())) as $example) {
+            $examples[] = $example + $runner->preview($example);
+        }
+
+        return $this->render('demo/conditional_examples.html.twig', ['examples' => $examples]);
+    }
+
+    #[Route('/conditionals/examples/{id}/{kind}.docx', name: 'demo_conditionals_example', requirements: ['kind' => 'template|result'], methods: ['GET'])]
+    public function downloadExample(string $id, string $kind, ExpressionExampleRunner $runner, ClockInterface $clock): Response
+    {
+        foreach (ExpressionExamples::all(DateTimeImmutable::createFromInterface($clock->now())) as $example) {
+            if ($example['id'] !== $id) {
+                continue;
+            }
+
+            try {
+                $bytes = $kind === 'template' ? $runner->templateBytes($example) : $runner->resultBytes($example);
+            } catch (ConditionalExpressionException $e) {
+                return new Response($e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY, ['Content-Type' => 'text/plain; charset=UTF-8']);
+            }
+
+            return new Response($bytes, Response::HTTP_OK, [
+                'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition' => 'attachment; filename="' . $id . '-' . $kind . '.docx"',
+            ]);
+        }
+
+        throw $this->createNotFoundException(sprintf('Unknown example "%s".', $id));
     }
 
     private function templatePath(): string

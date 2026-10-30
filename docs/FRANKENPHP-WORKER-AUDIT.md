@@ -42,7 +42,7 @@ A bundle that is safe under **B** is safe under **A** and under classic mode / P
 | Doctrine / EntityManager | ✅ N/A | No persistence |
 | Output, headers, `exit`, shutdown functions | ✅ | None; result is a file path (`ProcessedDocument`) |
 | Resources (files, sockets, cURL) held open | ✅ | PHPWord's temporary template copy is removed on every path (W-02, resolved) |
-| Memory growth across requests | ✅ | No caches; PHPWord's static `Html::$xpath` is cleared after each merge |
+| Memory growth across requests | ✅ | PHPWord's static `Html::$xpath` is cleared after each merge. The only cache is the parsed-expression pool of `ConditionalExpressionEvaluator` (1.8): an `ArrayAdapter` capped at 256 entries holding parsed ASTs of template expressions (never context values) |
 | Blocking I/O and timeouts | ⚠️ Low | Cooperative deadline between merge phases; a single PHPWord call cannot be interrupted (W-03, accepted) |
 | Third-party static state | ✅ | `PhpWord\Settings` output escaping and `PhpWord\Shared\Html::$css` / `$xpath` / `$options` are saved, cleared and restored around each `process()` (W-01, resolved); `Html::$listIndex` only grows as a counter |
 | PHPStan FrankenPHP rulesets | ✅ | `ruleset-classic.neon` + `ruleset-worker.neon` included in `phpstan.neon.dist:11-12` |
@@ -53,9 +53,11 @@ A worker demo exists: `demo/symfony8/docker/frankenphp/Caddyfile:31` declares a 
 
 | Service | Shared | Mutable state | Scenario A | Scenario B |
 |---------|--------|---------------|------------|------------|
-| `Nowo\WordTemplateBundle\Processor\WordTemplateProcessor` (public, alias `WordTemplateProcessorInterface`) | yes | none (`readonly class`); PHPWord statics scoped per call | ✅ | ✅ |
+| `Nowo\WordTemplateBundle\Processor\WordTemplateProcessor` (public, alias `WordTemplateProcessorInterface`, `ConditionalExpressionInspectorInterface`) | yes | none (`readonly class`); PHPWord statics scoped per call | ✅ | ✅ |
+| `Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator` (1.8) | yes | bounded parse cache (256 parsed expressions, no request data); functions registered once in the constructor; the PHP error handler used during evaluation is restored in `finally` | ✅ | ✅ |
+| `Nowo\WordTemplateBundle\Expression\BuiltinExpressionFunctions` (1.8) | yes | none (`readonly`; clock + time zone); `now()` reads the injected clock on every call | ✅ | ✅ |
 
-Per-call objects: `TemplateProcessorBridge` (one per call, local variable), `ConditionalBlockApplicator` / `BrokenMacroNormalizer` (readonly config), `ProcessDeadline` (`final readonly`, created per `process()` call with `hrtime()`), `ProcessedDocument` (`final readonly`). Models (`ConditionalBlock`, `HtmlContent`, `ImageSource`, `TableRows`) are readonly value objects passed in by the caller and never stored in a service.
+Per-call objects: `TemplateProcessorBridge` (one per call, local variable), `ConditionalExpressionApplicator`, `ConditionalExpressionReport` and the exposed expression variables (`ExpressionVariables` / `ExpressionMap`, built per `process()` call), `ConditionalBlockApplicator` / `BrokenMacroNormalizer` (readonly config), `ProcessDeadline` (`final readonly`, created per `process()` call with `hrtime()`), `ProcessedDocument` (`final readonly`). Models (`ConditionalBlock`, `HtmlContent`, `ImageSource`, `TableRows`) are readonly value objects passed in by the caller and never stored in a service.
 
 ## Findings
 

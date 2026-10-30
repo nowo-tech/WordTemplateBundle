@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Nowo\WordTemplateBundle\DependencyInjection;
 
+use DateTimeZone;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+
+use function in_array;
+use function is_string;
 
 /**
  * Root key: {@see self::ALIAS} — PHPWord template macro delimiters.
@@ -69,6 +73,51 @@ final class Configuration implements ConfigurationInterface
                 ->scalarNode('conditional_endif_closing')
                     ->defaultValue('}')
                     ->info('Closing delimiter for conditional end markers.')
+                ->end()
+                ->arrayNode('conditional_expressions')
+                    ->info('Expression conditionals: ${#if total > 0} … ${#endif} (nameless end marker), evaluated with a function-less Symfony ExpressionLanguage against the context. Opt-in.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')
+                            ->defaultFalse()
+                            ->info('When false (default) expression markers are left untouched, as in 1.7.')
+                        ->end()
+                        ->enumNode('on_error')
+                            ->values(['exception', 'hide', 'keep'])
+                            ->defaultValue('exception')
+                            ->info('Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block whose expression fails (a block with a bad marker layout cannot be delimited and is left as text); keep = leave the markers as text (hide and keep log a warning).')
+                        ->end()
+                        ->integerNode('max_length')
+                            ->defaultValue(500)
+                            ->min(1)
+                            ->max(10000)
+                            ->info('Maximum length of one expression in characters.')
+                        ->end()
+                        ->scalarNode('timezone')
+                            ->defaultNull()
+                            ->validate()
+                                ->ifTrue(static fn (mixed $v): bool => $v !== null && (!is_string($v) || !in_array($v, DateTimeZone::listIdentifiers(), true) && $v !== 'UTC'))
+                                ->thenInvalid('conditional_expressions.timezone must be a valid PHP time zone identifier (e.g. "Europe/Madrid"), %s given.')
+                            ->end()
+                            ->info('Time zone of now() / date() (e.g. "Europe/Madrid"); null = PHP default time zone. "Now" comes from the Symfony clock service when available.')
+                        ->end()
+                        ->arrayNode('functions')
+                            ->info('Restrict the expression functions (built-ins and host providers tagged nowo_word_template.expression_function_provider).')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->arrayNode('allow')
+                                    ->info('Only these functions are available; null (default) = all.')
+                                    ->scalarPrototype()->end()
+                                    ->defaultNull()
+                                ->end()
+                                ->arrayNode('deny')
+                                    ->info('Functions that are never available (e.g. [now, date]).')
+                                    ->scalarPrototype()->end()
+                                    ->defaultValue([])
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
                 ->end()
             ->end()
             ->validate()

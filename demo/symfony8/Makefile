@@ -10,7 +10,7 @@ COMPOSE_BIN := $(shell "$(DOCKER)" compose version >/dev/null 2>&1 && echo "$(DO
 COMPOSE     := $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP := php
 
-.PHONY: help up down build install shell logs test verify-http cache-clear link-bundle update-bundle ensure-up restart release-check
+.PHONY: help up down build install shell logs test verify-http cache-clear link-bundle update-bundle ensure-up restart release-check test-e2e demo-screenshots docx-previews
 
 help:
 	@echo "Symfony 8 demo — WordTemplateBundle"
@@ -27,6 +27,9 @@ help:
 	@echo "  make cache-clear    Clear Symfony cache"
 	@echo "  make link-bundle    Symlink bundle from /var/word-template-bundle"
 	@echo "  make update-bundle  Sync bundle + autoload + cache (REQ-DEMO-007)"
+	@echo "  make test-e2e       Playwright e2e (REQ-DEMO-013)"
+	@echo "  make demo-screenshots  Refresh docs/images/demo/*.webp (pages)"
+	@echo "  make docx-previews  Render example templates and results with LibreOffice → docs/images/demo/docx-*.webp"
 	@echo ""
 
 up:
@@ -96,6 +99,52 @@ update-bundle: ensure-up
 
 release-check: ensure-up update-bundle test verify-http
 	@echo "Demo release-check OK."
+
+# REQ-DEMO-013: Playwright e2e and screenshots in the official Playwright image (version = e2e/package.json).
+PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.64.1-jammy
+DEMO_PORT = DEMO_PORT=$$(grep -E '^PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '\r'); DEMO_PORT=$${DEMO_PORT:-8021}
+
+test-e2e: ensure-up
+	@mkdir -p e2e/node_modules
+	@$(DEMO_PORT); \
+	docker run --rm --network host \
+		-v "$(CURDIR)/e2e:/e2e" -w /e2e \
+		-e DEMO_BASE_URL=http://127.0.0.1:$$DEMO_PORT \
+		$(PLAYWRIGHT_IMAGE) \
+		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=chromium --workers=2'
+
+demo-screenshots: ensure-up
+	@mkdir -p ../../docs/images/demo e2e/node_modules
+	@$(DEMO_PORT); \
+	docker run --rm --network host \
+		-v "$(CURDIR)/e2e:/e2e" \
+		-v "$(CURDIR)/../../docs/images/demo:/screenshots" \
+		-w /e2e \
+		-e DEMO_BASE_URL=http://127.0.0.1:$$DEMO_PORT \
+		-e SCREENSHOT_DIR=/screenshots \
+		$(PLAYWRIGHT_IMAGE) \
+		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=screenshots && node scripts/to-webp.mjs /screenshots'
+	@echo "Screenshots written under docs/images/demo/ (WebP)"
+
+# "Template in Word → generated document" images: export every /conditionals/examples case, render both .docx
+# with LibreOffice (installed on the fly in LIBREOFFICE_IMAGE unless it already has soffice) and compose them.
+LIBREOFFICE_IMAGE ?= debian:bookworm-slim
+DOCX_PREVIEW_IDS  ?= named-block expression-true expression-false functions nested else one-of-n table table-empty dates
+
+docx-previews: ensure-up
+	@rm -rf e2e/docx-previews && mkdir -p e2e/docx-previews ../../docs/images/demo e2e/node_modules
+	$(COMPOSE) exec -T php php bin/console app:conditionals:export-examples /app/e2e/docx-previews
+	docker run --rm -v "$(CURDIR)/e2e/docx-previews:/work" -w /work --entrypoint sh $(LIBREOFFICE_IMAGE) -c '\
+		(command -v soffice >/dev/null || (apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libreoffice-writer-nogui fonts-dejavu fonts-crosextra-carlito >/dev/null)) \
+		&& soffice -env:UserInstallation=file:///tmp/lo --headless --convert-to png --outdir /work/png *.docx >/dev/null \
+		&& chown -R $(shell id -u):$(shell id -g) /work'
+	docker run --rm \
+		-v "$(CURDIR)/e2e:/e2e" \
+		-v "$(CURDIR)/../../docs/images/demo:/screenshots" \
+		-w /e2e \
+		$(PLAYWRIGHT_IMAGE) \
+		bash -lc 'npm install --no-fund --no-audit && node scripts/docx-side-by-side.mjs /e2e/docx-previews/png /screenshots $(DOCX_PREVIEW_IDS)'
+	@echo "Document previews written under docs/images/demo/docx-*.webp"
 
 
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)

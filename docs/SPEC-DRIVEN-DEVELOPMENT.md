@@ -36,8 +36,9 @@ The sections above/below state **behavior**; this subsection states **intent** i
 | US-07 | **As a** platform maintainer, **I want** `nowo_word_template.macro_opening` / `macro_closing` configurable **so that** they match what template authors typed in Word (defaults `${` / `}`). |
 | US-08 | **As a** integrator, **I want** to pass `ConditionalBlock` for `${#if name}` … `${#endif name}` regions **so that** whole paragraphs or sections appear or disappear from PHP. |
 | US-09 | **As a** integrator, **I want** nested conditional blocks and separate `conditional_*` delimiters **so that** inner regions resolve before outer ones and markers can differ from scalar placeholders. |
+| US-10 | **As a** template author, **I want** to write the condition in Word (`${#if total > 1000}` … `${#endif}`) with Twig-like functions **so that** simple document rules do not need PHP changes (opt-in; [`specs/002-expression-conditionals`](../specs/002-expression-conditionals/spec.md)). |
 
-**Out of scope for these stories:** running Word VBA; inline `#if` inside a single paragraph (use a computed scalar instead); `elseif` / `else` in template syntax (v1).
+**Out of scope for these stories:** running Word VBA; inline `#if` inside a single paragraph (use a computed scalar instead); `elseif` / `else` in template syntax (write the opposite expression).
 
 ---
 
@@ -58,6 +59,8 @@ The sections above/below state **behavior**; this subsection states **intent** i
 | `Stringable` | Cast to string, then `setValue`. |
 | `TableRows` | `cloneRow` on an anchor column, then `setValue` for `placeholder#N` per row/cell. |
 | `ConditionalBlock` | Show or remove `${#if block}` … `${#endif block}` regions (nested, inside-out); markers use `conditional_*` config keys. |
+| Backed / pure enum, `DateTimeInterface` | Value / case name / `'Y-m-d'` (since 1.8). |
+| *(expression blocks)* | `${#if <expression>}` … `${#endif}` evaluated against the context when `conditional_expressions.enabled` (1.8). |
 | `HtmlContent` | `setComplexBlock` with HTML rendered via PHPWord (`Html::addHtml`). |
 | `ImageSource` | `setImageValue` with optional width/height. |
 

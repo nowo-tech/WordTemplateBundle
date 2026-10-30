@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}WordTemplate — expression examples{% endblock %}
+
+{% block body %}
+  <h1>Expression conditionals — worked examples</h1>
+  <p class="lead">
+    Each card is a small template built from the &ldquo;In Word&rdquo; text (one paragraph per line, markers in blue)
+    merged with the PHP context next to it. Download the template and the generated document to open them in Word.
+    The same cases are documented and tested in the bundle's <code>docs/USAGE.md</code> (&ldquo;Expression conditionals&rdquo;);
+    this demo enables them with <code>nowo_word_template.conditional_expressions.enabled: true</code>.
+  </p>
+  {% for example in examples %}
+    <div class="card mb-3" data-testid="example-{{ example.id }}" id="example-{{ example.id }}">
+      <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <strong>{{ example.title }}</strong>
+        <span class="small">
+          <a href="{{ path('demo_conditionals_example', {id: example.id, kind: 'template'}) }}">template .docx</a>
+          {% if not example.error %}
+            &middot; <a href="{{ path('demo_conditionals_example', {id: example.id, kind: 'result'}) }}">generated .docx</a>
+          {% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        <p class="small text-muted">{{ example.note }}</p>
+        <div class="row g-3">
+          <div class="col-lg-4">
+            <div class="small fw-semibold mb-1">In Word</div>
+            <pre class="bg-light border rounded p-2 small mb-0 demo-pre">{% for line in example.word %}{{ line }}
+{% endfor %}</pre>
+          </div>
+          <div class="col-lg-4">
+            <div class="small fw-semibold mb-1">In PHP</div>
+            <pre class="bg-dark text-light rounded p-2 small mb-0 demo-pre">{{ example.php }}</pre>
+          </div>
+          <div class="col-lg-4">
+            <div class="small fw-semibold mb-1">Result</div>
+            {% if example.error %}
+              <div class="alert alert-danger small mb-0" data-testid="example-error-message"><code>ConditionalExpressionException</code>: {{ example.error }}</div>
+            {% else %}
+              <pre class="bg-white border border-success rounded p-2 small mb-0 demo-pre" data-testid="example-result">{% for line in example.lines %}{{ line }}
+{% endfor %}</pre>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}
