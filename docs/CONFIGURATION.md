@@ -19,7 +19,7 @@ Root key: `nowo_word_template`.
 | `loops.enabled` | `false` | Opt-in (1.8): expand `${#for item in items}` … `${#endfor}`. See [Loops](#loops). |
 | `loops.max_iterations` | `1000` | Maximum elements of one loop. |
 | `loops.max_total_iterations` | `10000` | Maximum iterations of all loops of one merge together (nested loops multiply). |
-| `loops.max_output_bytes` | `33554432` | Maximum bytes of document XML produced by all loops of one merge (all parts together); checked before rendering. |
+| `loops.max_output_bytes` | `33554432` | Maximum bytes of document XML produced by all loops of one merge (all parts together); checked before rendering. With expression blocks or loops enabled it also bounds the values written into all copies of the scalar placeholders. |
 | `conditional_expressions.max_markers` | `2000` | Maximum expression / loop markers per document part (body, each header, each footer). |
 | `conditional_expressions.max_depth` | `32` | Maximum nesting depth of expression blocks and loops. |
 | `conditional_expressions.max_evaluations` | `100000` | Maximum expression evaluations of one merge (loops re-evaluate their bodies). |

@@ -89,8 +89,11 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   `conditional_expressions.max_markers` (2000 per part), `max_depth` (32) and `max_evaluations` (100,000 per merge), which
   always throw the new `TemplateLimitExceededException`; the merge `timeout` is checked while rendering and the
   inspection APIs run under it; values printed by loops **and by ordinary placeholders** can no longer be read as
-  placeholders again (`${other}` in a value stays literal, `$` is written as `&#36;`), and XML-invalid control
-  characters are dropped from values.
+  placeholders again — alone or next to another value (`'$'` + `'{other}'`) — because every `$` in a value is written
+  as `&#36;` (collision-free internal escaping), `HtmlContent` and images are inserted after the scalar placeholders so
+  `${key}` inside HTML stays literal, and XML-invalid control characters are dropped from values. With expression
+  blocks or loops enabled, all copies of the scalar placeholders are checked against `loops.max_output_bytes` before
+  PHPWord writes them.
 
 ### Documentation
 

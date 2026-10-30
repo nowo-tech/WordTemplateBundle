@@ -8,6 +8,7 @@ use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
 use Nowo\WordTemplateBundle\Exception\InvalidContextValueException;
 use Nowo\WordTemplateBundle\Exception\PathNotAllowedException;
 use Nowo\WordTemplateBundle\Exception\ProcessingTimedOutException;
+use Nowo\WordTemplateBundle\Exception\TemplateLimitExceededException;
 use Nowo\WordTemplateBundle\Exception\TemplateNotFoundException;
 use Nowo\WordTemplateBundle\Exception\WordTemplateExceptionInterface;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionErrorMode;
@@ -44,19 +45,21 @@ use function implode;
 use function in_array;
 use function ini_get;
 use function is_bool;
+use function is_scalar;
 use function mb_ord;
 use function mb_substr;
 use function preg_match;
 use function preg_quote;
 use function preg_replace;
+use function preg_replace_callback;
 use function preg_split;
 use function round;
 use function sprintf;
-use function str_contains;
-use function str_replace;
 use function str_starts_with;
 use function strlen;
+use function strtr;
 use function substr;
+use function substr_count;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -82,8 +85,14 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
 
     private ExpressionLimits $expressionLimits;
 
-    /** Stands for the first character of {@code macro_opening} inside merged values until the parts are final. */
-    private const INERT_MACRO = "\u{E000}";
+    /**
+     * Escape character of merged values: {@see self::INERT_ESCAPE} + {@see self::INERT_ESCAPE} stands for itself and
+     * {@see self::INERT_ESCAPE} + {@see self::INERT_MACRO} for the first character of {@code macro_opening}, until
+     * {@see self::restoreInertMacros()} writes the parts. Escaping makes the scheme collision-free for any user input.
+     */
+    private const INERT_ESCAPE = "\u{E000}";
+
+    private const INERT_MACRO = "\u{E001}";
 
     /**
      * @param string $macroOpening placeholder opening delimiter
@@ -394,28 +403,28 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
                 }
             }
 
+            $this->assertPlaceholderBudget($processor, $flat);
+
+            // Scalars first: HtmlContent / images are inserted afterwards, so text inside an HtmlContent can never be
+            // filled by a later setValue() (a "${key}" typed in HTML stays literal).
             foreach ($flat as $key => $value) {
-                if ($value instanceof ConditionalBlock || $value instanceof TableRows) {
-                    continue;
-                }
-
-                if ($value instanceof HtmlContent) {
-                    $this->applyHtml($processor, $key, $value, $htmlImages);
-                    $deadline->assertNotTimedOut();
-
-                    continue;
-                }
-
-                if ($value instanceof ImageSource) {
-                    $this->applyImage($processor, $key, $value, $templatePath);
-                    $deadline->assertNotTimedOut();
-
+                if ($value instanceof ConditionalBlock || $value instanceof TableRows || $value instanceof HtmlContent || $value instanceof ImageSource) {
                     continue;
                 }
 
                 // @igor-ignore - Not shared worker service state.
                 $processor->setValue($key, $this->stringify($value));
                 $deadline->assertNotTimedOut();
+            }
+
+            foreach ($flat as $key => $value) {
+                if ($value instanceof HtmlContent) {
+                    $this->applyHtml($processor, $key, $value, $htmlImages);
+                    $deadline->assertNotTimedOut();
+                } elseif ($value instanceof ImageSource) {
+                    $this->applyImage($processor, $key, $value, $templatePath);
+                    $deadline->assertNotTimedOut();
+                }
             }
 
             $this->restoreInertMacros($processor);
@@ -603,9 +612,38 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     }
 
     /**
-     * Value for PHPWord setValue(): characters invalid in XML are dropped, and the placeholder opening (e.g. {@code ${})
-     * inside the value is made inert so a later setValue() cannot replace it with another context value (restored by
-     * {@see self::restoreInertMacros()}).
+     * With expression blocks or loops enabled, a template can repeat a placeholder many times (directly or through a
+     * loop body): the bytes PHPWord would write for all copies of all scalar placeholders are checked against
+     * {@code loops.max_output_bytes} before any setValue() call.
+     *
+     * @param array<string, mixed> $flat
+     */
+    private function assertPlaceholderBudget(TemplateProcessorBridge $processor, array $flat): void
+    {
+        if (!$this->conditionalExpressionsEnabled && !$this->loopsEnabled) {
+            return;
+        }
+
+        $parts = $processor->documentPartXmls();
+        $bytes = 0;
+        foreach ($flat as $key => $value) {
+            if ($value === null || is_scalar($value) || $value instanceof Stringable) {
+                $macro = $this->macroOpening . $key . $this->macroClosing;
+                foreach ($parts as $xml) {
+                    $bytes += substr_count($xml, $macro) * strlen((string) $value);
+                }
+            }
+        }
+
+        if ($bytes > $this->expressionLimits->maxOutputBytes) {
+            throw new TemplateLimitExceededException(sprintf('The placeholders of the document would write %d bytes of values; the limit (loops.max_output_bytes) is %d.', $bytes, $this->expressionLimits->maxOutputBytes));
+        }
+    }
+
+    /**
+     * Value for PHPWord setValue(): characters invalid in XML are dropped, and every first character of the placeholder
+     * opening (e.g. {@code $}) inside the value is made inert so the value — alone or next to another value — cannot be
+     * replaced by a later setValue() (restored by {@see self::restoreInertMacros()}).
      */
     private function stringify(string|Stringable|int|float|bool|null $value): string
     {
@@ -618,21 +656,26 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         }
 
         $string = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) $value);
-        if ($this->macroOpening === '' || !str_contains($string, $this->macroOpening)) {
-            return $string;
-        }
 
-        return str_replace($this->macroOpening, self::INERT_MACRO . substr($this->macroOpening, 1), $string);
+        $pairs = [self::INERT_ESCAPE => self::INERT_ESCAPE . self::INERT_ESCAPE, mb_substr($this->macroOpening, 0, 1) => self::INERT_ESCAPE . self::INERT_MACRO];
+        unset($pairs['']); // empty macro_opening: only the escape character is escaped
+
+        return strtr($string, $pairs);
     }
 
     /**
-     * Writes the inert first character of macro_opening as a numeric character reference (same text in Word).
+     * Decodes the escaped values: the escape pair becomes the escape character again, the inert macro character is
+     * written as a numeric character reference (same text in Word, never read as a placeholder).
      */
     private function restoreInertMacros(TemplateProcessorBridge $processor): void
     {
         $first     = mb_substr($this->macroOpening, 0, 1);
         $reference = $first === '' ? '' : '&#' . mb_ord($first) . ';';
-        $processor->transformDocumentParts(static fn (string $xml): string => str_replace(self::INERT_MACRO, $reference, $xml));
+        $processor->transformDocumentParts(static fn (string $xml): string => (string) preg_replace_callback(
+            '/' . self::INERT_ESCAPE . '([' . self::INERT_ESCAPE . self::INERT_MACRO . '])/u',
+            static fn (array $match): string => $match[1] === self::INERT_ESCAPE ? self::INERT_ESCAPE : $reference,
+            $xml,
+        ));
     }
 
     protected function persistTemplate(TemplateProcessor $processor, string $target): void

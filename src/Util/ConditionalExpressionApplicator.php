@@ -30,6 +30,7 @@ use function is_float;
 use function is_int;
 use function is_string;
 use function mb_ord;
+use function mb_substr;
 use function preg_last_error_msg;
 use function preg_match;
 use function preg_match_all;
@@ -37,7 +38,6 @@ use function preg_quote;
 use function preg_replace;
 use function preg_replace_callback;
 use function sprintf;
-use function str_contains;
 use function str_replace;
 use function strcasecmp;
 use function strlen;
@@ -672,18 +672,18 @@ final readonly class ConditionalExpressionApplicator
     }
 
     /**
-     * Makes a printed value inert: drops characters that are invalid in XML and encodes the first character of the
-     * placeholder opening ({@code $} of {@code ${}) so the value can never be read as a placeholder again — neither by
-     * an enclosing loop nor by PHPWord's setValue() — while Word displays the same text.
+     * Makes a printed value inert: drops characters that are invalid in XML and encodes every occurrence of the first
+     * character of the placeholder opening ({@code $} of {@code ${}) so the value — alone or next to another value —
+     * can never be read as a placeholder again, neither by an enclosing loop nor by PHPWord's setValue(), while Word
+     * displays the same text.
      */
     public static function protect(string $escapedValue, string $macroOpening): string
     {
         $value = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $escapedValue);
-        if ($macroOpening === '' || !str_contains($value, $macroOpening)) {
-            return $value;
-        }
+        $first = mb_substr($macroOpening, 0, 1);
 
-        return str_replace($macroOpening, '&#' . mb_ord($macroOpening[0]) . ';' . substr($macroOpening, 1), $value);
+        // Every occurrence, not only a full "${": two adjacent values ("$" and "{key}") must not form one either.
+        return $first === '' ? $value : str_replace($first, '&#' . mb_ord($first) . ';', $value);
     }
 
     private function countEvaluation(ConditionalExpressionReport $report): void

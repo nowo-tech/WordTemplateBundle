@@ -1241,7 +1241,7 @@ Order F-2026-001
 Total: 65.5 EUR
 ```
 
-Values are printed like other placeholders (`true` → `1`, `false` → `0`, `null` → empty, enums → value, dates → `Y-m-d`) and XML-escaped. A value is never read as a template again: `${…}` inside a value (an order line typed by a customer, say) is printed as typed, not replaced by another context value, and characters that are invalid in XML are dropped — this also applies to ordinary placeholders since 1.8. A list or a map cannot be printed: print one of its values or loop over it.
+Values are printed like other placeholders (`true` → `1`, `false` → `0`, `null` → empty, enums → value, dates → `Y-m-d`) and XML-escaped. A value is never read as a template again: `${…}` inside a value (an order line typed by a customer, say) is printed as typed, not replaced by another context value — neither alone nor next to another value (every `$` of a value is written as `&#36;`, which Word shows as `$`) — and characters that are invalid in XML are dropped — this also applies to ordinary placeholders since 1.8. A list or a map cannot be printed: print one of its values or loop over it.
 
 ### Repeat table rows
 

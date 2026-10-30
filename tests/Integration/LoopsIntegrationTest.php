@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\WordTemplateBundle\Tests\Integration;
 
 use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
+use Nowo\WordTemplateBundle\Exception\TemplateLimitExceededException;
+use Nowo\WordTemplateBundle\Model\HtmlContent;
 use Nowo\WordTemplateBundle\Model\TableRows;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessor;
 use Nowo\WordTemplateBundle\Tests\Fixtures\RecordingLogger;
@@ -230,6 +232,80 @@ final class LoopsIntegrationTest extends TestCase
 
         try {
             self::assertSame('A=x ${b} ${internal_margin} B=SECRET-B Widget ${internal_margin} hello ${c.iban}', $this->text($out->path(), 'word/document.xml'));
+        } finally {
+            $out->dispose();
+        }
+    }
+
+    /**
+     * REQ-SEC-004 BQ N1 / N3: adjacent values and HtmlContent text cannot form placeholders; private-use characters in
+     * values survive the internal escaping.
+     */
+    public function testAdjacentValuesHtmlAndPrivateUseCharacters(): void
+    {
+        $template = $this->template(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('Top: ${a}${b}');
+            $section->addText('${#for l in lines}');
+            $section->addText('Loop: ${l.cur}${l.amount}');
+            $section->addText('${#endfor}');
+            $section->addText('${html}');
+            $section->addText('PUA: ${pua}');
+        });
+
+        $out = $this->processor()->process($template, [
+            'a'               => '$',
+            'b'               => '{internal_margin}',
+            'lines'           => [['cur' => '$', 'amount' => '{internal_margin}']],
+            'html'            => new HtmlContent('<p>Html: ${internal_margin}</p>'),
+            'pua'             => "\u{E000}x\u{E001}\u{E000}\u{E000}\u{E000}\u{E001}",
+            'internal_margin' => 'MARGIN-42%',
+        ]);
+
+        try {
+            $text = $this->text($out->path(), 'word/document.xml');
+            self::assertStringNotContainsString('MARGIN-42%', $text);
+            self::assertStringContainsString('Top: ${internal_margin} Loop: ${internal_margin}', $text);
+            self::assertStringContainsString('Html: ${internal_margin}', $text);
+            self::assertStringContainsString("PUA: \u{E000}x\u{E001}\u{E000}\u{E000}\u{E000}\u{E001}", $text);
+        } finally {
+            $out->dispose();
+        }
+    }
+
+    /**
+     * REQ-SEC-004 BQ N2 (placeholderamp / rawamp): copies of a placeholder × a large value are budgeted before PHPWord
+     * writes them, when expression blocks or loops are enabled.
+     */
+    public function testRepeatedPlaceholdersAreBudgeted(): void
+    {
+        $looped = $this->template(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('${#for i in 1..1000}');
+            $section->addText('${big}');
+            $section->addText('${#endfor}');
+        });
+        $raw = $this->template(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            for ($i = 0; $i < 400; ++$i) {
+                $section->addText('${big}');
+            }
+        });
+
+        foreach ([$looped, $raw] as $template) {
+            try {
+                $this->processor()->process($template, ['big' => str_repeat('B', 100_000)]);
+                self::fail('TemplateLimitExceededException expected');
+            } catch (TemplateLimitExceededException $e) {
+                self::assertStringContainsString('the limit (loops.max_output_bytes) is 33554432', $e->getMessage());
+            }
+        }
+
+        // Features disabled: no budget (1.7 behaviour).
+        $out = (new WordTemplateProcessor())->process($raw, ['big' => 'small']);
+
+        try {
+            self::assertStringContainsString('small', $this->text($out->path(), 'word/document.xml'));
         } finally {
             $out->dispose();
         }

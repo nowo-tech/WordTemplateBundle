@@ -152,8 +152,9 @@ final class SecurityLimitsTest extends TestCase
     public function testProtectKeepsPlainValuesAndHandlesEmptyDelimiters(): void
     {
         self::assertSame('a&amp;b', ConditionalExpressionApplicator::protect("a&amp;\x1Fb", '${'));
+        self::assertSame('&#36;', ConditionalExpressionApplicator::protect('$', '${'), 'a lone $ is encoded too (N1)');
         self::assertSame('${x}', ConditionalExpressionApplicator::protect('${x}', ''));
-        self::assertSame('&#91;[x]]', ConditionalExpressionApplicator::protect('[[x]]', '[['));
+        self::assertSame('&#91;&#91;x]]', ConditionalExpressionApplicator::protect('[[x]]', '[['));
     }
 
     public function testBoundaryIndex(): void
