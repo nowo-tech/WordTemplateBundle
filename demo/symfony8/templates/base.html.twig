@@ -24,6 +24,10 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
         <div class="container">
             <a class="navbar-brand" href="{{ path('demo_home') }}">WordTemplateBundle</a>
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link{{ app.request.attributes.get('_route') == 'demo_home' ? ' active' : '' }}" href="{{ path('demo_home') }}">Template form</a></li>
+                <li class="nav-item"><a class="nav-link{{ app.request.attributes.get('_route') == 'demo_conditionals' ? ' active' : '' }}" href="{{ path('demo_conditionals') }}">Conditionals by data type</a></li>
+            </ul>
             <span class="navbar-text text-white-50 small">Symfony 8 demo</span>
         </div>
     </nav>

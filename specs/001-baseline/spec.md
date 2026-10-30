@@ -109,10 +109,16 @@ Aligned with [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPM
 - Block markers in **separate Word paragraphs** (PHPWord paragraph constraint).
 - **Nested** regions with distinct block names (inside-out processing).
 - Visibility controlled from PHP via `ConditionalBlock($name, $visible)`.
+- `$visible` is a strict `bool` (non-`bool` values raise `TypeError` in strict mode); the template never evaluates expressions — integrators derive the `bool` in PHP ([docs/USAGE.md — Conditionals by data type](../../docs/USAGE.md#conditionals-by-data-type)).
+- Every region with the same name is toggled by one `ConditionalBlock` (main part, headers and footers); with two `ConditionalBlock`s of the same name the last one wins.
+- A region whose name has no `ConditionalBlock` in the context (or whose closing marker does not match) is left untouched — markers stay as literal text.
+- Marker paragraphs are removed whether the block is shown or hidden; text after a marker in the same paragraph prevents matching.
+- Executable documentation: `tests/Integration/ConditionalsUsageDocTest.php` runs every documented expression and placement rule.
 
 **Out of scope (v1)**
 
 - Inline `#if` markers mid-paragraph (use a **scalar** computed in PHP for “word A or B” in one line).
+- Markers spanning table cells/rows, overlapping pairs, same-name nesting, footnotes / endnotes / comments.
 - Template-side expression evaluation.
 - Word VBA execution.
 

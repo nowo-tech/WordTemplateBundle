@@ -6,7 +6,7 @@
 
 Symfony bundle that fills **Microsoft Word `.docx` templates** (PHPWord [`TemplateProcessor`](https://phpoffice.github.io/PHPWord/docs/classes/PhpOffice-PhpWord-TemplateProcessor.html)) using a **PHP context array**:
 - **Scalars** (strings, numbers, booleans, null) → `setValue` on placeholders such as `${client_name}` or `${client.city}` when you nest arrays (flattened to dot keys).
-- **`ConditionalBlock`** → `${#if block}` … `${#endif block}` regions (**several** sibling and **nested** blocks supported); show or remove from PHP. Markers split across Word runs are healed before apply.
+- **`ConditionalBlock`** → `${#if block}` … `${#endif block}` regions (**several** sibling and **nested** blocks supported); show or remove from PHP. Markers split across Word runs are healed before apply. The template never evaluates expressions: you pass a `bool` — see **[Conditionals by data type](docs/USAGE.md#conditionals-by-data-type)** for how to derive it from `bool`, `int`, `float`, `string`, `null`, arrays, dates, enums, Doctrine relations and request/form data, the "else" and "one of N" patterns, and where markers may go in Word.
 - **`TableRows`** → `cloneRow` + per-cell `#1`, `#2`, … replacements for repeating table lines (**several independent tables** in one `.docx` via distinct anchors; one `TableRows` per table row).
 - **`HtmlContent`** → rich fragments (paragraphs, bold/italic, tables inside HTML, etc.) via PHPWord `Html::addHtml` embedded as a complex block (lists `<ul>`/`<ol>` may require extra numbering setup in PHPWord; prefer plain paragraphs or combine with [HtmlToWordBundle](https://github.com/nowo-tech/HtmlToWordBundle) for full HTML pipelines).
 - **`ImageSource`** → `setImageValue` with optional width/height.
@@ -73,11 +73,14 @@ cd demo/symfony8 && cp .env.example .env && make up   # Symfony 8, port 8021
 
 Or from `demo/`: `make up` (see [`demo/README.md`](demo/README.md)).
 
+The demo has two pages: `/` fills a template discovered with `listVariables()` (scalars, `HtmlContent`, `TableRows`, nested conditionals, images) and `/conditionals` shows one form field per PHP type, the `ConditionalBlock` decision each one produces, and downloads the merged `.docx`.
+
 ## Documentation
 
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)
+  - [Conditionals by data type](docs/USAGE.md#conditionals-by-data-type) — bool/int/float/string/null/array/date/enum/Doctrine/request examples, pitfalls, missing blocks, marker placement
 - [Contributing](docs/CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Changelog](docs/CHANGELOG.md)
