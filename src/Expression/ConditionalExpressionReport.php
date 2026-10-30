@@ -18,6 +18,33 @@ final class ConditionalExpressionReport
 
     private int $iterations = 0;
 
+    private int $evaluations = 0;
+
+    private int $outputBytes = 0;
+
+    /**
+     * Counts one expression evaluation and returns the total of the merge.
+     */
+    public function countEvaluation(): int
+    {
+        // @igor-ignore - Per-call collector created inside process(); never a shared service.
+        return ++$this->evaluations;
+    }
+
+    /**
+     * Adds bytes produced by loops (one budget for all loops and parts of the merge).
+     */
+    public function addOutputBytes(int $bytes): void
+    {
+        // @igor-ignore - Per-call collector created inside process(); never a shared service.
+        $this->outputBytes += $bytes;
+    }
+
+    public function outputBytes(): int
+    {
+        return $this->outputBytes;
+    }
+
     /**
      * Counts loop iterations of the merge (checked against {@code loops.max_total_iterations}).
      */

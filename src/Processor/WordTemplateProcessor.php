@@ -13,6 +13,7 @@ use Nowo\WordTemplateBundle\Exception\WordTemplateExceptionInterface;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionErrorMode;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionReport;
+use Nowo\WordTemplateBundle\Expression\ExpressionLimits;
 use Nowo\WordTemplateBundle\Expression\ExpressionVariables;
 use Nowo\WordTemplateBundle\Expression\LoopSettings;
 use Nowo\WordTemplateBundle\Model\ConditionalBlock;
@@ -43,11 +44,16 @@ use function implode;
 use function in_array;
 use function ini_get;
 use function is_bool;
+use function mb_ord;
+use function mb_substr;
 use function preg_match;
 use function preg_quote;
+use function preg_replace;
 use function preg_split;
 use function round;
 use function sprintf;
+use function str_contains;
+use function str_replace;
 use function str_starts_with;
 use function strlen;
 use function substr;
@@ -74,6 +80,11 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
 
     private LoopSettings $loopSettings;
 
+    private ExpressionLimits $expressionLimits;
+
+    /** Stands for the first character of {@code macro_opening} inside merged values until the parts are final. */
+    private const INERT_MACRO = "\u{E000}";
+
     /**
      * @param string $macroOpening placeholder opening delimiter
      * @param string $macroClosing placeholder closing delimiter
@@ -95,6 +106,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      * @param string $loopForClosing closing delimiter of loop markers
      * @param string $loopEndforOpening opening delimiter of loop end markers
      * @param string $loopEndforClosing closing delimiter of loop end markers
+     * @param int $conditionalExpressionsMaxMarkers maximum expression / loop markers per document part
+     * @param int $conditionalExpressionsMaxDepth maximum nesting depth of expression blocks and loops
+     * @param int $conditionalExpressionsMaxEvaluations maximum expression evaluations per merge
+     * @param int $loopMaxOutputBytes maximum bytes produced by all loops of one merge
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -117,7 +132,12 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         string $loopForClosing = '}',
         string $loopEndforOpening = '${#endfor',
         string $loopEndforClosing = '}',
+        int $conditionalExpressionsMaxMarkers = ExpressionLimits::DEFAULT_MAX_MARKERS,
+        int $conditionalExpressionsMaxDepth = ExpressionLimits::DEFAULT_MAX_DEPTH,
+        int $conditionalExpressionsMaxEvaluations = ExpressionLimits::DEFAULT_MAX_EVALUATIONS,
+        int $loopMaxOutputBytes = ExpressionLimits::DEFAULT_MAX_OUTPUT_BYTES,
     ) {
+        $this->expressionLimits    = new ExpressionLimits($conditionalExpressionsMaxMarkers, $conditionalExpressionsMaxDepth, $conditionalExpressionsMaxEvaluations, $loopMaxOutputBytes);
         $this->loopSettings        = new LoopSettings($loopForOpening, $loopForClosing, $loopEndforOpening, $loopEndforClosing, $macroOpening, $macroClosing, $loopMaxIterations, $loopMaxTotalIterations);
         $this->logger              = $logger ?? new NullLogger();
         $this->expressionErrorMode = ConditionalExpressionErrorMode::from($conditionalExpressionsOnError);
@@ -163,20 +183,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     private function loopVariables(string $templatePath): array
     {
-        $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->createExpressionApplicator(true);
-        $names      = [];
-
-        try {
-            foreach ($processor->documentPartXmls() as $xml) {
-                $names = [...$names, ...$applicator->discoverLoopVariables($xml)];
-            }
-        } finally {
-            // @igor-ignore - Not shared worker service state.
-            $processor->removeTemporaryDocument();
-        }
-
-        return $names;
+        return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverLoopVariables($xml));
     }
 
     /**
@@ -217,8 +224,12 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     public function listConditionalBlocks(string $templatePath): array
     {
+        if ($this->conditionalExpressionsEnabled) {
+            return $this->inspectParts($templatePath, static fn (ConditionalExpressionApplicator $applicator, string $xml): array => $applicator->discoverBlockNames($xml));
+        }
+
         $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->conditionalExpressionsEnabled ? $this->createExpressionApplicator(true) : $this->createConditionalApplicator();
+        $applicator = $this->createConditionalApplicator();
         $names      = [];
 
         try {
@@ -267,22 +278,47 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     private function inspectParts(string $templatePath, callable $inspect): array
     {
-        $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->createExpressionApplicator(true);
-        $found      = [];
+        /* @var list<string> */
+        return $this->withTimeLimit(function (ProcessDeadline $deadline) use ($templatePath, $inspect): array {
+            $processor  = $this->openTemplate($templatePath);
+            $applicator = $this->createExpressionApplicator(true, $deadline);
+            $found      = [];
+
+            try {
+                foreach ($processor->documentPartXmls() as $xml) {
+                    foreach ($inspect($applicator, $xml) as $item) {
+                        $found[$item] = true;
+                    }
+                }
+            } finally {
+                // @igor-ignore - Not shared worker service state.
+                $processor->removeTemporaryDocument();
+            }
+
+            return array_keys($found);
+        });
+    }
+
+    /**
+     * Runs a template inspection under the same {@code timeout} as {@see self::process()} (set_time_limit plus a
+     * cooperative deadline), so validating an uploaded template cannot pin a worker.
+     *
+     * @template T
+     *
+     * @param callable(ProcessDeadline): T $inspection
+     *
+     * @return T
+     */
+    private function withTimeLimit(callable $inspection): mixed
+    {
+        $previousMaxExecution = (int) ini_get('max_execution_time');
+        set_time_limit($this->timeout);
 
         try {
-            foreach ($processor->documentPartXmls() as $xml) {
-                foreach ($inspect($applicator, $xml) as $item) {
-                    $found[$item] = true;
-                }
-            }
+            return $inspection($this->createDeadline());
         } finally {
-            // @igor-ignore - Not shared worker service state.
-            $processor->removeTemporaryDocument();
+            set_time_limit($previousMaxExecution);
         }
-
-        return array_keys($found);
     }
 
     /**
@@ -294,20 +330,23 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      */
     public function lintConditionalExpressions(string $templatePath, array $variableNames): array
     {
-        $processor  = $this->openTemplate($templatePath);
-        $applicator = $this->createExpressionApplicator(true);
-        $problems   = [];
+        /* @var list<ConditionalExpressionException> */
+        return $this->withTimeLimit(function (ProcessDeadline $deadline) use ($templatePath, $variableNames): array {
+            $processor  = $this->openTemplate($templatePath);
+            $applicator = $this->createExpressionApplicator(true, $deadline);
+            $problems   = [];
 
-        try {
-            foreach ($processor->documentPartXmls() as $xml) {
-                $problems = [...$problems, ...$applicator->lint($xml, $variableNames)];
+            try {
+                foreach ($processor->documentPartXmls() as $xml) {
+                    $problems = [...$problems, ...$applicator->lint($xml, $variableNames)];
+                }
+            } finally {
+                // @igor-ignore - Not shared worker service state.
+                $processor->removeTemporaryDocument();
             }
-        } finally {
-            // @igor-ignore - Not shared worker service state.
-            $processor->removeTemporaryDocument();
-        }
 
-        return $problems;
+            return $problems;
+        });
     }
 
     /**
@@ -345,7 +384,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $this->applyConditionalBlocks($processor, $flat);
             $deadline->assertNotTimedOut();
 
-            $this->applyConditionalExpressions($processor, $context, $templatePath);
+            $this->applyConditionalExpressions($processor, $context, $templatePath, $deadline);
             $deadline->assertNotTimedOut();
 
             foreach ($flat as $value) {
@@ -378,6 +417,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
                 $processor->setValue($key, $this->stringify($value));
                 $deadline->assertNotTimedOut();
             }
+
+            $this->restoreInertMacros($processor);
 
             $target    = $outputPath ?? $this->makeTempOutputPath();
             $temporary = $outputPath === null;
@@ -467,13 +508,13 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      *
      * @param array<string, mixed> $context
      */
-    private function applyConditionalExpressions(TemplateProcessorBridge $processor, array $context, string $templatePath): void
+    private function applyConditionalExpressions(TemplateProcessorBridge $processor, array $context, string $templatePath, ProcessDeadline $deadline): void
     {
         if (!$this->conditionalExpressionsEnabled && !$this->loopsEnabled) {
             return;
         }
 
-        $applicator = $this->createExpressionApplicator(false);
+        $applicator = $this->createExpressionApplicator(false, $deadline);
         $variables  = ExpressionVariables::fromContext($context);
         $report     = new ConditionalExpressionReport();
         $processor->transformDocumentParts(static fn (string $xml): string => $applicator->apply($xml, $variables, $report));
@@ -492,7 +533,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     /**
      * @param bool $inspection true recognises conditionals and loops whatever the configuration (listing / linting)
      */
-    private function createExpressionApplicator(bool $inspection): ConditionalExpressionApplicator
+    private function createExpressionApplicator(bool $inspection, ?ProcessDeadline $deadline = null): ConditionalExpressionApplicator
     {
         return new ConditionalExpressionApplicator(
             $this->conditionalIfOpening,
@@ -503,6 +544,8 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $this->expressionErrorMode,
             $inspection || $this->conditionalExpressionsEnabled,
             $inspection || $this->loopsEnabled ? $this->loopSettings : null,
+            $this->expressionLimits,
+            $deadline,
         );
     }
 
@@ -559,6 +602,11 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         $processor->setImageValue($macroKey, $replace);
     }
 
+    /**
+     * Value for PHPWord setValue(): characters invalid in XML are dropped, and the placeholder opening (e.g. {@code ${})
+     * inside the value is made inert so a later setValue() cannot replace it with another context value (restored by
+     * {@see self::restoreInertMacros()}).
+     */
     private function stringify(string|Stringable|int|float|bool|null $value): string
     {
         if (is_bool($value)) {
@@ -569,7 +617,22 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             return '';
         }
 
-        return (string) $value;
+        $string = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) $value);
+        if ($this->macroOpening === '' || !str_contains($string, $this->macroOpening)) {
+            return $string;
+        }
+
+        return str_replace($this->macroOpening, self::INERT_MACRO . substr($this->macroOpening, 1), $string);
+    }
+
+    /**
+     * Writes the inert first character of macro_opening as a numeric character reference (same text in Word).
+     */
+    private function restoreInertMacros(TemplateProcessorBridge $processor): void
+    {
+        $first     = mb_substr($this->macroOpening, 0, 1);
+        $reference = $first === '' ? '' : '&#' . mb_ord($first) . ';';
+        $processor->transformDocumentParts(static fn (string $xml): string => str_replace(self::INERT_MACRO, $reference, $xml));
     }
 
     protected function persistTemplate(TemplateProcessor $processor, string $target): void

@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Nowo\WordTemplateBundle\Util;
 
 use Nowo\WordTemplateBundle\Exception\ConditionalExpressionException;
+use Nowo\WordTemplateBundle\Exception\TemplateLimitExceededException;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionErrorMode;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionEvaluator;
 use Nowo\WordTemplateBundle\Expression\ConditionalExpressionReport;
 use Nowo\WordTemplateBundle\Expression\ExpressionBlock;
+use Nowo\WordTemplateBundle\Expression\ExpressionLimits;
 use Nowo\WordTemplateBundle\Expression\ExpressionMap;
 use Nowo\WordTemplateBundle\Expression\ExpressionTextNormalizer;
 use Nowo\WordTemplateBundle\Expression\ExpressionVariables;
 use Nowo\WordTemplateBundle\Expression\LoopSettings;
+use Nowo\WordTemplateBundle\Runtime\ProcessDeadline;
 
 use function array_key_exists;
 use function array_keys;
@@ -26,17 +29,18 @@ use function is_bool;
 use function is_float;
 use function is_int;
 use function is_string;
-use function max;
+use function mb_ord;
 use function preg_last_error_msg;
 use function preg_match;
 use function preg_match_all;
 use function preg_quote;
+use function preg_replace;
 use function preg_replace_callback;
 use function sprintf;
+use function str_contains;
+use function str_replace;
 use function strcasecmp;
 use function strlen;
-use function strpos;
-use function strrpos;
 use function substr;
 use function trim;
 
@@ -82,6 +86,8 @@ final readonly class ConditionalExpressionApplicator
      * @param ConditionalExpressionErrorMode $onError what to do when an expression or its layout is invalid
      * @param bool $conditionals false ignores {@code if} markers (left as text) — loops only
      * @param LoopSettings|null $loops null ignores {@code for} markers (left as text) — conditionals only
+     * @param ExpressionLimits $limits marker / depth / evaluation / output limits
+     * @param ProcessDeadline|null $deadline cooperative deadline checked while scanning, rendering and linting
      */
     public function __construct(
         private string $ifOpening,
@@ -92,6 +98,8 @@ final readonly class ConditionalExpressionApplicator
         private ConditionalExpressionErrorMode $onError = ConditionalExpressionErrorMode::Exception,
         private bool $conditionals = true,
         private ?LoopSettings $loops = null,
+        private ExpressionLimits $limits = new ExpressionLimits(),
+        private ?ProcessDeadline $deadline = null,
     ) {
     }
 
@@ -113,7 +121,7 @@ final readonly class ConditionalExpressionApplicator
             return $xml;
         }
 
-        foreach ([...$scan->problems, ...$this->checkLayout($normalized, $scan->roots, 0, strlen($normalized))] as $problem) {
+        foreach ([...$scan->problems, ...$this->checkLayout(new BoundaryIndex($normalized), $normalized, $scan->roots, 0, strlen($normalized))] as $problem) {
             $this->fail($problem, $report);
         }
 
@@ -181,7 +189,7 @@ final readonly class ConditionalExpressionApplicator
         $normalized = $this->normalize($xml);
         $scan       = $this->scan($normalized);
 
-        return [...$scan->problems, ...$this->checkLayout($normalized, $scan->roots, 0, strlen($normalized))];
+        return [...$scan->problems, ...$this->checkLayout(new BoundaryIndex($normalized), $normalized, $scan->roots, 0, strlen($normalized))];
     }
 
     /**
@@ -199,7 +207,7 @@ final readonly class ConditionalExpressionApplicator
 
         return [
             ...$scan->problems,
-            ...$this->checkLayout($normalized, $scan->roots, 0, strlen($normalized)),
+            ...$this->checkLayout(new BoundaryIndex($normalized), $normalized, $scan->roots, 0, strlen($normalized)),
             ...$this->lintBlocks($scan->roots, $variableNames),
         ];
     }
@@ -214,6 +222,8 @@ final readonly class ConditionalExpressionApplicator
     {
         $problems = [];
         foreach ($blocks as $block) {
+            $this->deadline?->assertNotTimedOut();
+
             try {
                 $this->evaluator->lint($block->expression, $names);
             } catch (ConditionalExpressionException $e) {
@@ -244,6 +254,8 @@ final readonly class ConditionalExpressionApplicator
      */
     private function scan(string $xml): MarkerStack
     {
+        $this->deadline?->assertNotTimedOut();
+
         $alternatives = [];
         if ($this->loops instanceof LoopSettings) {
             $alternatives[] = '(?<endfor>' . preg_quote($this->loops->endforOpening, '/') . '\s*' . preg_quote($this->loops->endforClosing, '/') . ')';
@@ -264,7 +276,16 @@ final readonly class ConditionalExpressionApplicator
             throw new ConditionalExpressionException('', sprintf('Conditional markers could not be scanned (%s).', preg_last_error_msg()));
         }
 
+        // Limits fail closed whatever on_error says.
+        if (count($matches) > $this->limits->maxMarkers) {
+            throw new TemplateLimitExceededException(sprintf('The document part has %d expression / loop markers; the limit is %d.', count($matches), $this->limits->maxMarkers));
+        }
+
         foreach ($matches as $match) {
+            if (count($state->stack) >= $this->limits->maxDepth && (($match['if'][0] ?? null) !== null || ($match['for'][0] ?? null) !== null)) {
+                throw new TemplateLimitExceededException(sprintf('Expression blocks and loops are nested more than %d levels deep.', $this->limits->maxDepth));
+            }
+
             if (($match['if'][0] ?? null) !== null) {
                 $state->open('if', trim((string) $match['text'][0]), $match['if'][0], $match['if'][1]);
             } elseif (($match['for'][0] ?? null) !== null) {
@@ -392,13 +413,14 @@ final readonly class ConditionalExpressionApplicator
      *
      * @return list<ConditionalExpressionException>
      */
-    private function checkLayout(string $xml, array $blocks, int $from, int $to): array
+    private function checkLayout(BoundaryIndex $index, string $xml, array $blocks, int $from, int $to): array
     {
         $problems = [];
         $previous = $from;
 
         foreach ($blocks as $block) {
-            $block->problem = $this->layoutProblem($xml, $block, $from, $to, $previous);
+            $this->deadline?->assertNotTimedOut();
+            $block->problem = $this->layoutProblem($index, $xml, $block, $from, $to, $previous);
             if ($block->problem instanceof ConditionalExpressionException) {
                 $problems[] = $block->problem;
 
@@ -406,16 +428,16 @@ final readonly class ConditionalExpressionApplicator
             }
 
             $previous = $block->regionEnd;
-            $problems = [...$problems, ...$this->checkLayout($xml, $block->children, $block->contentStart, $block->contentEnd)];
+            $problems = [...$problems, ...$this->checkLayout($index, $xml, $block->children, $block->contentStart, $block->contentEnd)];
         }
 
         return $problems;
     }
 
-    private function layoutProblem(string $xml, ExpressionBlock $block, int $from, int $to, int $previousEnd): ?ConditionalExpressionException
+    private function layoutProblem(BoundaryIndex $index, string $xml, ExpressionBlock $block, int $from, int $to, int $previousEnd): ?ConditionalExpressionException
     {
-        $open  = $this->enclosing($xml, $block->openStart, $block->openEnd, 'p');
-        $close = $this->enclosing($xml, $block->closeStart, $block->closeEnd, 'p');
+        $open  = $index->enclosing($block->openStart, $block->openEnd, 'p');
+        $close = $index->enclosing($block->closeStart, $block->closeEnd, 'p');
 
         if ($open === null || $close === null) {
             return ConditionalExpressionException::invalidStructure($block->marker, 'each marker must be inside a paragraph.');
@@ -426,8 +448,8 @@ final readonly class ConditionalExpressionApplicator
         }
 
         // Markers in different rows of a table: the block works on whole rows.
-        $openRow  = $this->enclosing($xml, $open[0], $open[1], 'tr');
-        $closeRow = $this->enclosing($xml, $close[0], $close[1], 'tr');
+        $openRow  = $index->enclosing($open[0], $open[1], 'tr');
+        $closeRow = $index->enclosing($close[0], $close[1], 'tr');
         if ($openRow !== null && $closeRow !== null && $openRow[1] <= $closeRow[0]) {
             $open  = $openRow;
             $close = $closeRow;
@@ -463,6 +485,8 @@ final readonly class ConditionalExpressionApplicator
                 continue; // left as literal text (only reachable in hide / keep modes)
             }
 
+            $this->deadline?->assertNotTimedOut();
+
             $out .= substr($xml, $pos, $block->regionStart - $pos);
             $pos = $block->regionEnd;
             $out .= $block->isLoop()
@@ -478,6 +502,8 @@ final readonly class ConditionalExpressionApplicator
      */
     private function renderCondition(string $xml, ExpressionBlock $block, array $variables, ?ExpressionMap $loop, ConditionalExpressionReport $report): string
     {
+        $this->countEvaluation($report);
+
         try {
             $visible = $this->evaluator->evaluate($block->expression, $variables);
         } catch (ConditionalExpressionException $e) {
@@ -503,6 +529,7 @@ final readonly class ConditionalExpressionApplicator
         /** @var LoopSettings $loops loops are only scanned with LoopSettings */
         $loops = $this->loops;
         $item  = (string) $block->loopItem;
+        $this->countEvaluation($report);
 
         try {
             $entries = $this->entries($block, $this->evaluator->evaluateValue($block->expression, $variables), $loops);
@@ -511,9 +538,15 @@ final readonly class ConditionalExpressionApplicator
                 throw new ConditionalExpressionException($block->expression, sprintf('Loop "%s": all loops of the document together exceed the allowed %d iterations (nested loops multiply).', $block->marker, $loops->maxTotalIterations));
             }
 
+            // Budget pre-check before rendering anything: body template size x iterations.
+            if ($report->outputBytes() + ($block->contentEnd - $block->contentStart) * count($entries) > $this->limits->maxOutputBytes) {
+                throw $this->tooLarge($block);
+            }
+
             $out    = '';
             $length = count($entries);
             foreach ($entries as $index => [$key, $value]) {
+                $this->deadline?->assertNotTimedOut();
                 $loopMap = new ExpressionMap([
                     'index'     => $index + 1,
                     'index0'    => $index,
@@ -534,11 +567,15 @@ final readonly class ConditionalExpressionApplicator
                     $names[]                = $block->loopKey;
                 }
 
-                $body = $this->render($xml, $block->children, $block->contentStart, $block->contentEnd, $scope, $loopMap, $report);
-                $out .= $this->substitute($body, $scope, $names, $loops, $report);
+                $body = $this->substitute($this->render($xml, $block->children, $block->contentStart, $block->contentEnd, $scope, $loopMap, $report), $scope, $names, $loops, $report);
+                $out .= $body;
 
-                if (strlen($out) > LoopSettings::MAX_OUTPUT_BYTES) {
-                    throw new ConditionalExpressionException($block->expression, sprintf('Loop "%s" produces more than %d bytes of document XML.', $block->marker, LoopSettings::MAX_OUTPUT_BYTES));
+                // One budget for the whole merge: only outermost loops are charged (their output contains the inner ones).
+                if (!$parent instanceof ExpressionMap) {
+                    $report->addOutputBytes(strlen($body));
+                }
+                if ($report->outputBytes() + ($parent instanceof ExpressionMap ? strlen($out) : 0) > $this->limits->maxOutputBytes) {
+                    throw $this->tooLarge($block);
                 }
             }
 
@@ -585,9 +622,9 @@ final readonly class ConditionalExpressionApplicator
     {
         $pattern = '/' . preg_quote($loops->macroOpening, '/') . '\s*(' . implode('|', $names) . ')((?:\.[A-Za-z0-9_]+|\[[0-9]+\])*)\s*' . preg_quote($loops->macroClosing, '/') . '/';
 
-        return (string) preg_replace_callback($pattern, function (array $match) use ($scope, $report): string {
+        return (string) preg_replace_callback($pattern, function (array $match) use ($scope, $report, $loops): string {
             try {
-                return htmlspecialchars($this->printable($match[1] . $match[2], $this->resolve($scope[$match[1]], $match[1], $match[2])), ENT_QUOTES | ENT_XML1, 'UTF-8');
+                return self::protect(htmlspecialchars($this->printable($match[1] . $match[2], $this->resolve($scope[$match[1]], $match[1], $match[2])), ENT_QUOTES | ENT_XML1, 'UTF-8'), $loops->macroOpening);
             } catch (ConditionalExpressionException $e) {
                 $this->fail($e, $report);
 
@@ -634,6 +671,34 @@ final readonly class ConditionalExpressionApplicator
         throw new ConditionalExpressionException($path, sprintf('Placeholder "%s" holds a %s, not a printable value; print one of its values or loop over it.', $path, get_debug_type($value)));
     }
 
+    /**
+     * Makes a printed value inert: drops characters that are invalid in XML and encodes the first character of the
+     * placeholder opening ({@code $} of {@code ${}) so the value can never be read as a placeholder again — neither by
+     * an enclosing loop nor by PHPWord's setValue() — while Word displays the same text.
+     */
+    public static function protect(string $escapedValue, string $macroOpening): string
+    {
+        $value = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $escapedValue);
+        if ($macroOpening === '' || !str_contains($value, $macroOpening)) {
+            return $value;
+        }
+
+        return str_replace($macroOpening, '&#' . mb_ord($macroOpening[0]) . ';' . substr($macroOpening, 1), $value);
+    }
+
+    private function countEvaluation(ConditionalExpressionReport $report): void
+    {
+        if ($report->countEvaluation() > $this->limits->maxEvaluations) {
+            // Fails closed whatever on_error says.
+            throw new TemplateLimitExceededException(sprintf('The merge evaluates more than %d expressions (loops re-evaluate their bodies).', $this->limits->maxEvaluations));
+        }
+    }
+
+    private function tooLarge(ExpressionBlock $block): ConditionalExpressionException
+    {
+        return new ConditionalExpressionException($block->expression, sprintf('Loop "%s": the loops of the document would produce more than %d bytes of document XML.', $block->marker, $this->limits->maxOutputBytes));
+    }
+
     private function fail(ConditionalExpressionException $error, ConditionalExpressionReport $report): void
     {
         if ($this->onError === ConditionalExpressionErrorMode::Exception) {
@@ -672,24 +737,6 @@ final readonly class ConditionalExpressionApplicator
             }
             $this->collectLoopVariables($block->children, $names);
         }
-    }
-
-    /**
-     * Bounds of the element ({@code <w:p>} or {@code <w:tr>}) holding [start, end), or null.
-     *
-     * @return array{int, int}|null
-     */
-    private function enclosing(string $xml, int $start, int $end, string $tag): ?array
-    {
-        $before = substr($xml, 0, $start);
-        $open   = max(strrpos($before, '<w:' . $tag . '>'), strrpos($before, '<w:' . $tag . ' '));
-        $close  = strpos($xml, '</w:' . $tag . '>', $end);
-
-        if ($open === false || $close === false || strpos($before, '</w:' . $tag . '>', $open) !== false) {
-            return null;
-        }
-
-        return [$open, $close + strlen('</w:' . $tag . '>')];
     }
 
     /**

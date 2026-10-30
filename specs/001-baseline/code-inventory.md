@@ -48,6 +48,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Exception/TemplateNotFoundException.php` | Domain exception | FR-ERR-001 |
 | `Exception/WordTemplateExceptionInterface.php` | Domain exception | FR-ERR-001 |
 | `Exception/PathNotAllowedException.php` | Path outside `allowed_roots` | FR-ERR-001, FR-SEC-001 |
+| `Exception/TemplateLimitExceededException.php` | Resource limit of expression blocks / loops exceeded (fail closed) | FR-ERR-001, FR-LOOP-006 |
 | `Exception/ConditionalExpressionException.php` | Invalid expression conditional ([002](../002-expression-conditionals/spec.md)) | FR-ERR-001, FR-EXPR-030 |
 
 ## Document processing
@@ -80,6 +81,8 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Expression/ExpressionFunctionError.php` | Bad function input | FR-EXPR-020, FR-EXPR-030 |
 | `Expression/LoopSettings.php` | Loop delimiters and limits ([003](../003-template-loops/spec.md)) | FR-LOOP-001, FR-LOOP-006 |
 | `Util/MarkerStack.php` | Bracket matching of if / for markers per scan | FR-EXPR-001, FR-LOOP-001 |
+| `Util/BoundaryIndex.php` | Paragraph / row boundaries indexed once per part (linear layout check) | FR-EXPR-003, FR-LOOP-004 |
+| `Expression/ExpressionLimits.php` | Marker, depth, evaluation and output limits | FR-LOOP-006 |
 
 ## Symfony config
 
@@ -96,10 +99,10 @@ This file proves that **every production source artifact** under `src/` is refer
 | Domain models | 4 | 4 |
 | Support utilities | 5 | 5 |
 | Runtime | 1 | 1 |
-| Exceptions | 6 | 6 |
+| Exceptions | 7 | 7 |
 | Document processing | 6 | 6 |
-| Expression conditionals and loops | 15 | 15 |
+| Expression conditionals and loops | 17 | 17 |
 | Symfony config | 2 | 2 |
-| **Total production sources** | **42** | **42** |
+| **Total production sources** | **45** | **45** |
 
-Audit: `git ls-files src | wc -l` → 42.
+Audit: `git ls-files src | wc -l` → 45.

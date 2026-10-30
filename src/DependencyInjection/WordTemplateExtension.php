@@ -45,6 +45,10 @@ final class WordTemplateExtension extends Extension
         $container->setParameter(Configuration::ALIAS . '.loops.enabled', $config['loops']['enabled']);
         $container->setParameter(Configuration::ALIAS . '.loops.max_iterations', $config['loops']['max_iterations']);
         $container->setParameter(Configuration::ALIAS . '.loops.max_total_iterations', $config['loops']['max_total_iterations']);
+        $container->setParameter(Configuration::ALIAS . '.loops.max_output_bytes', $config['loops']['max_output_bytes']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.max_markers', $config['conditional_expressions']['max_markers']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.max_depth', $config['conditional_expressions']['max_depth']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_expressions.max_evaluations', $config['conditional_expressions']['max_evaluations']);
         $container->setParameter(Configuration::ALIAS . '.conditional_expressions.enabled', $config['conditional_expressions']['enabled']);
         $container->setParameter(Configuration::ALIAS . '.conditional_expressions.on_error', $config['conditional_expressions']['on_error']);
         $container->setParameter(Configuration::ALIAS . '.conditional_expressions.max_length', $config['conditional_expressions']['max_length']);

@@ -70,8 +70,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   map; `${item.name}`, `${key}` and Twig-like `${loop.index}`, `index0`, `revindex`, `revindex0`, `first`, `last`,
   `length`, `parent` are filled per iteration and are variables of the `${#if …}` / `${#for …}` blocks inside the body
   (processed outside-in with scoping). Enable with `nowo_word_template.loops.enabled: true`; limits
-  `loops.max_iterations` (1000) and `loops.max_total_iterations` (10000, nested loops multiply), 32 MiB per expanded
-  part; delimiters `loop_for_opening` / `loop_for_closing` / `loop_endfor_opening` / `loop_endfor_closing`.
+  `loops.max_iterations` (1000) and `loops.max_total_iterations` (10000, nested loops multiply), `loops.max_output_bytes`
+  (32 MiB for the whole merge); delimiters `loop_for_opening` / `loop_for_closing` / `loop_endfor_opening` / `loop_endfor_closing`.
 - Expression blocks whose markers sit in different rows of the same table keep or remove whole rows.
 - `ConditionalExpressionInspectorInterface::listLoops()`; `lintConditionalExpressions()` checks loop heads and knows the
   loop variables inside loop bodies.
@@ -83,6 +83,13 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
   `number_format()` accepts at most 20 decimals and `replace()`, `join()`, `number_format()` check the result size before
   building it; date formats are limited to 100 bytes; function errors no longer echo argument values; a PCRE failure
   while scanning markers fails closed.
+- Loops and expression blocks (REQ-SEC-004 Appendix BQ M2, M3, L1, L2): one output byte budget for all loops and parts of
+  a merge (`loops.max_output_bytes`, 32 MiB), checked before a loop renders; linear marker layout analysis with
+  `conditional_expressions.max_markers` (2000 per part), `max_depth` (32) and `max_evaluations` (100,000 per merge), which
+  always throw the new `TemplateLimitExceededException`; the merge `timeout` is checked while rendering and the
+  inspection APIs run under it; values printed by loops **and by ordinary placeholders** can no longer be read as
+  placeholders again (`${other}` in a value stays literal, `$` is written as `&#36;`), and XML-invalid control
+  characters are dropped from values.
 
 ### Documentation
 

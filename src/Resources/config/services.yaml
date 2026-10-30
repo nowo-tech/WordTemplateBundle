@@ -47,6 +47,10 @@ services:
             $loopForClosing: '%nowo_word_template.loop_for_closing%'
             $loopEndforOpening: '%nowo_word_template.loop_endfor_opening%'
             $loopEndforClosing: '%nowo_word_template.loop_endfor_closing%'
+            $conditionalExpressionsMaxMarkers: '%nowo_word_template.conditional_expressions.max_markers%'
+            $conditionalExpressionsMaxDepth: '%nowo_word_template.conditional_expressions.max_depth%'
+            $conditionalExpressionsMaxEvaluations: '%nowo_word_template.conditional_expressions.max_evaluations%'
+            $loopMaxOutputBytes: '%nowo_word_template.loops.max_output_bytes%'
         tags:
             - { name: monolog.logger, channel: word_template }
 

@@ -201,6 +201,40 @@ final class LoopsIntegrationTest extends TestCase
         }
     }
 
+    /**
+     * REQ-SEC-004 BQ L1: a value can never pull another context value through a placeholder it contains.
+     */
+    public function testValuesCannotPullOtherContextValues(): void
+    {
+        $template = $this->template(static function (PhpWord $pw): void {
+            $section = $pw->addSection();
+            $section->addText('A=${a}');
+            $section->addText('B=${b}');
+            $section->addText('${#for l in lines}');
+            $section->addText('${l.desc}');
+            $section->addText('${#endfor}');
+            $section->addText('${#for c in clients}');
+            $section->addText('${#for n in c.notes}');
+            $section->addText('${n}');
+            $section->addText('${#endfor}');
+            $section->addText('${#endfor}');
+        });
+
+        $out = $this->processor()->process($template, [
+            'a'               => 'x ${b} ${internal_margin}',
+            'b'               => 'SECRET-B',
+            'internal_margin' => 'MARGIN-42%',
+            'lines'           => [['desc' => 'Widget ${internal_margin}']],
+            'clients'         => [['iban' => 'ES91-SECRET', 'notes' => ['hello ${c.iban}']]],
+        ]);
+
+        try {
+            self::assertSame('A=x ${b} ${internal_margin} B=SECRET-B Widget ${internal_margin} hello ${c.iban}', $this->text($out->path(), 'word/document.xml'));
+        } finally {
+            $out->dispose();
+        }
+    }
+
     public function testListingAndLinting(): void
     {
         $template = $this->template(static function (PhpWord $pw): void {

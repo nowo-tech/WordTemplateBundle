@@ -155,7 +155,7 @@ final class LoopApplicatorTest extends TestCase
         $xml = self::doc('${#for x in xs}', '${x}', '${#endfor}');
 
         $this->expectException(ConditionalExpressionException::class);
-        $this->expectExceptionMessage('produces more than 33554432 bytes');
+        $this->expectExceptionMessage('would produce more than 33554432 bytes');
         $this->applicator()->apply($xml, ['xs' => array_fill(0, 40, $big)], new ConditionalExpressionReport());
     }
 

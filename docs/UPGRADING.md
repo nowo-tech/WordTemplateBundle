@@ -53,6 +53,10 @@
   default `on_error: exception` mode.
 - **Loops — opt-in, no action required.** `${#for item in items}` … `${#endfor}` is only expanded with
   `nowo_word_template.loops.enabled: true`; see [USAGE.md — Loops](USAGE.md#loops). `TableRows` keeps working unchanged.
+- **Placeholder values are inert (security).** A value that contains `${…}` is printed as typed; before 1.8 it could be
+  replaced by another context value depending on the key order. Characters that are invalid in XML (`\x00`–`\x1F`
+  except tab and line breaks) are dropped instead of producing a corrupt document. No action required unless you relied
+  on a value expanding into another placeholder.
 - **New dependencies** pulled in automatically: `symfony/expression-language`, `symfony/cache`, `symfony/clock`.
 - **Context values** — backed enums, pure enums and `DateTimeInterface` are now accepted (value / case name /
   `'Y-m-d'`) instead of throwing `InvalidContextValueException`. If you relied on that exception, convert the values

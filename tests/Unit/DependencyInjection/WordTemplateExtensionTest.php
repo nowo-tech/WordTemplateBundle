@@ -111,6 +111,10 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame('${#done', $container->getParameter(Configuration::ALIAS . '.loop_endfor_opening'));
         self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.loop_endfor_closing'));
         self::assertSame('%nowo_word_template.loops.enabled%', $container->getDefinition(WordTemplateProcessor::class)->getArgument('$loopsEnabled'));
+        self::assertSame(33554432, $container->getParameter(Configuration::ALIAS . '.loops.max_output_bytes'));
+        self::assertSame(2000, $container->getParameter(Configuration::ALIAS . '.conditional_expressions.max_markers'));
+        self::assertSame(32, $container->getParameter(Configuration::ALIAS . '.conditional_expressions.max_depth'));
+        self::assertSame(100000, $container->getParameter(Configuration::ALIAS . '.conditional_expressions.max_evaluations'));
     }
 
     public function testGetAlias(): void

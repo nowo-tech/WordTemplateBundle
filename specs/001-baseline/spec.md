@@ -145,7 +145,7 @@ ${#endif optional_funding}
 
 ## Success Criteria
 
-- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**42/42** mapped, audited 2026-10-30).
+- **SC-001**: 100% of production files in `src/` appear in [`code-inventory.md`](code-inventory.md) with requirement IDs (**45/45** mapped, audited 2026-10-30).
 - **SC-002**: Configuration keys in `docs/CONFIGURATION.md` match `Configuration.php`.
 - **SC-003**: `composer qa` / `make release-check` pass in CI (PHPUnit, PHPStan).
 - **SC-004**: No Packagist-visible behavior change without spec, inventory, and test updates.
@@ -157,6 +157,6 @@ ${#endif optional_funding}
 | Check | Command |
 | --- | --- |
 | Full QA | `make release-check` or `composer qa` |
-| Code inventory audit | `git ls-files src \| wc -l` → 42 |
+| Code inventory audit | `git ls-files src \| wc -l` → 45 |
 
 When changing behavior, update this spec, `code-inventory.md`, integrator docs, and tests.

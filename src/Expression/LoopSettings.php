@@ -14,9 +14,6 @@ final readonly class LoopSettings
 
     public const DEFAULT_MAX_TOTAL_ITERATIONS = 10_000;
 
-    /** Maximum size of one expanded document part (bytes). */
-    public const MAX_OUTPUT_BYTES = 33_554_432;
-
     /**
      * @param string $forOpening opening delimiter of loop markers (e.g. {@code ${#for})
      * @param string $forClosing closing delimiter of loop markers

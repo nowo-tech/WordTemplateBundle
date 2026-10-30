@@ -1196,6 +1196,7 @@ nowo_word_template:
         enabled: true               # default false: loop markers stay as literal text
         max_iterations: 1000        # elements of one loop
         max_total_iterations: 10000 # all loops of one merge together (nested loops multiply)
+        max_output_bytes: 33554432  # XML produced by all loops of one merge, checked before rendering
     conditional_expressions:
         enabled: true               # needed for ${#if …} inside loop bodies (and everywhere else)
         on_error: exception         # also applies to loops
@@ -1240,7 +1241,7 @@ Order F-2026-001
 Total: 65.5 EUR
 ```
 
-Values are printed like other placeholders (`true` → `1`, `false` → `0`, `null` → empty, enums → value, dates → `Y-m-d`) and XML-escaped. A list or a map cannot be printed: print one of its values or loop over it.
+Values are printed like other placeholders (`true` → `1`, `false` → `0`, `null` → empty, enums → value, dates → `Y-m-d`) and XML-escaped. A value is never read as a template again: `${…}` inside a value (an order line typed by a customer, say) is printed as typed, not replaced by another context value, and characters that are invalid in XML are dropped — this also applies to ordinary placeholders since 1.8. A list or a map cannot be printed: print one of its values or loop over it.
 
 ### Repeat table rows
 
@@ -1412,7 +1413,8 @@ No items in this order.
 | unknown iterable / typo (`${#for x in itms}`) | `uses the unknown variable "itms"` |
 | more than `loops.max_iterations` elements | `has 1500 items; the limit is 1000` |
 | all loops together above `loops.max_total_iterations` (e.g. 200 orders × 100 lines) | `exceed the allowed 10000 iterations (nested loops multiply)` |
-| expanded part above 32 MiB of XML | `produces more than 33554432 bytes of document XML` |
+| all loops of the merge above `loops.max_output_bytes` (32 MiB) — checked before a loop renders | `would produce more than 33554432 bytes of document XML` |
+| more than `max_markers` (2000) markers in one part, nesting deeper than `max_depth` (32), more than `max_evaluations` (100,000) evaluations | `TemplateLimitExceededException` — always thrown, whatever `on_error` says |
 | `${item.missing}` | `uses the unknown variable "item.missing"` |
 | `${item}` holding a list / map | `not a printable value` |
 | `${#endfor}` without loop, loop never closed, `${#for items}` (no `in`), `${#endif}` closing a loop | layout error (`there is no open loop to close`, `the loop is never closed`, `a loop needs "item in <expression>"`, `it cannot close the loop`) |
