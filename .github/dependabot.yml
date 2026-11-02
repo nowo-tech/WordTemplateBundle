@@ -9,6 +9,7 @@ updates:
 
   - package-ecosystem: "composer"
     directory: "/"
+    versioning-strategy: widen
     schedule:
       interval: "weekly"
     groups:
@@ -19,5 +20,6 @@ updates:
         patterns:
           - "phpstan/*"
           - "phpstan-*/*"
+          - "rector/rector"
     commit-message:
       prefix: "composer"
