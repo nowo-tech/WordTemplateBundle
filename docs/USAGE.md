@@ -54,7 +54,7 @@ With those defaults, scalar placeholders look like `${client_name}` and conditio
   - [Operators](#operators)
   - [Expressions by data type](#expressions-by-data-type)
   - [Functions reference](#functions-reference)
-  - [Nesting, "else" and one of N](#nesting-else-and-one-of-n)
+  - [Nesting, "else" and one of N](#nesting-else-and-one-of-n) — `${#elseif}` / `${#else}` *(1.9)*
   - [When to compute in PHP, when in the template](#when-to-compute-in-php-when-in-the-template)
   - [Errors](#errors)
   - [Security](#security)
@@ -269,7 +269,7 @@ $processor->process($templatePath, [
 ]);
 ```
 
-Nested blocks resolve **inside-out** (deepest first). There is no `else` / `elseif` — use two blocks with opposite conditions (["else"](#else-two-blocks-with-opposite-conditions)) or one block per option ([One of N](#one-of-n-switch)).
+Nested blocks resolve **inside-out** (deepest first). Named blocks have no `else` / `elseif` — use two blocks with opposite conditions (["else"](#else-two-blocks-with-opposite-conditions)) or one block per option ([One of N](#one-of-n-switch)). Expression blocks have `${#elseif …}` / `${#else}` branches since 1.9 ([Nesting, "else" and one of N](#nesting-else-and-one-of-n)).
 
 ---
 
@@ -538,7 +538,7 @@ Pitfall: `(bool) $request->query->get('annex')` is `true` for `?annex=false` and
 
 ### "else": two blocks with opposite conditions
 
-There is no `${#else}`. Use a second block whose condition is the negation, and compute the condition **once** so both blocks can never be visible (or hidden) together:
+Named blocks have no `${#else}` (expression blocks do since 1.9: [Nesting, "else" and one of N](#nesting-else-and-one-of-n)). Use a second block whose condition is the negation, and compute the condition **once** so both blocks can never be visible (or hidden) together:
 
 **In Word:**
 
@@ -994,7 +994,7 @@ Customer: ACME
 End of offer.
 ```
 
-**"else"** — there is no `${#else}`; write the opposite expression. One expression per branch keeps both branches readable in Word:
+**"else"** *(1.9)* — `${#else}` splits an expression block in two: the part after it is rendered when the expression is false. Like every marker it goes alone in its own paragraph:
 
 <!-- expr-example -->
 **In Word:**
@@ -1002,8 +1002,7 @@ End of offer.
 ```text
 ${#if status == 'paid'}
 Thank you, invoice ${number} is paid.
-${#endif}
-${#if status != 'paid'}
+${#else}
 Please pay invoice ${number} before ${due_date}.
 ${#endif}
 ```
@@ -1024,7 +1023,7 @@ $result = $processor->process($templatePath, [
 Please pay invoice F-7 before 2026-11-15.
 ```
 
-**One of N** — one block per option, plus a fallback:
+**One of N** *(1.9)* — `${#elseif <expression>}` branches are tried in order and the **first** true one is rendered; the expressions after it are not evaluated. `${#else}` (optional, always last) is the fallback:
 
 <!-- expr-example -->
 **In Word:**
@@ -1032,11 +1031,9 @@ Please pay invoice F-7 before 2026-11-15.
 ```text
 ${#if plan == 'basic'}
 Plan: Basic.
-${#endif}
-${#if plan == 'pro'}
+${#elseif plan == 'pro'}
 Plan: Pro.
-${#endif}
-${#if plan not in ['basic', 'pro']}
+${#else}
 Plan not recognised — please contact sales.
 ${#endif}
 ```
@@ -1054,6 +1051,17 @@ $result = $processor->process($templatePath, [
 ```text
 Plan: Pro.
 ```
+
+Branch rules:
+
+- Branches only exist in **expression** blocks (closed by a nameless `${#endif}`). In a named block (`${#endif name}`) a branch marker is an error and is left as text; a loop has no branches either (wrap it in a conditional).
+- At most one `${#else}`, and it must be the last branch. Each branch can hold nested blocks and loops.
+- When the markers sit in rows of their own of one table, the branch markers must sit in rows of their own too: each branch keeps or removes whole rows.
+- An error in any evaluated branch expression applies `on_error` to the **whole** block (`hide` removes it, `keep` leaves every marker and branch as text).
+- `listConditionalExpressions()` lists the `${#elseif}` expressions too; `lintConditionalExpressions()` checks them.
+- Delimiters: `conditional_elseif_opening` / `conditional_elseif_closing` (`${#elseif` / `}`) and `conditional_else_opening` / `conditional_else_closing` (`${#else` / `}`).
+
+Before 1.9 (or with named blocks), write the opposite condition in a second block — `${#if status != 'paid'}` — or one block per option with a fallback `${#if plan not in ['basic', 'pro']}`.
 
 **Mixed with named blocks** — the named block is still decided in PHP; the expression inside it reads a plain value:
 
@@ -1132,7 +1140,7 @@ With two lines the table shows both rows and "No items" is removed; with `[]` on
 | bad function argument | `${#if upper(lines) == ''}` | `['lines' => ['A']]` | throws `upper() expects a string, got array` |
 | missing list index | `${#if lines[5] == 'x'}` | `['lines' => ['A']]` | throws `could not be evaluated` |
 
-Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Messages contain template text (the expression, variable and function names, argument types) but never context values, so they can be shown to template authors. Layout problems are errors too: a `${#endif}` with no open block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that cuts table cells / rows / content controls in half (for example opening in one cell and closing in another cell of the same row).
+Every error is a `Nowo\WordTemplateBundle\Exception\ConditionalExpressionException` (implements `WordTemplateExceptionInterface`; `$e->expression` holds the expression). Messages contain template text (the expression, variable and function names, argument types) but never context values, so they can be shown to template authors. Layout problems are errors too: a `${#endif}` with no open block, a branch marker (`${#elseif}` / `${#else}`) with no open expression block, inside a loop body, in a named block or after the `${#else}` of its block, an expression block never closed, opening and closing marker in the same paragraph (inline blocks are not supported), a marker sharing a paragraph with another block's marker, or a block that cuts table cells / rows / content controls in half (for example opening in one cell and closing in another cell of the same row).
 
 **Whole table rows** — when the opening and the closing marker sit in rows of their own of the same table, an expression block keeps or removes the rows between them (the two marker rows are always removed), exactly like [row loops](#repeat-table-rows):
 
@@ -1375,7 +1383,7 @@ A loop inside a removed `${#if …}` is never evaluated, and a `${#if …}` arou
 
 ### Empty lists
 
-An empty list removes the whole block (including the marker paragraphs). There is no `${#else}`; add the opposite condition:
+An empty list removes the whole block (including the marker paragraphs). A loop has no `${#else}`; add the opposite condition (or wrap the loop in `${#if length(lines) > 0}` … `${#else}` … `${#endif}`):
 
 <!-- expr-example -->
 **In Word:**

@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.9.0](#to-190)
 - [To 1.8.0](#to-180)
 - [To 1.7.1](#to-171)
 - [To 1.7.0](#to-170)
@@ -45,6 +46,15 @@
 - [From pre-release snapshots](#from-pre-release-snapshots)
 
 ## Unreleased
+
+## To 1.9.0
+
+No code or configuration change is required. Only templates processed with `conditional_expressions.enabled: true` are affected:
+
+- A paragraph holding `${#else}` or `${#elseif …}` inside an expression block (closed by a nameless `${#endif}`) is now a branch marker instead of literal text.
+- The same paragraph inside a **named** block (`${#endif name}`), a loop body or outside any block is now a layout error: with `on_error: exception` the merge throws `ConditionalExpressionException`; with `hide` / `keep` the marker stays as text and a warning is logged. Run `lintConditionalExpressions()` over stored templates to find them.
+- `listVariables()` no longer returns `#else` / `#elseif …` entries.
+- If authors must type `${#else}` literally, change `conditional_else_opening` / `conditional_elseif_opening`.
 
 ## To 1.8.0
 

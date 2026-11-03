@@ -51,6 +51,10 @@ services:
             $conditionalExpressionsMaxDepth: '%nowo_word_template.conditional_expressions.max_depth%'
             $conditionalExpressionsMaxEvaluations: '%nowo_word_template.conditional_expressions.max_evaluations%'
             $loopMaxOutputBytes: '%nowo_word_template.loops.max_output_bytes%'
+            $conditionalElseifOpening: '%nowo_word_template.conditional_elseif_opening%'
+            $conditionalElseifClosing: '%nowo_word_template.conditional_elseif_closing%'
+            $conditionalElseOpening: '%nowo_word_template.conditional_else_opening%'
+            $conditionalElseClosing: '%nowo_word_template.conditional_else_closing%'
         tags:
             - { name: monolog.logger, channel: word_template }
 

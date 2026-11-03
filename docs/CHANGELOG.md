@@ -5,6 +5,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.9.0] - 2026-11-03](#190---2026-11-03)
 - [[1.8.0] - 2026-10-30](#180---2026-10-30)
 - [[1.7.1] - 2026-10-29](#171---2026-10-29)
 - [[1.7.0] - 2026-10-29](#170---2026-10-29)
@@ -43,6 +44,20 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - [[0.1.0] - 2026-05-12](#010---2026-05-12)
 
 ## [Unreleased]
+
+## [1.9.0] - 2026-11-03
+
+### Added
+
+- **`${#elseif …}` / `${#else}` branches** in expression conditionals (`conditional_expressions.enabled: true`): `${#if a > 5000}` … `${#elseif a > 1000}` … `${#else}` … `${#endif}`. The first true branch is rendered and the expressions after it are not evaluated; `${#else}` is the optional, last fallback. Branches can hold nested blocks and loops, work on whole table rows when the markers sit in rows of their own, and count towards `max_evaluations` (spec [`004-else-branches`](../specs/004-else-branches/spec.md)).
+- Configuration `conditional_elseif_opening` / `conditional_elseif_closing` (`${#elseif` / `}`) and `conditional_else_opening` / `conditional_else_closing` (`${#else` / `}`), and the matching optional `WordTemplateProcessor` / `ConditionalExpressionApplicator` constructor arguments.
+- `listConditionalExpressions()` also lists `${#elseif}` expressions; `lintConditionalExpressions()` checks them and the blocks nested in every branch.
+- Layout errors (per `on_error`): a branch marker with no open expression block, inside a loop body, in a named block, in a block that is never closed, after the `${#else}` of its block, sharing a paragraph with another marker, outside the rows of a row block, or a branch cutting table cells in half.
+
+### Changed
+
+- With expression conditionals enabled, `listVariables()` omits `#elseif …` / `#else` markers.
+- An evaluation error in any branch applies `on_error` to the whole block: `hide` removes it, `keep` leaves every marker and branch as text.
 
 ## [1.8.0] - 2026-10-30
 

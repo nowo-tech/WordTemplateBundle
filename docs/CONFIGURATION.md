@@ -14,6 +14,8 @@ Root key: `nowo_word_template`.
 | `conditional_if_closing` | `}` | Closing delimiter for conditional opening markers. |
 | `conditional_endif_opening` | `${#endif` | Opening delimiter for conditional end markers (before the block name). |
 | `conditional_endif_closing` | `}` | Closing delimiter for conditional end markers. |
+| `conditional_elseif_opening` / `conditional_elseif_closing` | `${#elseif` / `}` | Delimiters of `${#elseif <expression>}` branch markers of expression conditionals (1.9). |
+| `conditional_else_opening` / `conditional_else_closing` | `${#else` / `}` | Delimiters of `${#else}` branch markers of expression conditionals (1.9). |
 | `loop_for_opening` / `loop_for_closing` | `${#for` / `}` | Delimiters of loop markers (`${#for item in items}`). |
 | `loop_endfor_opening` / `loop_endfor_closing` | `${#endfor` / `}` | Delimiters of loop end markers (`${#endfor}`). |
 | `loops.enabled` | `false` | Opt-in (1.8): expand `${#for item in items}` … `${#endfor}`. See [Loops](#loops). |
@@ -70,6 +72,10 @@ nowo_word_template:
     conditional_if_closing: '}'
     conditional_endif_opening: '${#endif'
     conditional_endif_closing: '}'
+    conditional_elseif_opening: '${#elseif'
+    conditional_elseif_closing: '}'
+    conditional_else_opening: '${#else'
+    conditional_else_closing: '}'
     conditional_expressions:
         enabled: false
 ```
@@ -89,6 +95,7 @@ nowo_word_template:
 ```
 
 - The nameless end marker is the `conditional_endif_opening` + `conditional_endif_closing` delimiters without a name (`${#endif}` by default) — there is no separate setting.
+- Branch markers (`${#elseif <expression>}`, `${#else}`) are only recognised when `enabled: true`, and only belong to expression blocks; their delimiters are `conditional_elseif_*` / `conditional_else_*`. Keep the elseif opening distinct from the else opening (the default `${#else` is a prefix of `${#elseif`, which is fine: elseif is matched first).
 - `now()` / `date()` read the Symfony `clock` service when it exists (FrameworkBundle registers it), so `MockClock` freezes them in tests; otherwise the system clock.
 - Host functions: services implementing `Nowo\WordTemplateBundle\Expression\ExpressionFunctionProviderInterface` are autoconfigured with the `nowo_word_template.expression_function_provider` tag; built-ins are registered with priority 1000, so a host function with the same name (default priority 0) replaces the built-in. An unknown name in `allow` / `deny` is a configuration error raised when the evaluator is built.
 - `max_markers`, `max_depth` and `max_evaluations` always throw `TemplateLimitExceededException` (whatever `on_error` says). The merge `timeout` is also checked while blocks and loops are rendered, and `listConditionalExpressions()`, `listLoops()`, `listConditionalBlocks()`, `listVariables()` and `lintConditionalExpressions()` run under the same `timeout` (`ProcessingTimedOutException`).

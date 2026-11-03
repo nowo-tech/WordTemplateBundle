@@ -60,6 +60,10 @@ use const PREG_UNMATCHED_AS_NULL;
  * as {@see ConditionalBlockApplicator}) and leaves it to {@see ConditionalBlockApplicator} — named blocks keep
  * their legacy behaviour exactly. {@code ${#endfor}} closes the nearest open loop.
  *
+ * A conditional may have branches: {@code ${#elseif <expression>}} and a last {@code ${#else}} between its markers.
+ * The first branch whose expression is true is rendered (later expressions are not evaluated); {@code ${#else}} is
+ * rendered when none is. Branches only exist in expression blocks: a named block or a loop never has them.
+ *
  * Blocks are rendered outside-in with a scope: a removed block is never evaluated, and each loop iteration renders
  * its body with the loop variables ({@code item}, {@code key}, {@code loop}) added to the scope — so conditions and
  * nested loops inside a loop body see them, and {@code ${item.name}} placeholders are replaced per iteration.
@@ -88,6 +92,10 @@ final readonly class ConditionalExpressionApplicator
      * @param LoopSettings|null $loops null ignores {@code for} markers (left as text) — conditionals only
      * @param ExpressionLimits $limits marker / depth / evaluation / output limits
      * @param ProcessDeadline|null $deadline cooperative deadline checked while scanning, rendering and linting
+     * @param string $elseifOpening opening delimiter of {@code elseif} markers (e.g. {@code ${#elseif})
+     * @param string $elseifClosing closing delimiter of {@code elseif} markers
+     * @param string $elseOpening opening delimiter of {@code else} markers (e.g. {@code ${#else})
+     * @param string $elseClosing closing delimiter of {@code else} markers
      */
     public function __construct(
         private string $ifOpening,
@@ -100,6 +108,10 @@ final readonly class ConditionalExpressionApplicator
         private ?LoopSettings $loops = null,
         private ExpressionLimits $limits = new ExpressionLimits(),
         private ?ProcessDeadline $deadline = null,
+        private string $elseifOpening = '${#elseif',
+        private string $elseifClosing = '}',
+        private string $elseOpening = '${#else',
+        private string $elseClosing = '}',
     ) {
     }
 
@@ -224,10 +236,16 @@ final readonly class ConditionalExpressionApplicator
         foreach ($blocks as $block) {
             $this->deadline?->assertNotTimedOut();
 
-            try {
-                $this->evaluator->lint($block->expression, $names);
-            } catch (ConditionalExpressionException $e) {
-                $problems[] = $e;
+            foreach ([$block, ...$block->branches] as $branch) {
+                if ($branch->else) {
+                    continue;
+                }
+
+                try {
+                    $this->evaluator->lint($branch->expression, $names);
+                } catch (ConditionalExpressionException $e) {
+                    $problems[] = $e;
+                }
             }
 
             $inner = $names;
@@ -239,6 +257,9 @@ final readonly class ConditionalExpressionApplicator
             }
 
             $problems = [...$problems, ...$this->lintBlocks($block->children, $inner)];
+            foreach ($block->branches as $branch) {
+                $problems = [...$problems, ...$this->lintBlocks($branch->children, $names)];
+            }
         }
 
         return $problems;
@@ -264,6 +285,9 @@ final readonly class ConditionalExpressionApplicator
         if ($this->conditionals) {
             $alternatives[] = '(?<endif>' . preg_quote($this->endifOpening, '/') . '(?:\s+(?<endname>[^<]*?))?\s*' . preg_quote($this->endifClosing, '/') . ')';
             $alternatives[] = '(?<if>' . preg_quote($this->ifOpening, '/') . '\s+(?<text>[^<]+?)' . preg_quote($this->ifClosing, '/') . ')';
+            // elseif before else: the else opening is usually a prefix of the elseif opening.
+            $alternatives[] = '(?<elseif>' . preg_quote($this->elseifOpening, '/') . '\s+(?<branch>[^<]+?)' . preg_quote($this->elseifClosing, '/') . ')';
+            $alternatives[] = '(?<else>' . preg_quote($this->elseOpening, '/') . '\s*' . preg_quote($this->elseClosing, '/') . ')';
         }
 
         $state = new MarkerStack();
@@ -288,6 +312,10 @@ final readonly class ConditionalExpressionApplicator
 
             if (($match['if'][0] ?? null) !== null) {
                 $state->open('if', trim((string) $match['text'][0]), $match['if'][0], $match['if'][1]);
+            } elseif (($match['elseif'][0] ?? null) !== null) {
+                $this->openBranch($state, trim((string) $match['branch'][0]), $match['elseif'][0], $match['elseif'][1]);
+            } elseif (($match['else'][0] ?? null) !== null) {
+                $this->openBranch($state, null, $match['else'][0], $match['else'][1]);
             } elseif (($match['for'][0] ?? null) !== null) {
                 $state->open('for', trim((string) $match['head'][0]), $match['for'][0], $match['for'][1]);
             } elseif (($match['endfor'][0] ?? null) !== null) {
@@ -318,6 +346,23 @@ final readonly class ConditionalExpressionApplicator
         }
 
         $state->pop();
+
+        $branches = [];
+        foreach ($open['branches'] as $i => $branch) {
+            $next       = $open['branches'][$i + 1] ?? null;
+            $closeStart = $next !== null ? $next['start'] : $start;
+            $branches[] = new ExpressionBlock(
+                $branch['text'] !== null ? ExpressionTextNormalizer::normalize($branch['text']) : '',
+                $branch['marker'],
+                $branch['start'],
+                $branch['start'] + strlen($branch['raw']),
+                $closeStart,
+                $closeStart + strlen($next !== null ? $next['raw'] : $raw),
+                $branch['children'],
+                else: $branch['text'] === null,
+            );
+        }
+
         $state->attach([new ExpressionBlock(
             ExpressionTextNormalizer::normalize($open['text']),
             $open['marker'],
@@ -326,7 +371,46 @@ final readonly class ConditionalExpressionApplicator
             $start,
             $start + strlen($raw),
             $open['children'],
+            branches: $branches,
         )]);
+    }
+
+    /**
+     * Starts an {@code ${#elseif …}} ({@code $text} set) or {@code ${#else}} branch of the innermost open conditional.
+     * A branch marker outside a conditional, inside a loop body, or after the {@code ${#else}} of its block is a
+     * stray marker (left as text).
+     */
+    private function openBranch(MarkerStack $state, ?string $text, string $raw, int $start): void
+    {
+        $open = $state->top();
+        if ($open === null || $open['type'] !== 'if') {
+            $state->problems[] = ConditionalExpressionException::invalidStructure($this->decode($raw), $open === null
+                ? 'there is no open block for this branch.'
+                : sprintf('a branch cannot belong to the loop "%s"; close the loop first.', $open['marker']));
+
+            return;
+        }
+
+        $last = $open['branches'][count($open['branches']) - 1] ?? null;
+        if ($last !== null && $last['text'] === null) {
+            $state->problems[] = ConditionalExpressionException::invalidStructure($this->decode($raw), sprintf('the block "%s" already has its else branch; the else branch must be the last one.', $open['marker']));
+
+            return;
+        }
+
+        $state->branch($text, $raw, $start);
+    }
+
+    /**
+     * Branch markers of a block that is not an expression block (named, or never closed) are left as text.
+     *
+     * @param array{branches: list<array{marker: string}>} $open
+     */
+    private function rejectBranches(MarkerStack $state, array $open, string $reason): void
+    {
+        foreach ($open['branches'] as $branch) {
+            $state->problems[] = ConditionalExpressionException::invalidStructure($branch['marker'], $reason);
+        }
     }
 
     private function closeLoop(MarkerStack $state, string $raw, int $start): void
@@ -384,7 +468,8 @@ final readonly class ConditionalExpressionApplicator
 
         $open                           = $state->pop();
         $state->openings[$open['text']] = true;
-        $state->attach($open['children']);
+        $this->rejectBranches($state, $open, 'else / elseif branches only work in blocks closed by a nameless end marker.');
+        $state->attach(MarkerStack::allChildren($open));
     }
 
     /**
@@ -398,12 +483,13 @@ final readonly class ConditionalExpressionApplicator
             $state->problems[] = ConditionalExpressionException::invalidStructure($open['marker'], 'the loop is never closed (add an end marker).');
         } else {
             $state->openings[$open['text']] = true;
-            if (preg_match(self::PLAIN_NAME, $open['text']) !== 1) {
+            if (preg_match(self::PLAIN_NAME, $open['text']) !== 1 || $open['branches'] !== []) {
                 $state->problems[] = ConditionalExpressionException::invalidStructure($open['marker'], 'the block is never closed (add a nameless end marker).');
             }
+            $this->rejectBranches($state, $open, 'the block of this branch is never closed.');
         }
 
-        $state->attach($open['children']);
+        $state->attach(MarkerStack::allChildren($open));
     }
 
     /**
@@ -429,6 +515,9 @@ final readonly class ConditionalExpressionApplicator
 
             $previous = $block->regionEnd;
             $problems = [...$problems, ...$this->checkLayout($index, $xml, $block->children, $block->contentStart, $block->contentEnd)];
+            foreach ($block->branches as $branch) {
+                $problems = [...$problems, ...$this->checkLayout($index, $xml, $branch->children, $branch->contentStart, $branch->contentEnd)];
+            }
         }
 
         return $problems;
@@ -448,25 +537,56 @@ final readonly class ConditionalExpressionApplicator
         }
 
         // Markers in different rows of a table: the block works on whole rows.
+        $rows     = false;
         $openRow  = $index->enclosing($open[0], $open[1], 'tr');
         $closeRow = $index->enclosing($close[0], $close[1], 'tr');
         if ($openRow !== null && $closeRow !== null && $openRow[1] <= $closeRow[0]) {
             $open  = $openRow;
             $close = $closeRow;
+            $rows  = true;
         }
 
         if ($open[0] < $from || $close[1] > $to || $open[0] < $previousEnd) {
             return ConditionalExpressionException::invalidStructure($block->marker, 'the marker shares a paragraph with the marker of another block; put each marker in its own paragraph.');
         }
 
-        if (!$this->balanced(substr($xml, $open[1], $close[0] - $open[1]))) {
-            return ConditionalExpressionException::invalidStructure($block->marker, 'the block crosses table cells, rows or content controls; wrap whole paragraphs, whole rows (markers in rows of their own) or a whole table.');
+        // Each branch marker splits the content: [opening][content][branch][content]…[closing].
+        $segments = [];
+        $previous = $open[1];
+        foreach ($block->branches as $branch) {
+            $marker = $index->enclosing($branch->openStart, $branch->openEnd, $rows ? 'tr' : 'p');
+            if ($marker === null) {
+                return ConditionalExpressionException::invalidStructure($branch->marker, $rows
+                    ? 'the block works on whole rows, so each branch marker must sit in a row of its own.'
+                    : 'each marker must be inside a paragraph.');
+            }
+
+            if ($marker[0] < $previous || $marker[1] > $close[0]) {
+                return ConditionalExpressionException::invalidStructure($branch->marker, 'the branch marker shares a paragraph with another marker; put each marker in its own paragraph.');
+            }
+
+            $segments[] = [$previous, $marker[0]];
+            $previous   = $marker[1];
+        }
+        $segments[] = [$previous, $close[0]];
+
+        foreach ($segments as [$segmentStart, $segmentEnd]) {
+            if (!$this->balanced(substr($xml, $segmentStart, $segmentEnd - $segmentStart))) {
+                return ConditionalExpressionException::invalidStructure($block->marker, 'the block crosses table cells, rows or content controls; wrap whole paragraphs, whole rows (markers in rows of their own) or a whole table.');
+            }
         }
 
         $block->regionStart  = $open[0];
         $block->contentStart = $open[1];
-        $block->contentEnd   = $close[0];
+        $block->contentEnd   = $segments[0][1];
         $block->regionEnd    = $close[1];
+
+        foreach ($block->branches as $i => $branch) {
+            $branch->regionStart  = $segments[$i][1];
+            $branch->contentStart = $segments[$i + 1][0];
+            $branch->contentEnd   = $segments[$i + 1][1];
+            $branch->regionEnd    = $segments[$i + 1][1];
+        }
 
         return null;
     }
@@ -502,10 +622,20 @@ final readonly class ConditionalExpressionApplicator
      */
     private function renderCondition(string $xml, ExpressionBlock $block, array $variables, ?ExpressionMap $loop, ConditionalExpressionReport $report): string
     {
-        $this->countEvaluation($report);
-
         try {
-            $visible = $this->evaluator->evaluate($block->expression, $variables);
+            // The first true branch wins; later expressions are never evaluated.
+            foreach ([$block, ...$block->branches] as $branch) {
+                if (!$branch->else) {
+                    $this->countEvaluation($report);
+                    if (!$this->evaluator->evaluate($branch->expression, $variables)) {
+                        continue;
+                    }
+                }
+
+                return $this->render($xml, $branch->children, $branch->contentStart, $branch->contentEnd, $variables, $loop, $report);
+            }
+
+            return '';
         } catch (ConditionalExpressionException $e) {
             $this->fail($e, $report);
 
@@ -513,12 +643,17 @@ final readonly class ConditionalExpressionApplicator
                 return '';
             }
 
-            return substr($xml, $block->regionStart, $block->contentStart - $block->regionStart)
-                . $this->render($xml, $block->children, $block->contentStart, $block->contentEnd, $variables, $loop, $report)
-                . substr($xml, $block->contentEnd, $block->regionEnd - $block->contentEnd);
-        }
+            // Every marker stays as text and every branch is kept.
+            $out = '';
+            $pos = $block->regionStart;
+            foreach ([$block, ...$block->branches] as $branch) {
+                $out .= substr($xml, $pos, $branch->contentStart - $pos)
+                    . $this->render($xml, $branch->children, $branch->contentStart, $branch->contentEnd, $variables, $loop, $report);
+                $pos = $branch->contentEnd;
+            }
 
-        return $visible ? $this->render($xml, $block->children, $block->contentStart, $block->contentEnd, $variables, $loop, $report) : '';
+            return $out . substr($xml, $pos, $block->regionEnd - $pos);
+        }
     }
 
     /**
@@ -719,6 +854,13 @@ final readonly class ConditionalExpressionApplicator
                 $found[$block->loopHead()] = true;
             }
             $this->collect($block->children, $found, $loops);
+
+            foreach ($block->branches as $branch) {
+                if (!$loops && !$branch->else) {
+                    $found[$branch->expression] = true;
+                }
+                $this->collect($branch->children, $found, $loops);
+            }
         }
     }
 
@@ -736,6 +878,9 @@ final readonly class ConditionalExpressionApplicator
                 }
             }
             $this->collectLoopVariables($block->children, $names);
+            foreach ($block->branches as $branch) {
+                $this->collectLoopVariables($branch->children, $names);
+            }
         }
     }
 

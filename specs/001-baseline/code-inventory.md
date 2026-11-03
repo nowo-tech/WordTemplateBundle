@@ -62,12 +62,12 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Processor/PhpWordHtmlState.php` | Scopes PHPWord global `Html` parser state to one merge (worker safety) | FR-PROC-007 |
 | `Processor/ConditionalExpressionInspectorInterface.php` | List / lint expression conditionals ([002](../002-expression-conditionals/spec.md)) | FR-EXPR-040 |
 
-## Expression conditionals and loops ([`002`](../002-expression-conditionals/spec.md), [`003`](../003-template-loops/spec.md))
+## Expression conditionals and loops ([`002`](../002-expression-conditionals/spec.md), [`003`](../003-template-loops/spec.md), [`004`](../004-else-branches/spec.md))
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `Util/ConditionalExpressionApplicator.php` | Marker pairing, classification, layout checks (rows), outside-in scoped rendering of conditionals and loops | FR-EXPR-001, FR-EXPR-003, FR-EXPR-031, FR-LOOP-004, FR-LOOP-005 |
-| `Expression/ExpressionBlock.php` | One expression block (offsets, regions) | FR-EXPR-001, FR-EXPR-003 |
+| `Util/ConditionalExpressionApplicator.php` | Marker pairing, classification, layout checks (rows), outside-in scoped rendering of conditionals (with elseif / else branches) and loops | FR-EXPR-001, FR-EXPR-003, FR-EXPR-031, FR-LOOP-004, FR-LOOP-005, FR-ELSE-001…004 |
+| `Expression/ExpressionBlock.php` | One expression block (offsets, regions, elseif / else branches) | FR-EXPR-001, FR-EXPR-003, FR-ELSE-001 |
 | `Expression/ExpressionTextNormalizer.php` | Entities, smart quotes, dashes, spaces | FR-EXPR-004 |
 | `Expression/SandboxedExpressionLanguage.php` | ExpressionLanguage without default functions | FR-EXPR-010 |
 | `Expression/ConditionalExpressionEvaluator.php` | Parse, check, evaluate, bounded cache, function registry | FR-EXPR-010, FR-EXPR-012, FR-EXPR-013, FR-EXPR-022 |
@@ -80,7 +80,7 @@ This file proves that **every production source artifact** under `src/` is refer
 | `Expression/ExpressionFunctionProviderInterface.php` | Host function providers (autoconfigured tag) | FR-EXPR-022 |
 | `Expression/ExpressionFunctionError.php` | Bad function input | FR-EXPR-020, FR-EXPR-030 |
 | `Expression/LoopSettings.php` | Loop delimiters and limits ([003](../003-template-loops/spec.md)) | FR-LOOP-001, FR-LOOP-006 |
-| `Util/MarkerStack.php` | Bracket matching of if / for markers per scan | FR-EXPR-001, FR-LOOP-001 |
+| `Util/MarkerStack.php` | Bracket matching of if / for markers (and their branches) per scan | FR-EXPR-001, FR-LOOP-001, FR-ELSE-001 |
 | `Util/BoundaryIndex.php` | Paragraph / row boundaries indexed once per part (linear layout check) | FR-EXPR-003, FR-LOOP-004 |
 | `Expression/ExpressionLimits.php` | Marker, depth, evaluation and output limits | FR-LOOP-006 |
 

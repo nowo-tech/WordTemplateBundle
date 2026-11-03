@@ -47,6 +47,13 @@ nowo_word_template:
     # Suffix that closes the conditional end marker (after the block name).
     conditional_endif_closing: '}'
 
+    # Branches of expression conditionals (since 1.9): ${#if a > 1} … ${#elseif a > 0} … ${#else} … ${#endif}
+    # Only in expression blocks (nameless ${#endif}); the first true branch is rendered.
+    conditional_elseif_opening: '${#elseif'
+    conditional_elseif_closing: '}'
+    conditional_else_opening: '${#else'
+    conditional_else_closing: '}'
+
     # Expression conditionals (opt-in, since 1.8): ${#if total > 1000} … ${#endif}
     # A nameless ${#endif} closes the nearest open ${#if …} and makes it an expression block,
     # evaluated against the context with a function-less Symfony ExpressionLanguage.

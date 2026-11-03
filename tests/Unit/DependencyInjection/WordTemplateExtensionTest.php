@@ -117,6 +117,23 @@ final class WordTemplateExtensionTest extends TestCase
         self::assertSame(100000, $container->getParameter(Configuration::ALIAS . '.conditional_expressions.max_evaluations'));
     }
 
+    public function testElseBranchDelimitersAreExposedAndWired(): void
+    {
+        $container = new ContainerBuilder();
+        (new WordTemplateExtension())->load([['conditional_else_opening' => '${#otherwise']], $container);
+
+        self::assertSame('${#elseif', $container->getParameter(Configuration::ALIAS . '.conditional_elseif_opening'));
+        self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.conditional_elseif_closing'));
+        self::assertSame('${#otherwise', $container->getParameter(Configuration::ALIAS . '.conditional_else_opening'));
+        self::assertSame('}', $container->getParameter(Configuration::ALIAS . '.conditional_else_closing'));
+
+        $definition = $container->getDefinition(WordTemplateProcessor::class);
+        self::assertSame('%nowo_word_template.conditional_elseif_opening%', $definition->getArgument('$conditionalElseifOpening'));
+        self::assertSame('%nowo_word_template.conditional_elseif_closing%', $definition->getArgument('$conditionalElseifClosing'));
+        self::assertSame('%nowo_word_template.conditional_else_opening%', $definition->getArgument('$conditionalElseOpening'));
+        self::assertSame('%nowo_word_template.conditional_else_closing%', $definition->getArgument('$conditionalElseClosing'));
+    }
+
     public function testGetAlias(): void
     {
         self::assertSame(Configuration::ALIAS, (new WordTemplateExtension())->getAlias());

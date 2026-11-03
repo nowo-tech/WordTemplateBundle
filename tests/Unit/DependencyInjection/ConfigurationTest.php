@@ -136,6 +136,19 @@ final class ConfigurationTest extends TestCase
         ]]);
     }
 
+    public function testElseBranchDelimitersDefaultsAndCustom(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), []);
+        self::assertSame(['${#elseif', '}', '${#else', '}'], [$config['conditional_elseif_opening'], $config['conditional_elseif_closing'], $config['conditional_else_opening'], $config['conditional_else_closing']]);
+
+        $config = (new Processor())->processConfiguration(new Configuration(), [[
+            'conditional_elseif_opening' => '[[#elif',
+            'conditional_else_opening'   => '[[#otherwise',
+            'conditional_else_closing'   => ']]',
+        ]]);
+        self::assertSame(['[[#elif', '}', '[[#otherwise', ']]'], [$config['conditional_elseif_opening'], $config['conditional_elseif_closing'], $config['conditional_else_opening'], $config['conditional_else_closing']]);
+    }
+
     public function testLoopsDefaultsAndCustom(): void
     {
         $config = (new Processor())->processConfiguration(new Configuration(), []);

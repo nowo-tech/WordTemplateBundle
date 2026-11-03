@@ -119,6 +119,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
      * @param int $conditionalExpressionsMaxDepth maximum nesting depth of expression blocks and loops
      * @param int $conditionalExpressionsMaxEvaluations maximum expression evaluations per merge
      * @param int $loopMaxOutputBytes maximum bytes produced by all loops of one merge
+     * @param string $conditionalElseifOpening opening delimiter of {@code elseif} branch markers
+     * @param string $conditionalElseifClosing closing delimiter of {@code elseif} branch markers
+     * @param string $conditionalElseOpening opening delimiter of {@code else} branch markers
+     * @param string $conditionalElseClosing closing delimiter of {@code else} branch markers
      */
     public function __construct(
         private string $macroOpening = '${',
@@ -145,6 +149,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         int $conditionalExpressionsMaxDepth = ExpressionLimits::DEFAULT_MAX_DEPTH,
         int $conditionalExpressionsMaxEvaluations = ExpressionLimits::DEFAULT_MAX_EVALUATIONS,
         int $loopMaxOutputBytes = ExpressionLimits::DEFAULT_MAX_OUTPUT_BYTES,
+        private string $conditionalElseifOpening = '${#elseif',
+        private string $conditionalElseifClosing = '}',
+        private string $conditionalElseOpening = '${#else',
+        private string $conditionalElseClosing = '}',
     ) {
         $this->expressionLimits    = new ExpressionLimits($conditionalExpressionsMaxMarkers, $conditionalExpressionsMaxDepth, $conditionalExpressionsMaxEvaluations, $loopMaxOutputBytes);
         $this->loopSettings        = new LoopSettings($loopForOpening, $loopForClosing, $loopEndforOpening, $loopEndforClosing, $macroOpening, $macroClosing, $loopMaxIterations, $loopMaxTotalIterations);
@@ -204,6 +212,9 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
     {
         $prefixes = [];
         $openings = [$this->conditionalIfOpening, $this->conditionalEndifOpening];
+        if ($this->conditionalExpressionsEnabled) {
+            $openings = [...$openings, $this->conditionalElseifOpening, $this->conditionalElseOpening];
+        }
         if ($this->loopsEnabled) {
             $openings = [...$openings, $this->loopSettings->forOpening, $this->loopSettings->endforOpening];
         }
@@ -555,6 +566,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $inspection || $this->loopsEnabled ? $this->loopSettings : null,
             $this->expressionLimits,
             $deadline,
+            $this->conditionalElseifOpening,
+            $this->conditionalElseifClosing,
+            $this->conditionalElseOpening,
+            $this->conditionalElseClosing,
         );
     }
 

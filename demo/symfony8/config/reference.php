@@ -760,6 +760,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     conditional_if_closing?: scalar|Param|null, // Closing delimiter for conditional opening markers. // Default: "}"
  *     conditional_endif_opening?: scalar|Param|null, // Opening delimiter for conditional end markers (before the block name). // Default: "${#endif"
  *     conditional_endif_closing?: scalar|Param|null, // Closing delimiter for conditional end markers. // Default: "}"
+ *     conditional_elseif_opening?: scalar|Param|null, // Opening delimiter for elseif branch markers of expression conditionals (before the expression). // Default: "${#elseif"
+ *     conditional_elseif_closing?: scalar|Param|null, // Closing delimiter for elseif branch markers. // Default: "}"
+ *     conditional_else_opening?: scalar|Param|null, // Opening delimiter for else branch markers of expression conditionals. // Default: "${#else"
+ *     conditional_else_closing?: scalar|Param|null, // Closing delimiter for else branch markers. // Default: "}"
  *     loop_for_opening?: scalar|Param|null, // Opening delimiter for loop markers (before "item in items"). // Default: "${#for"
  *     loop_for_closing?: scalar|Param|null, // Closing delimiter for loop markers. // Default: "}"
  *     loop_endfor_opening?: scalar|Param|null, // Opening delimiter for loop end markers. // Default: "${#endfor"
@@ -768,11 +772,15 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         enabled?: bool|Param, // When false (default) loop markers are left untouched. // Default: false
  *         max_iterations?: int|Param, // Maximum number of elements one loop may iterate over. // Default: 1000
  *         max_total_iterations?: int|Param, // Maximum number of iterations of all loops of one merge together (nested loops multiply). // Default: 10000
+ *         max_output_bytes?: int|Param, // Maximum bytes of document XML produced by all loops of one merge (all parts together); checked before rendering. // Default: 33554432
  *     },
  *     conditional_expressions?: array{ // Expression conditionals: ${#if total > 0} … ${#endif} (nameless end marker), evaluated with a function-less Symfony ExpressionLanguage against the context. Opt-in.
  *         enabled?: bool|Param, // When false (default) expression markers are left untouched, as in 1.7. // Default: false
- *         on_error?: "exception"|"hide"|"keep"|Param, // Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block; keep = leave the markers as text (hide and keep log a warning). // Default: "exception"
+ *         on_error?: "exception"|"hide"|"keep"|Param, // Invalid expression / unknown variable / bad marker layout: exception = throw ConditionalExpressionException; hide = remove the block whose expression fails (a block with a bad marker layout cannot be delimited and is left as text); keep = leave the markers as text (hide and keep log a warning). // Default: "exception"
  *         max_length?: int|Param, // Maximum length of one expression in characters. // Default: 500
+ *         max_markers?: int|Param, // Maximum expression / loop markers in one document part (body, each header, each footer). Exceeding it always throws. // Default: 2000
+ *         max_depth?: int|Param, // Maximum nesting depth of expression blocks and loops. Exceeding it always throws. // Default: 32
+ *         max_evaluations?: int|Param, // Maximum expression evaluations of one merge (loops re-evaluate their bodies). Exceeding it always throws. // Default: 100000
  *         timezone?: scalar|Param|null, // Time zone of now() / date() (e.g. "Europe/Madrid"); null = PHP default time zone. "Now" comes from the Symfony clock service when available. // Default: null
  *         functions?: array{ // Restrict the expression functions (built-ins and host providers tagged nowo_word_template.expression_function_provider).
  *             allow?: null|list<scalar|Param|null>,

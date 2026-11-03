@@ -27,6 +27,7 @@ Two ways to keep or remove part of a document — both in the same template if y
 | **In Word** | `${#if annex}` … `${#endif annex}` | `${#if total > 1000}` … `${#endif}` |
 | **In PHP** | `'annex' => new ConditionalBlock('annex', $hasAnnex)` | `'total' => $order->total()` |
 | **Enable** | always on | `nowo_word_template.conditional_expressions.enabled: true` |
+| **Branches** | — (two blocks with opposite decisions) | `${#elseif total > 100}` … `${#else}` … `${#endif}` *(1.9)* |
 
 **In Word** (each marker in its own paragraph):
 
@@ -54,7 +55,7 @@ $document = $processor->process($templatePath, [
 
 **Result:** `Invoice F-2026-001` · `Orders above 1,000 EUR ship for free within Spain.` · `Please pay before 2026-11-15.`
 
-Expressions use [Symfony ExpressionLanguage](https://symfony.com/doc/current/components/expression_language.html) syntax with no access to PHP functions, constants or objects — only the context values and a whitelist of Twig-like functions (`lower`, `upper`, `trim`, `length`, `replace`, `round`, `number_format`, `join`, `default`, `is_defined`, `now`, `date`, …; your own via a tagged provider). Errors (typos, unknown variables) throw `ConditionalExpressionException` by default. Word's typographic quotes are handled. Full reference: [USAGE — Expression conditionals](docs/USAGE.md#expression-conditionals) (operators, data types, functions, nesting, "else", one of N, errors) and [USAGE — Conditionals by data type](docs/USAGE.md#conditionals-by-data-type) for named blocks.
+Expressions use [Symfony ExpressionLanguage](https://symfony.com/doc/current/components/expression_language.html) syntax with no access to PHP functions, constants or objects — only the context values and a whitelist of Twig-like functions (`lower`, `upper`, `trim`, `length`, `replace`, `round`, `number_format`, `join`, `default`, `is_defined`, `now`, `date`, …; your own via a tagged provider). Errors (typos, unknown variables) throw `ConditionalExpressionException` by default. Word's typographic quotes are handled. Full reference: [USAGE — Expression conditionals](docs/USAGE.md#expression-conditionals) (operators, data types, functions, nesting, `${#elseif}` / `${#else}`, one of N, errors) and [USAGE — Conditionals by data type](docs/USAGE.md#conditionals-by-data-type) for named blocks.
 
 Rendered by the demo (`make docx-previews`, LibreOffice) — template in Word → generated document:
 

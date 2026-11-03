@@ -38,6 +38,10 @@ final class WordTemplateExtension extends Extension
         $container->setParameter(Configuration::ALIAS . '.conditional_if_closing', $config['conditional_if_closing']);
         $container->setParameter(Configuration::ALIAS . '.conditional_endif_opening', $config['conditional_endif_opening']);
         $container->setParameter(Configuration::ALIAS . '.conditional_endif_closing', $config['conditional_endif_closing']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_elseif_opening', $config['conditional_elseif_opening']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_elseif_closing', $config['conditional_elseif_closing']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_else_opening', $config['conditional_else_opening']);
+        $container->setParameter(Configuration::ALIAS . '.conditional_else_closing', $config['conditional_else_closing']);
         $container->setParameter(Configuration::ALIAS . '.loop_for_opening', $config['loop_for_opening']);
         $container->setParameter(Configuration::ALIAS . '.loop_for_closing', $config['loop_for_closing']);
         $container->setParameter(Configuration::ALIAS . '.loop_endfor_opening', $config['loop_endfor_opening']);

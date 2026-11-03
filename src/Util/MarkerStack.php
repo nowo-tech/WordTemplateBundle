@@ -20,7 +20,8 @@ use const ENT_XML1;
  *
  * @internal
  *
- * @phpstan-type OpenMarker array{type: 'if'|'for', text: string, raw: string, marker: string, start: int, children: list<ExpressionBlock>}
+ * @phpstan-type OpenBranch array{text: string|null, raw: string, marker: string, start: int, children: list<ExpressionBlock>}
+ * @phpstan-type OpenMarker array{type: 'if'|'for', text: string, raw: string, marker: string, start: int, children: list<ExpressionBlock>, branches: list<OpenBranch>}
  */
 final class MarkerStack
 {
@@ -49,7 +50,42 @@ final class MarkerStack
             'marker'   => html_entity_decode($raw, ENT_QUOTES | ENT_XML1, 'UTF-8'),
             'start'    => $start,
             'children' => [],
+            'branches' => [],
         ];
+    }
+
+    /**
+     * Starts a new branch ({@code ${#elseif …}} with its text, {@code ${#else}} with null) of the innermost open
+     * marker; blocks attached from now on belong to that branch.
+     */
+    public function branch(?string $text, string $raw, int $start): void
+    {
+        $top = count($this->stack) - 1;
+        // @igor-ignore - Per-scan state object, never a shared service.
+        $this->stack[$top]['branches'][] = [
+            'text'     => $text,
+            'raw'      => $raw,
+            'marker'   => html_entity_decode($raw, ENT_QUOTES | ENT_XML1, 'UTF-8'),
+            'start'    => $start,
+            'children' => [],
+        ];
+    }
+
+    /**
+     * Blocks nested in every branch of an open marker, in document order.
+     *
+     * @param OpenMarker $open
+     *
+     * @return list<ExpressionBlock>
+     */
+    public static function allChildren(array $open): array
+    {
+        $children = $open['children'];
+        foreach ($open['branches'] as $branch) {
+            $children = [...$children, ...$branch['children']];
+        }
+
+        return $children;
     }
 
     /**
@@ -93,7 +129,7 @@ final class MarkerStack
     }
 
     /**
-     * Adds finished blocks to the innermost open marker (or to the roots).
+     * Adds finished blocks to the current branch of the innermost open marker (or to the roots).
      *
      * @param list<ExpressionBlock> $blocks
      */
@@ -106,7 +142,15 @@ final class MarkerStack
             return;
         }
 
-        $top = count($this->stack) - 1;
+        $top    = count($this->stack) - 1;
+        $branch = count($this->stack[$top]['branches']) - 1;
+        if ($branch >= 0) {
+            // @igor-ignore - Per-scan state object, never a shared service.
+            $this->stack[$top]['branches'][$branch]['children'] = [...$this->stack[$top]['branches'][$branch]['children'], ...$blocks];
+
+            return;
+        }
+
         // @igor-ignore - Per-scan state object, never a shared service.
         $this->stack[$top]['children'] = [...$this->stack[$top]['children'], ...$blocks];
     }
