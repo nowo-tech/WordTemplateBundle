@@ -70,6 +70,7 @@ With those defaults, scalar placeholders look like `${client_name}` and conditio
 - [Combined example (scalars + 2 tables + 2 conditionals)](#combined-example-scalars--2-tables--2-conditionals)
 - [Context types (summary)](#context-types-summary)
 - [Listing placeholders and conditional blocks](#listing-placeholders-and-conditional-blocks)
+- [Using it from a DDD / hexagonal application](#using-it-from-a-ddd--hexagonal-application)
 - [Combining with HtmlToWordBundle](#combining-with-htmltowordbundle)
 - [Forms in host apps and demos (REQ-TWIG-005)](#forms-in-host-apps-and-demos-req-twig-005)
 
@@ -1554,6 +1555,61 @@ ${#endif annex}
 - `listConditionalBlocks()` → `annex`
 
 ---
+
+## Using it from a DDD / hexagonal application
+
+Word Template is an **infrastructure adapter** for document generation. It has no Doctrine dependency, no events and
+no routes, and it refuses entities in the context (only scalars, `Stringable`, enums, dates, arrays and the bundle
+models `TableRows`, `ConditionalBlock`, `HtmlContent`, `ImageSource`), so the boundary is enforced for you.
+
+**Standard Symfony project (default).** Inject `WordTemplateProcessorInterface` in a controller or service, read your
+entities there and pass the decisions (see [Doctrine entities and relations](#doctrine-entities-and-relations)).
+
+**DDD / hexagonal project (opt-in).** Define your own port in the application layer (e.g. `ContractDocumentRenderer`)
+and implement it in Infrastructure with `Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface` (the
+public alias of the bundle processor):
+
+```php
+final readonly class DocxContractRenderer implements ContractDocumentRenderer
+{
+    public function __construct(private WordTemplateProcessorInterface $word, private string $templatePath) {}
+
+    public function render(ContractView $contract): string
+    {
+        $document = $this->word->process($this->templatePath, [
+            'client' => ['name' => $contract->clientName, 'vat' => $contract->clientVat],
+            'has_guarantor' => $contract->hasGuarantor,
+        ]);
+
+        try {
+            return $document->readContents();
+        } finally {
+            $document->dispose();
+        }
+    }
+}
+```
+
+- **Ports to type-hint:** `Processor\WordTemplateProcessorInterface` (`process()`, `listVariables()`,
+  `listConditionalBlocks()`) and `Processor\ConditionalExpressionInspectorInterface`; both are aliases of the bundle
+  processor. Results are the immutable `Result\ProcessedDocument` handle (`readContents()`, `path()`, `dispose()`);
+  errors implement `WordTemplateExceptionInterface`.
+- **Replace or decorate:** point the alias at your own service, or decorate it
+  (`decorates: Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface`) to add logging, metrics or a cache.
+- **IDs and data:** pass read-model values (IDs, names, flags, counts) built by your application layer, never
+  aggregates. Compute every decision (relations set, collection sizes, flags) before `process()` and pass booleans and
+  strings.
+- **Events:** none; dispatch your own `ContractDocumentGenerated` from your adapter if you need one.
+- **Extension SPI:** expose domain functions to expression conditionals with a service implementing
+  `Expression\ExpressionFunctionProviderInterface`. It extends Symfony's ExpressionLanguage provider interface (the
+  expression engine *is* ExpressionLanguage), so implement it in Infrastructure, not in the domain.
+
+What stays standard-only: nothing; both host kinds use the same services and configuration.
+
+### Known limitations
+
+- Templates are read from the local filesystem under `allowed_roots`; copy templates stored elsewhere (database,
+  object storage) to an allowed directory first.
 
 ## Combining with HtmlToWordBundle
 
