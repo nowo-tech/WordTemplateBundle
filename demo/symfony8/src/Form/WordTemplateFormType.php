@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Form;
 
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Nowo\WordTemplateBundle\Processor\WordTemplateProcessorInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -25,7 +27,7 @@ use function in_array;
 use function str_replace;
 
 /**
- * Dynamic FormType for the WordTemplateBundle demo.
+ * REQ-DEMO-015: a FormKit form (profile `demo`) with CSRF. Dynamic FormType for the WordTemplateBundle demo.
  *
  * Symfony Form field names cannot contain dots, so each variable name read from the {@code .docx}
  * is sanitized via {@see sanitize()} (e.g. {@code chapter.number} → {@code chapter_DOT_number}).
@@ -41,8 +43,11 @@ use function str_replace;
  *  - {@code submit}: download as {@code .docx}.
  *  - {@code submit_pdf}: download as PDF (PhpWord + DomPDF; fidelity limited — see template note).
  */
+#[FormKitConfig('demo')]
 final class WordTemplateFormType extends AbstractType
 {
+    use FormOptionsTrait;
+
     /**
      * Replacement marker for dots in placeholder names — Symfony Form requires field names matching
      * {@code /^[a-zA-Z][a-zA-Z0-9_\-:]*$/}.
@@ -84,16 +89,16 @@ final class WordTemplateFormType extends AbstractType
         ]);
         foreach ($simpleVars as $var) {
             $isHtml = in_array($var, $htmlVars, true);
-            $placeholders->add(self::sanitize($var), $isHtml ? TextareaType::class : TextType::class, [
-                'required'   => false,
-                'data'       => $defaults[$var] ?? '',
-                'empty_data' => '',
-                'label'      => '${' . $var . '}',
-                'label_html' => false,
-                'attr'       => $isHtml
-                    ? ['class' => 'form-control font-monospace small', 'rows' => 4, 'spellcheck' => 'false']
-                    : ['class' => 'form-control'],
-                'label_attr' => ['class' => 'form-label'],
+            $this->addWithDefaults($placeholders, self::sanitize($var), $isHtml ? TextareaType::class : TextType::class, [
+                'required'           => false,
+                'data'               => $defaults[$var] ?? '',
+                'empty_data'         => '',
+                'label'              => '${' . $var . '}',
+                'label_html'         => false,
+                'translation_domain' => false,
+                'placeholder'        => false,
+                'help'               => false,
+                'attr'               => $isHtml ? ['rows' => 4, 'spellcheck' => 'false'] : [],
             ]);
         }
         $builder->add($placeholders);
@@ -125,16 +130,19 @@ final class WordTemplateFormType extends AbstractType
                 );
             }
 
-            $rows->add(self::sanitize($anchor), CollectionType::class, [
+            $this->addWithDefaults($rows, self::sanitize($anchor), CollectionType::class, [
                 'entry_type'    => RowEntryType::class,
                 'entry_options' => [
                     'cell_map' => $cellMap,
                     'label'    => false,
                 ],
-                'data'         => $sanitizedDefault,
-                'allow_add'    => false,
-                'allow_delete' => false,
-                'label'        => false,
+                'data'               => $sanitizedDefault,
+                'allow_add'          => false,
+                'allow_delete'       => false,
+                'label'              => false,
+                'translation_domain' => false,
+                'placeholder'        => false,
+                'help'               => false,
             ]);
         }
         $builder->add($rows);
@@ -145,12 +153,13 @@ final class WordTemplateFormType extends AbstractType
             'label'        => false,
         ]);
         foreach ($conditionalBlocks as $blockName => $label) {
-            $conditionals->add(self::sanitize($blockName), CheckboxType::class, [
-                'required'   => false,
-                'data'       => $defaultConditionals[$blockName] ?? false,
-                'label'      => $label,
-                'label_attr' => ['class' => 'form-check-label'],
-                'attr'       => ['class' => 'form-check-input'],
+            $this->addWithDefaults($conditionals, self::sanitize($blockName), CheckboxType::class, [
+                'required'           => false,
+                'data'               => $defaultConditionals[$blockName] ?? false,
+                'label'              => $label,
+                'translation_domain' => false,
+                'placeholder'        => false,
+                'help'               => false,
             ]);
         }
         $builder->add($conditionals);
@@ -160,12 +169,13 @@ final class WordTemplateFormType extends AbstractType
             'inherit_data' => false,
             'label'        => false,
         ]);
-        $scalarChoices->add('client_is_vip', CheckboxType::class, [
-            'required'   => false,
-            'data'       => $defaultScalarChoices['client_is_vip'] ?? false,
-            'label'      => 'VIP client → sets ${client_tier_label} to Gold or Standard in PHP',
-            'label_attr' => ['class' => 'form-check-label'],
-            'attr'       => ['class' => 'form-check-input'],
+        $this->addWithDefaults($scalarChoices, 'client_is_vip', CheckboxType::class, [
+            'required'           => false,
+            'data'               => $defaultScalarChoices['client_is_vip'] ?? false,
+            'label'              => 'VIP client → sets ${client_tier_label} to Gold or Standard in PHP',
+            'translation_domain' => false,
+            'placeholder'        => false,
+            'help'               => false,
         ]);
         $builder->add($scalarChoices);
 
@@ -175,25 +185,28 @@ final class WordTemplateFormType extends AbstractType
             'label'        => false,
         ]);
         foreach ($imagePlaceholders as $imageVar) {
-            $images->add(self::sanitize($imageVar), TextType::class, [
-                'required'   => false,
-                'data'       => $defaultImages[$imageVar] ?? '',
-                'empty_data' => '',
-                'label'      => '${' . $imageVar . '} (filesystem path)',
-                'attr'       => ['class' => 'form-control font-monospace small'],
-                'label_attr' => ['class' => 'form-label'],
+            $this->addWithDefaults($images, self::sanitize($imageVar), TextType::class, [
+                'required'           => false,
+                'data'               => $defaultImages[$imageVar] ?? '',
+                'empty_data'         => '',
+                'label'              => '${' . $imageVar . '} (filesystem path)',
+                'translation_domain' => false,
+                'placeholder'        => false,
+                'help'               => false,
             ]);
         }
         $builder->add($images);
 
-        $builder->add('submit', SubmitType::class, [
-            'label' => 'Download .docx',
-            'attr'  => ['class' => 'btn btn-primary'],
+        $this->addWithDefaults($builder, 'submit', SubmitType::class, [
+            'label'              => 'Download .docx',
+            'translation_domain' => false,
+            'attr'               => ['class' => 'nowo-ui-btn nowo-ui-btn--primary'],
         ]);
 
-        $builder->add('submit_pdf', SubmitType::class, [
-            'label' => 'Download PDF',
-            'attr'  => ['class' => 'btn btn-outline-secondary'],
+        $this->addWithDefaults($builder, 'submit_pdf', SubmitType::class, [
+            'label'              => 'Download PDF',
+            'translation_domain' => false,
+            'attr'               => ['class' => 'nowo-ui-btn nowo-ui-btn--outline'],
         ]);
     }
 

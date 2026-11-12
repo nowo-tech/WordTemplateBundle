@@ -5,7 +5,7 @@ test.describe('WordTemplate demo', () => {
     const response = await page.goto('/');
     expect(response?.ok()).toBeTruthy();
     await expect(page.locator('h1')).toContainText('WordTemplateBundle');
-    await expect(page.locator('.alert-info')).toContainText('placeholder(s)');
+    await expect(page.locator('.nowo-ui-flash--info')).toContainText('placeholder(s)');
   });
 
   test('conditionals page shows named and expression decisions', async ({ page }) => {

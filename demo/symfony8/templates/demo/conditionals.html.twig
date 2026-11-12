@@ -2,9 +2,15 @@
 
 {% block title %}WordTemplate — conditionals{% endblock %}
 
+{% block nowo_ui_page_header %}
+  {{ include(nowo_ui_partial('page_header'), {
+    title: 'Conditionals',
+    intro: 'Two ways to show or hide a part of the document: named blocks are decided in PHP with a ConditionalBlock and a bool; expression conditionals (bundle 1.8, opt-in) carry the condition in the template and are evaluated against the context.',
+  }) }}
+{% endblock %}
+
 {% block body %}
-  <h1>Conditionals</h1>
-  <p class="lead">
+  <p>
     Two ways to show or hide a part of the document. <strong>Named blocks</strong>
     (<code>${{ '{' }}#if annex}</code> &hellip; <code>${{ '{' }}#endif annex}</code>) are decided in PHP with a
     <code>ConditionalBlock</code> and a <code>bool</code>. <strong>Expression conditionals</strong>
@@ -18,26 +24,26 @@
     <a href="{{ path('demo_conditionals_examples') }}">expression examples</a> page.
   </p>
 
-  <div class="alert alert-info small">
+  <div class="nowo-ui-flash nowo-ui-flash--info" role="note">
     <strong>{{ template_blocks|length }} conditional block(s)</strong> found by <code>listConditionalBlocks()</code>:
-    {% for name in template_blocks %}<code class="me-1">{{ name }}</code>{% endfor %}
+    {% for name in template_blocks %}<code>{{ name }}</code>{% endfor %}
   </div>
 
-  <div class="row g-4">
-    <div class="col-lg-5">
+  <div>
+    <div>
       {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
-        <fieldset class="border rounded p-3 mb-3 demo-fieldset">
-          <legend class="float-none w-auto px-2 fs-6">Input values</legend>
+        <fieldset>
+          <legend>Input values</legend>
           {% for child in form %}
             {% if not child.rendered and child.vars.name not in ['preview', 'download', '_token'] %}
               {{ form_row(child) }}
             {% endif %}
           {% endfor %}
         </fieldset>
-        <div class="d-flex flex-wrap gap-2">
+        <p>
           {{ form_widget(form.preview) }}
           {{ form_widget(form.download) }}
-        </div>
+        </p>
         {# REQ-TWIG-003: render whatever is left (CSRF token, …). #}
         {% for child in form %}
           {% if not child.rendered %}
@@ -47,49 +53,49 @@
       {{ form_end(form) }}
     </div>
 
-    <div class="col-lg-7">
-      <h2 class="h5">Decisions {% if not submitted %}<span class="badge bg-secondary">default values</span>{% endif %}</h2>
-      <table class="demo-table mb-3" data-testid="decisions">
+    <div>
+      <h2>Decisions {% if not submitted %}<span class="nowo-ui-badge nowo-ui-badge--neutral">default values</span>{% endif %}</h2>
+      <table class="nowo-ui-data-table nowo-ui-data-table--compact" data-testid="decisions">
         <thead>
           <tr><th>Type</th><th>Value</th><th>Expression</th><th>Blocks</th></tr>
         </thead>
         <tbody>
           {% for decision in decisions %}
             <tr>
-              <td class="small text-nowrap">{{ decision.type }}</td>
-              <td class="small"><code>{{ decision.value }}</code></td>
-              <td class="small"><code>{{ decision.expression }}</code></td>
-              <td class="small">
+              <td>{{ decision.type }}</td>
+              <td><code>{{ decision.value }}</code></td>
+              <td><code>{{ decision.expression }}</code></td>
+              <td>
                 {% for name, visible in decision.blocks %}
-                  <span class="badge {{ visible ? 'bg-success' : 'bg-light text-secondary border' }} me-1" title="{{ visible ? 'kept' : 'removed' }}">{{ name }}</span>
+                  <span class="nowo-ui-badge {{ visible ? 'nowo-ui-badge--success' : 'nowo-ui-badge--neutral' }}" title="{{ visible ? 'kept' : 'removed' }}">{{ name }}</span>
                 {% endfor %}
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
-      <h2 class="h5 mt-4">Expression conditionals in the template</h2>
-      <table class="demo-table mb-3" data-testid="expressions">
+      <h2>Expression conditionals in the template</h2>
+      <table class="nowo-ui-data-table nowo-ui-data-table--compact" data-testid="expressions">
         <thead>
           <tr><th>In Word</th><th>Paragraph inside the block</th><th>Result</th></tr>
         </thead>
         <tbody>
           {% for row in expressions %}
             <tr>
-              <td class="small"><code>${{ '{' }}#if {{ row.expression }}}</code></td>
-              <td class="small">{{ row.text }}</td>
-              <td class="small text-nowrap">
+              <td><code>${{ '{' }}#if {{ row.expression }}}</code></td>
+              <td>{{ row.text }}</td>
+              <td>
                 {% if row.error %}
-                  <span class="badge bg-danger" title="{{ row.error }}">error</span>
+                  <span class="nowo-ui-badge nowo-ui-badge--danger" title="{{ row.error }}">error</span>
                 {% else %}
-                  <span class="badge {{ row.visible ? 'bg-success' : 'bg-light text-secondary border' }}">{{ row.visible ? 'kept' : 'removed' }}</span>
+                  <span class="nowo-ui-badge {{ row.visible ? 'nowo-ui-badge--success' : 'nowo-ui-badge--neutral' }}">{{ row.visible ? 'kept' : 'removed' }}</span>
                 {% endif %}
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
-      <p class="small text-muted mb-0">
+      <p class="nowo-ui-muted">
         Green blocks are kept, grey ones are removed with their content. Try <code>0</code> vs an empty discount,
         a total of <code>0.004</code> (rounds to 0.00), <code>yes</code>/<code>0</code> as notes, <code>es</code> vs <code>ES</code>,
         a past due date with status &ldquo;Paid&rdquo;, or an empty order-lines box.

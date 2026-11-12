@@ -4,31 +4,37 @@ declare(strict_types=1);
 
 namespace App\Form;
 
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Single entry inside a {@see CollectionType}.
+ * REQ-DEMO-015: FormKit entry (profile `demo`) inside a {@see CollectionType}.
  *
  * Renders one input per cell from the {@code cell_map} option (sanitized field name → original placeholder name).
  */
+#[FormKitConfig('demo')]
 final class RowEntryType extends AbstractType
 {
+    use FormOptionsTrait;
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         /** @var array<string, string> $cellMap */
         $cellMap = $options['cell_map'];
 
         foreach ($cellMap as $sanitized => $original) {
-            $builder->add($sanitized, TextType::class, [
-                'required'   => false,
-                'label'      => $original,
-                'empty_data' => '',
-                'attr'       => ['class' => 'form-control form-control-sm', 'placeholder' => $original],
-                'label_attr' => ['class' => 'form-label small'],
+            $this->addText($builder, $sanitized, [
+                'required'           => false,
+                'label'              => $original,
+                'empty_data'         => '',
+                'translation_domain' => false,
+                'placeholder'        => false,
+                'help'               => false,
+                'attr'               => ['placeholder' => $original],
             ]);
         }
     }
