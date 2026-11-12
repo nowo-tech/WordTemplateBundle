@@ -23,7 +23,7 @@ async function waitForToolbar(page: Page) {
 async function shoot(page: Page, path: string, name: string, height: number) {
   await page.setViewportSize({ width: 1280, height });
   await page.goto(path);
-  await expect(page.locator('nav.navbar .navbar-brand')).toBeVisible();
+  await expect(page.locator('.nowo-ui-header .nowo-ui-brand')).toBeVisible();
   await waitForToolbar(page);
   await page.screenshot({ path: resolve(outDir, `${name}.png`) });
 }

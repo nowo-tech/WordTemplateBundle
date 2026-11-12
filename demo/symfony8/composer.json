@@ -4,9 +4,11 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "dompdf/dompdf": "^3.0",
-        "nowo-tech/word-template-bundle": "@dev",
         "php": ">=8.2",
+        "dompdf/dompdf": "^3.0",
+        "nowo-tech/form-kit-bundle": "^2.22",
+        "nowo-tech/ui-kit-bundle": "^2.49",
+        "nowo-tech/word-template-bundle": "@dev",
         "symfony/asset": "8.1.*",
         "symfony/console": "^8.0",
         "symfony/dotenv": "^8.0",
@@ -41,8 +43,12 @@
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
-        "post-install-cmd": ["@auto-scripts"],
-        "post-update-cmd": ["@auto-scripts"]
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ]
     },
     "conflict": {
         "symfony/symfony": "*"

@@ -53,6 +53,10 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 - USAGE: new section "Using it from a DDD / hexagonal application" (own port implemented with `WordTemplateProcessorInterface`, replace/decorate through the alias, read-model context, ExpressionLanguage SPI on the infrastructure side, known limitations).
 
+### Changed
+
+- Demo uses the UiKit base style and FormKit forms (REQ-DEMO-014/015).
+
 ## [1.9.0] - 2026-11-03
 
 ### Added

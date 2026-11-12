@@ -2,49 +2,52 @@
 
 {% block title %}WordTemplate — demo (Symfony 8){% endblock %}
 
+{% block nowo_ui_page_header %}
+  {{ include(nowo_ui_partial('page_header'), {title: 'WordTemplateBundle'}) }}
+{% endblock %}
+
 {% block body %}
   {# Sanitization marker mirroring App\Form\WordTemplateFormType::DOT_PLACEHOLDER #}
   {% set DOT = '_DOT_' %}
 
-  <h1>WordTemplateBundle <span class="text-secondary fs-5">(Symfony 8)</span></h1>
-  <p class="lead">
+  <p>
     This page reads <code>public/demo/{{ template_filename }}</code> with PHPWord
     <code>TemplateProcessor::getVariables()</code>, lists every <code>${variable}</code> placeholder it finds and
     builds the form below. Submit it to download a filled <code>.docx</code>, or
     <a href="{{ path('demo_template') }}">download the blank template</a> with placeholders intact.
   </p>
 
-  <div class="alert alert-info small">
+  <div class="nowo-ui-flash nowo-ui-flash--info" role="note">
     <strong>{{ all_variables|length }} placeholder(s)</strong> discovered in the template:
-    {% for v in all_variables %}<code class="me-1">${{ '{' }}{{ v }}{{ '}' }}</code>{% endfor %}
+    {% for v in all_variables %}<code>${{ '{' }}{{ v }}{{ '}' }}</code>{% endfor %}
   </div>
 
-  <details class="mb-3 small">
-    <summary>Bundle features covered by this demo</summary>
-    <ul class="mt-2 mb-0">
-      <li><span class="badge bg-secondary">Scalar</span> — text fields (e.g. <code>${chapter.title}</code>, dot keys).</li>
-      <li><span class="badge bg-secondary">Inline scalar</span> — <code>${client_tier_label}</code> in one paragraph; VIP checkbox picks <em>Gold</em> or <em>Standard</em> in PHP (not a block conditional).</li>
-      <li><span class="badge bg-secondary">HtmlContent</span> — rich HTML fields (abstract, *.body, …).</li>
-      <li><span class="badge bg-secondary">TableRows</span> — repeating table rows (<code>row_code</code>, <code>ref_text</code>).</li>
-      <li><span class="badge bg-secondary">ConditionalBlock</span> — <code>${{ '{' }}#if optional_funding}</code> … <code>${{ '{' }}#endif optional_funding}</code>.</li>
-      <li><span class="badge bg-secondary">Nested conditional</span> — <code>${{ '{' }}#if funding_detail}</code> inside <code>optional_funding</code>.</li>
-      <li><span class="badge bg-secondary">ImageSource</span> — <code>${demo_logo}</code> from a filesystem path.</li>
-      <li><span class="badge bg-secondary">Config</span> — <code>config/packages/nowo_word_template.yaml</code> (macro and conditional delimiters).</li>
+  <details class="nowo-ui-card">
+    <summary class="nowo-ui-card__title">Bundle features covered by this demo</summary>
+    <ul>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">Scalar</span> — text fields (e.g. <code>${chapter.title}</code>, dot keys).</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">Inline scalar</span> — <code>${client_tier_label}</code> in one paragraph; VIP checkbox picks <em>Gold</em> or <em>Standard</em> in PHP (not a block conditional).</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">HtmlContent</span> — rich HTML fields (abstract, *.body, …).</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">TableRows</span> — repeating table rows (<code>row_code</code>, <code>ref_text</code>).</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">ConditionalBlock</span> — <code>${{ '{' }}#if optional_funding}</code> … <code>${{ '{' }}#endif optional_funding}</code>.</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">Nested conditional</span> — <code>${{ '{' }}#if funding_detail}</code> inside <code>optional_funding</code>.</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">ImageSource</span> — <code>${demo_logo}</code> from a filesystem path.</li>
+      <li><span class="nowo-ui-badge nowo-ui-badge--neutral">Config</span> — <code>config/packages/nowo_word_template.yaml</code> (macro and conditional delimiters).</li>
     </ul>
   </details>
 
-  <details class="mb-3 small">
-    <summary>HTML supported in <span class="badge bg-secondary">HtmlContent</span> fields</summary>
-    <ul class="mt-2">
+  <details class="nowo-ui-card">
+    <summary class="nowo-ui-card__title">HTML supported in <span class="nowo-ui-badge nowo-ui-badge--neutral">HtmlContent</span> fields</summary>
+    <ul>
       <li>Inline: <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code>, <code>&lt;u&gt;</code>, line breaks.</li>
       <li>Block: <code>&lt;p&gt;</code> (multiple paragraphs OK).</li>
       <li>Tables: <code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;…&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</code> with inline <code>style</code> (borders, <code>background-color</code>, padding). PHPWord expects border shorthand as <code>width color style</code>, e.g. <code>border: 1px #2c5282 solid</code>.</li>
       <li><strong>Lists</strong> (<code>&lt;ul&gt;</code>/<code>&lt;ol&gt;</code>) require a <code>numberingStyle</code> in the parent <code>PhpWord</code> instance — not registered by the bundle's <code>HtmlContent</code> right now. Use bulleted/numbered <code>&lt;p&gt;</code> tags instead, or pair with <a href="https://github.com/nowo-tech/HtmlToWordBundle">HtmlToWordBundle</a> for a full HTML pipeline.</li>
     </ul>
-    <p class="mb-0">The defaults below show: inline formatting, multi-paragraph blocks, simulated lists with bullets, and an inline HTML table in <code>${methodology.body}</code> and <code>${results.body}</code> — submit the form to see them in the resulting <code>.docx</code>.</p>
+    <p>The defaults below show: inline formatting, multi-paragraph blocks, simulated lists with bullets, and an inline HTML table in <code>${methodology.body}</code> and <code>${results.body}</code> — submit the form to see them in the resulting <code>.docx</code>.</p>
   </details>
 
-  {{ form_start(form, {attr: {class: 'mb-5', novalidate: 'novalidate'}}) }}
+  {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
     {% set fields_by_group = {} %}
     {% for var in simple_vars %}
       {% set group = (var matches '/\\./') ? var|split('.', 2)|first : '_general' %}
@@ -52,36 +55,34 @@
     {% endfor %}
 
     {% for group, vars in fields_by_group %}
-      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
-        <legend class="float-none w-auto px-2 fs-6">{{ group == '_general' ? 'General' : group }}</legend>
-        <div class="row g-3">
+      <section class="nowo-ui-card">
+        <h2 class="nowo-ui-card__title">{{ group == '_general' ? 'General' : group }}</h2>
+        <div>
           {% for var in vars %}
             {% set is_html = var in html_vars %}
             {% set field   = form.placeholders[var|replace({'.': DOT})] %}
-            <div class="{{ is_html ? 'col-12' : 'col-md-6' }}">
-              {{ form_label(field) }}
-              {% if is_html %}<span class="badge bg-secondary ms-1">HtmlContent</span>{% endif %}
-              {{ form_widget(field) }}
-              {{ form_errors(field) }}
+            <div>
+              {% if is_html %}<span class="nowo-ui-badge nowo-ui-badge--neutral">HtmlContent</span>{% endif %}
+              {{ form_row(field) }}
             </div>
           {% endfor %}
         </div>
-      </fieldset>
+      </section>
     {% endfor %}
 
     {% for anchor, cells in row_groups %}
       {% set collection = form.rows[anchor|replace({'.': DOT})] %}
-      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
-        <legend class="float-none w-auto px-2 fs-6">
-          Repeating rows <span class="badge bg-secondary ms-1">TableRows({{ anchor }})</span>
-        </legend>
-        <div class="small text-muted mb-2">
+      <section class="nowo-ui-card">
+        <h2 class="nowo-ui-card__title">
+          Repeating rows <span class="nowo-ui-badge nowo-ui-badge--neutral">TableRows({{ anchor }})</span>
+        </h2>
+        <p class="nowo-ui-muted">
           Anchor placeholder <code>${{ '{' }}{{ anchor }}{{ '}' }}</code>
-          {% if cells|length > 1 %}with cells {% for c in cells %}<code class="me-1">${{ '{' }}{{ c }}{{ '}' }}</code>{% endfor %}{% endif %}
+          {% if cells|length > 1 %}with cells {% for c in cells %}<code>${{ '{' }}{{ c }}{{ '}' }}</code>{% endfor %}{% endif %}
           — empty rows are dropped.
-        </div>
+        </p>
 
-        <table class="demo-table mb-2">
+        <table class="nowo-ui-data-table nowo-ui-data-table--compact">
           <thead>
             <tr>
               {% for cell in cells %}
@@ -94,78 +95,66 @@
               <tr>
                 {% for cell in cells %}
                   {% set cell_field = entry[cell|replace({'.': DOT})] %}
-                  <td>
-                    {{ form_label(cell_field) }}
-                    {{ form_widget(cell_field) }}
-                  </td>
+                  <td>{{ form_widget(cell_field) }}</td>
                 {% endfor %}
               </tr>
             {% endfor %}
           </tbody>
         </table>
-      </fieldset>
+      </section>
     {% endfor %}
 
     {% if conditional_blocks is not empty %}
-      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
-        <legend class="float-none w-auto px-2 fs-6">
-          Conditional blocks <span class="badge bg-secondary ms-1">ConditionalBlock</span>
-        </legend>
-        <p class="small text-muted">
+      <section class="nowo-ui-card">
+        <h2 class="nowo-ui-card__title">
+          Conditional blocks <span class="nowo-ui-badge nowo-ui-badge--neutral">ConditionalBlock</span>
+        </h2>
+        <p class="nowo-ui-muted">
           Twig-style regions in the template:
           {% for block, _label in conditional_blocks %}
             <code class="me-2">${{ '{' }}#if {{ block }}{{ '}' }}</code>…<code>${{ '{' }}#endif {{ block }}{{ '}' }}</code>{% if not loop.last %},{% endif %}
           {% endfor %}
         </p>
-        <div class="vstack gap-2">
+        <div>
           {% for block, label in conditional_blocks %}
             {% set field = form.conditionals[block|replace({'.': DOT})] %}
-            <div class="form-check">
-              {{ form_widget(field) }}
-              {{ form_label(field, label, {label_attr: {class: 'form-check-label'}}) }}
-              <code class="small text-muted ms-1">${{ '{' }}#if {{ block }}{{ '}' }}</code>
-            </div>
+            {{ form_row(field) }}
+            <code>${{ '{' }}#if {{ block }}{{ '}' }}</code>
           {% endfor %}
         </div>
-      </fieldset>
+      </section>
     {% endif %}
 
-    <fieldset class="border rounded p-3 mb-3 demo-fieldset">
-      <legend class="float-none w-auto px-2 fs-6">
-        Inline scalar <span class="badge bg-secondary ms-1">computed in PHP</span>
-      </legend>
-      <p class="small text-muted mb-2">
+    <section class="nowo-ui-card">
+      <h2 class="nowo-ui-card__title">
+        Inline scalar <span class="nowo-ui-badge nowo-ui-badge--neutral">computed in PHP</span>
+      </h2>
+      <p class="nowo-ui-muted">
         Same paragraph as normal text — template has <code>${client_tier_label}</code>; the checkbox below sets
         <em>Gold</em> or <em>Standard</em> (no <code>${{ '{' }}#if}</code> markers in the line).
       </p>
-      <div class="form-check">
-        {{ form_widget(form.scalar_choices.client_is_vip) }}
-        {{ form_label(form.scalar_choices.client_is_vip, 'VIP client', {label_attr: {class: 'form-check-label'}}) }}
-      </div>
-    </fieldset>
+      {{ form_row(form.scalar_choices.client_is_vip) }}
+    </section>
 
     {% if image_placeholders is not empty %}
-      <fieldset class="border rounded p-3 mb-3 demo-fieldset">
-        <legend class="float-none w-auto px-2 fs-6">
-          Images <span class="badge bg-secondary ms-1">ImageSource</span>
-        </legend>
-        <p class="small text-muted mb-2">Absolute path on the demo container/host (default: bundled <code>demo-logo.png</code>).</p>
+      <section class="nowo-ui-card">
+        <h2 class="nowo-ui-card__title">
+          Images <span class="nowo-ui-badge nowo-ui-badge--neutral">ImageSource</span>
+        </h2>
+        <p class="nowo-ui-muted">Absolute path on the demo container/host (default: bundled <code>demo-logo.png</code>).</p>
         {% for imageVar in image_placeholders %}
           {% set field = form.images[imageVar|replace({'.': DOT})] %}
-          <div class="mb-2">
-            {{ form_label(field) }}
-            {{ form_widget(field) }}
-          </div>
+          {{ form_row(field) }}
         {% endfor %}
-      </fieldset>
+      </section>
     {% endif %}
 
-    <div class="d-flex flex-wrap gap-2 align-items-center">
-      <a href="{{ path('demo_template') }}" class="btn btn-outline-primary">Download blank template</a>
+    <p>
+      <a href="{{ path('demo_template') }}" class="nowo-ui-btn nowo-ui-btn--outline">Download blank template</a>
       {{ form_widget(form.submit) }}
       {{ form_widget(form.submit_pdf) }}
-      <small class="text-muted">PDF backend: PhpWord + DomPDF (<code>docx → HTML → PDF</code>) — fidelity is limited (no headers/footers, no <code>numberingStyle</code> lists, simplified tables).</small>
-    </div>
+      <span class="nowo-ui-muted">PDF backend: PhpWord + DomPDF (<code>docx → HTML → PDF</code>) — fidelity is limited (no headers/footers, no <code>numberingStyle</code> lists, simplified tables).</span>
+    </p>
     {# REQ-TWIG-003 rule 3: the fieldsets above group the placeholders on purpose; the loop renders any remaining child. #}
     {% for child in form %}
       {% if not child.rendered %}
