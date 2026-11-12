@@ -45,6 +45,10 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Tests
+
+- `WorkerKeptAliveKernelTest`: one kept-alive kernel, 1000 merges as two users, no resetter, isolation and memory assertions (REQ-RUNTIME-002); `docs/FRANKENPHP-WORKER-AUDIT.md` refreshed.
+
 ### Documentation
 
 - USAGE: new section "Using it from a DDD / hexagonal application" (own port implemented with `WordTemplateProcessorInterface`, replace/decorate through the alias, read-model context, ExpressionLanguage SPI on the infrastructure side, known limitations).

@@ -4,6 +4,7 @@
 |-------|-------|
 | Package | `nowo-tech/word-template-bundle` (`symfony-bundle`) |
 | Audited revision | `v1.3.8` (remediation on top of `v1.3.7` / `d45b5f3`) |
+| Reviewed version | `v1.9.0` (2026-11-12 review: `git diff v1.9.0 -- src` is empty at this commit; the 1.8/1.9 additions are covered in the services table) |
 | Audit date | 2026-09-25 |
 | Method | Manual review of every file under `src/` (processor, PHPWord bridge, deadline, utils, models, result, DI extension, `Resources/config/*.yaml`); static state of `phpoffice/phpword` 1.4.0 (installed dev dependency) checked in `Shared/Html.php` and `TemplateProcessor.php` |
 | Remediation (2026-09-25) | W-01 fixed (PHPWord `Html` statics isolated per `process()` call and restored in `finally`, `Processor/PhpWordHtmlState.php`); W-02 fixed (PHPWord working copy deleted on every path); regression tests reuse one processor for consecutive merges |
@@ -18,6 +19,7 @@
   - [W-01 — PHPWord `Html` keeps the last parsed `<style>` sheet in a static property (Medium)](#w-01--phpword-html-keeps-the-last-parsed-style-sheet-in-a-static-property-medium)
   - [W-02 — PHPWord temporary template copies are not always removed (Low)](#w-02--phpword-temporary-template-copies-are-not-always-removed-low)
   - [W-03 — Timeout is cooperative, and restoring `set_time_limit()` restarts the budget (Low)](#w-03--timeout-is-cooperative-and-restoring-set_time_limit-restarts-the-budget-low)
+- [Kept-alive kernel test (REQ-RUNTIME-002)](#kept-alive-kernel-test-req-runtime-002)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
 - [Re-audit triggers](#re-audit-triggers)
 
@@ -83,6 +85,12 @@ Per-call objects: `TemplateProcessorBridge` (one per call, local variable), `Con
 - **Status:** Accepted — no state leaks (the limit is restored); a single PHPWord call cannot be interrupted in-process. Deployment limits above apply.
 
 No other findings. `PhpWord\Settings::setOutputEscapingEnabled(true)` is always paired with a restore in `finally` (`:75`, `:80`, `:141`), so the global PHPWord setting does not leak between requests.
+
+## Kept-alive kernel test (REQ-RUNTIME-002)
+
+**Safe with kernel reset false.** `tests/Integration/Worker/WorkerKeptAliveKernelTest.php::testMergesInOneKernelWithoutResetterKeepDataSeparatedAndMemoryFlat` boots ONE `AppKernel`, fetches `WordTemplateProcessorInterface` once and runs 1000 merges alternating two users (distinct names and HTML; only the first user ships a `<style>` block), never calling `services_resetter` or `kernel.reset`. Per iteration it asserts: the result holds only its own user's text and HTML, the other user's stylesheet never shows up, PHPWord's static `Html::$css` / `$xpath` are `null`, and no PHPWord working copy is left in the temp dir. After a 50-iteration warm-up and a GC pass, memory growth must stay under 4 MiB.
+
+Rule 7 (host Doctrine): the bundle has no persistence and never touches the host default EntityManager; nothing here clears, flushes or closes it, and a host application must not rely on this bundle for that either.
 
 ## Usage recommendations in worker mode
 
