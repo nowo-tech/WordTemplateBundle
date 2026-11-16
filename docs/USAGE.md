@@ -464,7 +464,7 @@ $result = $processor->process($templatePath, $context);
 Order of work inside `process()`: **conditionals first**, then `TableRows`, then scalars / `HtmlContent` / `ImageSource`. Consequences:
 
 - Values for placeholders that sit inside a **hidden** block are simply ignored (scalars, `HtmlContent`, `ImageSource`: no error).
-- A `TableRows` whose template row was inside a hidden block throws PHPWord's `Can not clone row, template variable not found or variable contains markup.` — only add the `TableRows` when the block is visible (as above).
+- A `TableRows` whose template row was inside a hidden block is skipped (debug log), because hiding it is what the template asked for. A `TableRows` whose row variable never existed in the template still throws PHPWord's `Can not clone row, template variable not found or variable contains markup.`
 
 ### `DateTimeInterface`
 
