@@ -47,7 +47,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ### Fixed
 
-- `TableRows` whose row variable sits inside a false `${#if}` block (named `ConditionalBlock` or expression) no longer throws PHPWord's `Can not clone row…`: the rows are skipped with a debug log. A row variable that never existed in the template still throws. Image and HTML values for hidden placeholders were already ignored.
+- `TableRows` whose row variable sits inside a false `${#if}` block (named `ConditionalBlock` or expression), an empty `${#for}` loop or an expression block removed by `on_error: hide` no longer throws PHPWord's `Can not clone row…`: the rows are skipped with a debug log. A row variable that never existed in the template still throws. Image and HTML values for hidden placeholders were already ignored.
 
 ### Tests
 

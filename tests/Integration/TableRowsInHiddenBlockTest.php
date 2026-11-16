@@ -91,6 +91,28 @@ final class TableRowsInHiddenBlockTest extends TestCase
         ]);
     }
 
+    public function testDuplicateRowVariableStillThrows(): void
+    {
+        $template = $this->template('${#if solidario}', '${#endif solidario}');
+        $rows     = new TableRows('TABLE_3_NOMBRE', [['TABLE_3_NOMBRE' => 'Ana', 'TABLE_3_NIF' => 'X']]);
+
+        $this->expectException(PhpWordException::class);
+        $this->expectExceptionMessage('Can not clone row, template variable not found or variable contains markup.');
+        $this->render(new WordTemplateProcessor(), $template, [
+            'solidario' => new ConditionalBlock('solidario', true),
+            'first'     => $rows,
+            'second'    => $rows,
+        ]);
+    }
+
+    public function testEmptyLoopHidesTableRowsWithoutError(): void
+    {
+        $template = $this->template('${#for x in items}', '${#endfor}');
+        $out      = $this->render(new WordTemplateProcessor(loopsEnabled: true), $template, ['items' => []] + $this->context('No'));
+
+        self::assertSame('', $out);
+    }
+
     /**
      * @return array<string, mixed>
      */

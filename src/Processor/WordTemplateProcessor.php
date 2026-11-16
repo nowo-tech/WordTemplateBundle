@@ -412,9 +412,12 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $this->applyConditionalExpressions($processor, $context, $templatePath, $deadline);
             $deadline->assertNotTimedOut();
 
+            // One snapshot before any cloneRow(): a row variable renamed by an earlier TableRows must not look removed.
+            $variablesAfterConditionals = array_fill_keys($processor->getVariables(), true);
+
             foreach ($flat as $value) {
                 if ($value instanceof TableRows) {
-                    $this->applyTableRows($processor, $value, $variablesBeforeConditionals);
+                    $this->applyTableRows($processor, $value, $variablesBeforeConditionals, $variablesAfterConditionals);
                     $deadline->assertNotTimedOut();
                 }
             }
@@ -590,14 +593,15 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
 
     /**
      * @param array<string, true> $variablesBeforeConditionals variables present in the template before conditionals ran
+     * @param array<string, true> $variablesAfterConditionals variables left after conditionals and loops, before any cloneRow()
      */
-    private function applyTableRows(TemplateProcessor $processor, TableRows $rows, array $variablesBeforeConditionals): void
+    private function applyTableRows(TemplateProcessor $processor, TableRows $rows, array $variablesBeforeConditionals, array $variablesAfterConditionals): void
     {
         if ($rows->rows === []) {
             throw new InvalidContextValueException(sprintf('TableRows for variable "%s" must contain at least one data row.', $rows->rowVariable));
         }
 
-        if (isset($variablesBeforeConditionals[$rows->rowVariable]) && !in_array($rows->rowVariable, $processor->getVariables(), true)) {
+        if (isset($variablesBeforeConditionals[$rows->rowVariable]) && !isset($variablesAfterConditionals[$rows->rowVariable])) {
             $this->logger->debug('Word template TableRows skipped: its row variable was removed by a false conditional block.', [
                 'bundle'       => 'word_template',
                 'action'       => 'process',
