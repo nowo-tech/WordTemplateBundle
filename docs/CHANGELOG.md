@@ -5,6 +5,7 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.9.1] - 2026-11-16](#191---2026-11-16)
 - [[1.9.0] - 2026-11-03](#190---2026-11-03)
 - [[1.8.0] - 2026-10-30](#180---2026-10-30)
 - [[1.7.1] - 2026-10-29](#171---2026-10-29)
@@ -44,6 +45,8 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 - [[0.1.0] - 2026-05-12](#010---2026-05-12)
 
 ## [Unreleased]
+
+## [1.9.1] - 2026-11-16
 
 ### Fixed
 

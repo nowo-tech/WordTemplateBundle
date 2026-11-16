@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.9.1](#to-191)
 - [To 1.9.0](#to-190)
 - [To 1.8.0](#to-180)
 - [To 1.7.1](#to-171)
@@ -46,6 +47,14 @@
 - [From pre-release snapshots](#from-pre-release-snapshots)
 
 ## Unreleased
+
+## To 1.9.1
+
+From **1.9.0**:
+
+```bash
+composer update nowo-tech/word-template-bundle
+```
 
 No code or configuration change is required. A `TableRows` whose row variable sat inside a false conditional block used to throw `Can not clone row…`; it is now skipped (debug log). Hosts that relied on that exception to detect a hidden table must check the block themselves.
 
