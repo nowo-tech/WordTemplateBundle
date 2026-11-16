@@ -45,6 +45,10 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Fixed
+
+- `TableRows` whose row variable sits inside a false `${#if}` block (named `ConditionalBlock` or expression) no longer throws PHPWord's `Can not clone row…`: the rows are skipped with a debug log. A row variable that never existed in the template still throws. Image and HTML values for hidden placeholders were already ignored.
+
 ### Tests
 
 - `WorkerKeptAliveKernelTest`: one kept-alive kernel, 1000 merges as two users, no resetter, isolation and memory assertions (REQ-RUNTIME-002); `docs/FRANKENPHP-WORKER-AUDIT.md` refreshed.

@@ -47,6 +47,8 @@
 
 ## Unreleased
 
+No code or configuration change is required. A `TableRows` whose row variable sat inside a false conditional block used to throw `Can not clone row…`; it is now skipped (debug log). Hosts that relied on that exception to detect a hidden table must check the block themselves.
+
 ## To 1.9.0
 
 No code or configuration change is required. Only templates processed with `conditional_expressions.enabled: true` are affected:

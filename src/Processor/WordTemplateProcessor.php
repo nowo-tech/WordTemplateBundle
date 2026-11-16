@@ -37,6 +37,7 @@ use Psr\Log\NullLogger;
 use Stringable;
 use Throwable;
 
+use function array_fill_keys;
 use function basename;
 use function chmod;
 use function count;
@@ -401,6 +402,10 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
             $processor = $this->openTemplate($templatePath);
             $deadline->assertNotTimedOut();
 
+            // Variables present before the conditionals run: a TableRows whose row variable was removed together with a
+            // false ${#if} block is skipped (the template asked to hide it) instead of failing in cloneRow().
+            $variablesBeforeConditionals = array_fill_keys($processor->getVariables(), true);
+
             $this->applyConditionalBlocks($processor, $flat);
             $deadline->assertNotTimedOut();
 
@@ -409,7 +414,7 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
 
             foreach ($flat as $value) {
                 if ($value instanceof TableRows) {
-                    $this->applyTableRows($processor, $value);
+                    $this->applyTableRows($processor, $value, $variablesBeforeConditionals);
                     $deadline->assertNotTimedOut();
                 }
             }
@@ -583,10 +588,23 @@ readonly class WordTemplateProcessor implements WordTemplateProcessorInterface, 
         );
     }
 
-    private function applyTableRows(TemplateProcessor $processor, TableRows $rows): void
+    /**
+     * @param array<string, true> $variablesBeforeConditionals variables present in the template before conditionals ran
+     */
+    private function applyTableRows(TemplateProcessor $processor, TableRows $rows, array $variablesBeforeConditionals): void
     {
         if ($rows->rows === []) {
             throw new InvalidContextValueException(sprintf('TableRows for variable "%s" must contain at least one data row.', $rows->rowVariable));
+        }
+
+        if (isset($variablesBeforeConditionals[$rows->rowVariable]) && !in_array($rows->rowVariable, $processor->getVariables(), true)) {
+            $this->logger->debug('Word template TableRows skipped: its row variable was removed by a false conditional block.', [
+                'bundle'       => 'word_template',
+                'action'       => 'process',
+                'row_variable' => $rows->rowVariable,
+            ]);
+
+            return;
         }
 
         $processor->cloneRow($rows->rowVariable, count($rows->rows));

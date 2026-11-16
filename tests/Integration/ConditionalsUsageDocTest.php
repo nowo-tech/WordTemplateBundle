@@ -465,15 +465,25 @@ final class ConditionalsUsageDocTest extends TestCase
         ]);
     }
 
-    public function testTableRowsInsideHiddenBlockThrows(): void
+    public function testTableRowsInsideHiddenBlockIsSkipped(): void
     {
-        self::assertStringContainsString("PHPWord's `Can not clone row, template variable not found or variable contains markup.`", $this->usage());
+        self::assertStringContainsString('A `TableRows` whose template row was inside a hidden block is skipped', $this->usage());
 
+        $text = $this->renderWith($this->tableTemplate(), [
+            'has_lines' => new ConditionalBlock('has_lines', false),
+            'lines'     => new TableRows('line_code', [['line_code' => 'A-1', 'line_desc' => 'Anchor bolts']]),
+        ]);
+
+        self::assertSame('', $text);
+    }
+
+    public function testTableRowsForVariableNeverInTemplateStillThrows(): void
+    {
         $this->expectException(PhpWordException::class);
         $this->expectExceptionMessage('Can not clone row, template variable not found or variable contains markup.');
         $this->renderWith($this->tableTemplate(), [
-            'has_lines' => new ConditionalBlock('has_lines', false),
-            'lines'     => new TableRows('line_code', [['line_code' => 'A-1', 'line_desc' => 'Anchor bolts']]),
+            'has_lines' => new ConditionalBlock('has_lines', true),
+            'lines'     => new TableRows('never_in_template', [['never_in_template' => 'A-1']]),
         ]);
     }
 
