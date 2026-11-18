@@ -101,7 +101,9 @@ release-check: ensure-up update-bundle test verify-http
 	@echo "Demo release-check OK."
 
 # REQ-DEMO-013: Playwright e2e and screenshots in the official Playwright image (version = e2e/package.json).
-PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.64.1-jammy
+# The image tag always follows the exact @playwright/test version pinned in e2e/package.json (browsers ship with the image).
+PLAYWRIGHT_VERSION := $(shell sed -n 's/.*"@playwright\/test": "\([0-9.]*\)".*/\1/p' e2e/package.json)
+PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v$(PLAYWRIGHT_VERSION)-jammy
 DEMO_PORT = DEMO_PORT=$$(grep -E '^PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '\r'); DEMO_PORT=$${DEMO_PORT:-8021}
 
 test-e2e: ensure-up
@@ -111,7 +113,7 @@ test-e2e: ensure-up
 		-v "$(CURDIR)/e2e:/e2e" -w /e2e \
 		-e DEMO_BASE_URL=http://127.0.0.1:$$DEMO_PORT \
 		$(PLAYWRIGHT_IMAGE) \
-		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=chromium --workers=2'
+		bash -lc 'npm ci --no-fund --no-audit && npx playwright test --project=chromium --workers=2'
 
 demo-screenshots: ensure-up
 	@mkdir -p ../../docs/images/demo e2e/node_modules
@@ -123,7 +125,7 @@ demo-screenshots: ensure-up
 		-e DEMO_BASE_URL=http://127.0.0.1:$$DEMO_PORT \
 		-e SCREENSHOT_DIR=/screenshots \
 		$(PLAYWRIGHT_IMAGE) \
-		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=screenshots && node scripts/to-webp.mjs /screenshots'
+		bash -lc 'npm ci --no-fund --no-audit && npx playwright test --project=screenshots && node scripts/to-webp.mjs /screenshots'
 	@echo "Screenshots written under docs/images/demo/ (WebP)"
 
 # "Template in Word → generated document" images: export every /conditionals/examples case, render both .docx
@@ -143,7 +145,7 @@ docx-previews: ensure-up
 		-v "$(CURDIR)/../../docs/images/demo:/screenshots" \
 		-w /e2e \
 		$(PLAYWRIGHT_IMAGE) \
-		bash -lc 'npm install --no-fund --no-audit && node scripts/docx-side-by-side.mjs /e2e/docx-previews/png /screenshots $(DOCX_PREVIEW_IDS)'
+		bash -lc 'npm ci --no-fund --no-audit && node scripts/docx-side-by-side.mjs /e2e/docx-previews/png /screenshots $(DOCX_PREVIEW_IDS)'
 	@echo "Document previews written under docs/images/demo/docx-*.webp"
 
 
