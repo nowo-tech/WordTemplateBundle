@@ -1,27 +1,14 @@
 <?php
 
-declare(strict_types=1);
-
-use Nowo\FormKitBundle\NowoFormKitBundle;
-use Nowo\HotReloadBundle\NowoHotReloadBundle;
-use Nowo\TwigInspectorBundle\NowoTwigInspectorBundle;
-use Nowo\UiKitBundle\NowoUiKitBundle;
-use Nowo\WordTemplateBundle\WordTemplateBundle;
-use Symfony\Bundle\DebugBundle\DebugBundle;
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
-use Symfony\Bundle\TwigBundle\TwigBundle;
-use Symfony\Bundle\WebProfilerBundle\WebProfilerBundle;
-use Twig\Extra\TwigExtraBundle\TwigExtraBundle;
-
 return [
-    FrameworkBundle::class         => ['all' => true],
-    TwigBundle::class              => ['all' => true],
-    DebugBundle::class             => ['dev' => true],
-    WebProfilerBundle::class       => ['dev' => true],
-    WordTemplateBundle::class      => ['all' => true],
-    NowoHotReloadBundle::class     => ['dev' => true, 'test' => true],
-    NowoTwigInspectorBundle::class => ['dev' => true, 'test' => true],
-    NowoFormKitBundle::class       => ['all' => true],
-    NowoUiKitBundle::class         => ['all' => true],
-    TwigExtraBundle::class         => ['all' => true],
+    Symfony\Bundle\FrameworkBundle\FrameworkBundle::class => ['all' => true],
+    Symfony\Bundle\TwigBundle\TwigBundle::class => ['all' => true],
+    Symfony\Bundle\DebugBundle\DebugBundle::class => ['dev' => true],
+    Symfony\Bundle\WebProfilerBundle\WebProfilerBundle::class => ['dev' => true],
+    Nowo\WordTemplateBundle\WordTemplateBundle::class => ['all' => true],
+    Nowo\HotReloadBundle\NowoHotReloadBundle::class => ['dev' => true, 'test' => true],
+    Nowo\TwigInspectorBundle\NowoTwigInspectorBundle::class => ['dev' => true, 'test' => true],
+    Nowo\FormKitBundle\NowoFormKitBundle::class => ['all' => true],
+    Nowo\UiKitBundle\NowoUiKitBundle::class => ['all' => true],
+    Twig\Extra\TwigExtraBundle\TwigExtraBundle::class => ['all' => true],
 ];

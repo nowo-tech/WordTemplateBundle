@@ -10,51 +10,47 @@
 {% endblock %}
 
 {% block body %}
-  <p>
-    Two ways to show or hide a part of the document. <strong>Named blocks</strong>
-    (<code>${{ '{' }}#if annex}</code> &hellip; <code>${{ '{' }}#endif annex}</code>) are decided in PHP with a
-    <code>ConditionalBlock</code> and a <code>bool</code>. <strong>Expression conditionals</strong>
-    (<code>${{ '{' }}#if order.total &gt; 100}</code> &hellip; <code>${{ '{' }}#endif}</code>, bundle 1.8, opt-in) carry
-    the condition in the template and are evaluated against the context.
-    Each field below has a different PHP type: the controller turns it into named blocks with the expressions of
-    <code>docs/USAGE.md</code> (&ldquo;Conditionals by data type&rdquo;) and passes the raw values as <code>order</code>
-    for the expression blocks. Preview the decisions, then download <code>public/demo/{{ template_filename }}</code>
-    filled in, or <a href="{{ path('demo_conditionals_template') }}">download the blank template</a>.
-    Step-by-step cases (Word text, PHP context, result, downloads) are on the
-    <a href="{{ path('demo_conditionals_examples') }}">expression examples</a> page.
-  </p>
+  {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'How it works', kind: 'detail', testid: 'conditionals-intro'} %}
+    {% block section_body %}
+      <p>
+        <strong>Named blocks</strong>
+        (<code class="nowo-ui-code">${{ '{' }}#if annex}</code> &hellip; <code class="nowo-ui-code">${{ '{' }}#endif annex}</code>) are decided in PHP with a
+        <code class="nowo-ui-code">ConditionalBlock</code> and a <code class="nowo-ui-code">bool</code>. <strong>Expression conditionals</strong>
+        (<code class="nowo-ui-code">${{ '{' }}#if order.total &gt; 100}</code> &hellip; <code class="nowo-ui-code">${{ '{' }}#endif}</code>, bundle 1.8, opt-in) carry
+        the condition in the template and are evaluated against the context.
+        Each field below has a different PHP type: the controller turns it into named blocks with the expressions of
+        <code class="nowo-ui-code">docs/USAGE.md</code> (&ldquo;Conditionals by data type&rdquo;) and passes the raw values as <code class="nowo-ui-code">order</code>
+        for the expression blocks. Preview the decisions, then download <code class="nowo-ui-code">public/demo/{{ template_filename }}</code>
+        filled in, or <a class="nowo-ui-link" href="{{ path('demo_conditionals_template') }}">download the blank template</a>.
+        Step-by-step cases (Word text, PHP context, result, downloads) are on the
+        <a class="nowo-ui-link" href="{{ path('demo_conditionals_examples') }}">expression examples</a> page.
+      </p>
+      <p>
+        <strong>{{ template_blocks|length }} conditional block(s)</strong> found by <code class="nowo-ui-code">listConditionalBlocks()</code>:
+        {% for name in template_blocks %}<code class="nowo-ui-code">{{ name }}</code> {% endfor %}
+      </p>
+    {% endblock %}
+  {% endembed %}
 
-  <div class="nowo-ui-flash nowo-ui-flash--info" role="note">
-    <strong>{{ template_blocks|length }} conditional block(s)</strong> found by <code>listConditionalBlocks()</code>:
-    {% for name in template_blocks %}<code>{{ name }}</code>{% endfor %}
-  </div>
-
-  <div>
-    <div>
-      {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
-        <fieldset>
-          <legend>Input values</legend>
-          {% for child in form %}
-            {% if not child.rendered and child.vars.name not in ['preview', 'download', '_token'] %}
-              {{ form_row(child) }}
-            {% endif %}
-          {% endfor %}
-        </fieldset>
-        <p>
-          {{ form_widget(form.preview) }}
-          {{ form_widget(form.download) }}
-        </p>
-        {# REQ-TWIG-003: render whatever is left (CSRF token, …). #}
+  {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Input values', kind: 'form', testid: 'conditionals-form'} %}
+    {% block section_body %}
+      {{ form_start(form, {attr: {id: 'conditionals-form', class: 'nowo-ui-form', novalidate: 'novalidate'}}) }}
         {% for child in form %}
-          {% if not child.rendered %}
+          {% if not child.rendered and child.vars.name not in ['preview', 'download'] %}
             {{ form_row(child) }}
           {% endif %}
         {% endfor %}
-      {{ form_end(form) }}
-    </div>
+      {{ form_end(form, {render_rest: false}) }}
+    {% endblock %}
+    {% block section_footer %}
+      <button type="submit" form="conditionals-form" name="{{ form.preview.vars.full_name }}" class="nowo-ui-btn nowo-ui-btn--outline">{{ form.preview.vars.label }}</button>
+      <button type="submit" form="conditionals-form" name="{{ form.download.vars.full_name }}" class="nowo-ui-btn nowo-ui-btn--primary">{{ form.download.vars.label }}</button>
+    {% endblock %}
+  {% endembed %}
 
-    <div>
-      <h2>Decisions {% if not submitted %}<span class="nowo-ui-badge nowo-ui-badge--neutral">default values</span>{% endif %}</h2>
+  {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Decisions', intro: 'Green blocks are kept, grey ones are removed with their content.', kind: 'table', testid: 'decisions-section'} %}
+    {% block section_actions %}{% if not submitted %}<span class="nowo-ui-badge nowo-ui-badge--neutral">default values</span>{% endif %}{% endblock %}
+    {% block section_body %}
       <table class="nowo-ui-data-table nowo-ui-data-table--compact" data-testid="decisions">
         <thead>
           <tr><th>Type</th><th>Value</th><th>Expression</th><th>Blocks</th></tr>
@@ -63,8 +59,8 @@
           {% for decision in decisions %}
             <tr>
               <td>{{ decision.type }}</td>
-              <td><code>{{ decision.value }}</code></td>
-              <td><code>{{ decision.expression }}</code></td>
+              <td><code class="nowo-ui-code">{{ decision.value }}</code></td>
+              <td><code class="nowo-ui-code">{{ decision.expression }}</code></td>
               <td>
                 {% for name, visible in decision.blocks %}
                   <span class="nowo-ui-badge {{ visible ? 'nowo-ui-badge--success' : 'nowo-ui-badge--neutral' }}" title="{{ visible ? 'kept' : 'removed' }}">{{ name }}</span>
@@ -74,7 +70,11 @@
           {% endfor %}
         </tbody>
       </table>
-      <h2>Expression conditionals in the template</h2>
+    {% endblock %}
+  {% endembed %}
+
+  {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Expression conditionals in the template', intro: 'Try 0 vs an empty discount, a total of 0.004 (rounds to 0.00), yes/0 as notes, es vs ES, a past due date with status “Paid”, or an empty order-lines box.', kind: 'table', testid: 'expressions-section'} %}
+    {% block section_body %}
       <table class="nowo-ui-data-table nowo-ui-data-table--compact" data-testid="expressions">
         <thead>
           <tr><th>In Word</th><th>Paragraph inside the block</th><th>Result</th></tr>
@@ -82,7 +82,7 @@
         <tbody>
           {% for row in expressions %}
             <tr>
-              <td><code>${{ '{' }}#if {{ row.expression }}}</code></td>
+              <td><code class="nowo-ui-code">${{ '{' }}#if {{ row.expression }}}</code></td>
               <td>{{ row.text }}</td>
               <td>
                 {% if row.error %}
@@ -95,12 +95,6 @@
           {% endfor %}
         </tbody>
       </table>
-      <p class="nowo-ui-muted">
-        Green blocks are kept, grey ones are removed with their content. Try <code>0</code> vs an empty discount,
-        a total of <code>0.004</code> (rounds to 0.00), <code>yes</code>/<code>0</code> as notes, <code>es</code> vs <code>ES</code>,
-        a past due date with status &ldquo;Paid&rdquo;, or an empty order-lines box.
-      </p>
-    </div>
-  </div>
-
+    {% endblock %}
+  {% endembed %}
 {% endblock %}

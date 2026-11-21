@@ -7,7 +7,7 @@
         "php": ">=8.2",
         "dompdf/dompdf": "^3.0",
         "nowo-tech/form-kit-bundle": "^2.22",
-        "nowo-tech/ui-kit-bundle": "^2.49",
+        "nowo-tech/ui-kit-bundle": "^2.60",
         "nowo-tech/word-template-bundle": "@dev",
         "symfony/asset": "8.1.*",
         "symfony/console": "^8.0",

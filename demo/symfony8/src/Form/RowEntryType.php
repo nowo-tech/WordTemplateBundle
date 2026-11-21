@@ -34,7 +34,7 @@ final class RowEntryType extends AbstractType
                 'translation_domain' => false,
                 'placeholder'        => false,
                 'help'               => false,
-                'attr'               => ['placeholder' => $original],
+                'attr'               => ['placeholder' => $original, 'aria-label' => $original],
             ]);
         }
     }
