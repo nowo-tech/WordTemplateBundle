@@ -4,8 +4,9 @@ test.describe('WordTemplate demo', () => {
   test('home lists the template placeholders', async ({ page }) => {
     const response = await page.goto('/');
     expect(response?.ok()).toBeTruthy();
+    await expect(page.getByTestId('demo-platform')).toBeVisible();
     await expect(page.locator('h1')).toContainText('WordTemplateBundle');
-    await expect(page.locator('.nowo-ui-flash--info')).toContainText('placeholder(s)');
+    await expect(page.getByTestId('demo-template')).toContainText('placeholder(s)');
   });
 
   test('conditionals page shows named and expression decisions', async ({ page }) => {

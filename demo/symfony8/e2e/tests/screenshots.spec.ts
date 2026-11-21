@@ -1,31 +1,19 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { frameShot } from './frame';
 
 /**
- * REQ-DEMO-013 — demo frame: navbar + page content + Symfony WebProfiler toolbar (kept visible on purpose).
+ * REQ-DEMO-013 — demo frame: the demo platform shell + page content, without the Symfony WebProfiler toolbar (see frame.ts).
  */
 const outDir = process.env.SCREENSHOT_DIR
   ? resolve(process.env.SCREENSHOT_DIR)
   : resolve(__dirname, '../../../../docs/images/demo');
 
-async function waitForToolbar(page: Page) {
-  await page
-    .locator('.sf-toolbar .sf-toolbar-block')
-    .first()
-    .waitFor({ state: 'visible', timeout: 15000 })
-    .catch(() => {});
-  await page
-    .waitForFunction(() => !(document.querySelector('.sf-toolbar')?.textContent ?? '').includes('Loading'), null, { timeout: 15000 })
-    .catch(() => {});
-}
-
 async function shoot(page: Page, path: string, name: string, height: number) {
   await page.setViewportSize({ width: 1280, height });
   await page.goto(path);
-  await expect(page.locator('.nowo-ui-header .nowo-ui-brand')).toBeVisible();
-  await waitForToolbar(page);
-  await page.screenshot({ path: resolve(outDir, `${name}.png`) });
+  await frameShot(page, resolve(outDir, `${name}.png`), { minHeight: 700 });
 }
 
 test.beforeAll(() => {
