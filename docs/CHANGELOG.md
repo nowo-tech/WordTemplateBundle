@@ -46,6 +46,10 @@ All notable changes are documented here using [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Changed
+
+- Demo: runs in UiKit's demo platform shell (`nowo-tech/ui-kit-bundle` ^2.60); the demo's own header is gone, every page uses the shell page header and section cards (forms with the actions in the card footer, tables in table cards). The README screenshot spec no longer shows the Symfony toolbar. Demo only, no bundle change.
+
 ## [1.9.1] - 2026-11-16
 
 ### Fixed
