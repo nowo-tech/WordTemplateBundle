@@ -61,7 +61,7 @@ final class TableRowsInHiddenBlockTest extends TestCase
         self::assertSame('Ana X', $this->render($processor, $template, $this->context('Sí')));
 
         $logger    = new RecordingLogger();
-        $processor = new WordTemplateProcessor(conditionalExpressionsEnabled: true, logger: $logger);
+        $processor = new WordTemplateProcessor(logger: $logger, conditionalExpressionsEnabled: true);
         self::assertSame('', $this->render($processor, $template, $this->context('No')));
         self::assertSame('debug', $logger->records[0]['level']);
         self::assertSame('TABLE_3_NOMBRE', $logger->records[0]['context']['row_variable']);
