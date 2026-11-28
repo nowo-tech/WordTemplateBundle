@@ -22,7 +22,7 @@ Symfony bundle wrapping PHPWord **TemplateProcessor** to fill `.docx` templates 
 
 | Requirement | Range |
 | --- | --- |
-| PHP | **8.2+** (`<8.6` in `composer.json`) |
+| PHP | **8.2+** (`<8.7` in `composer.json`) |
 | Symfony | **7.x / 8.x** (`^7.0 \|\| ^8.0` on bundle components) |
 
 Symfony **6.4** is no longer supported as of **1.1.0** (see [`docs/UPGRADING.md`](../../docs/UPGRADING.md)).
