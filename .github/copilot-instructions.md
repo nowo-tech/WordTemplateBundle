@@ -7,7 +7,7 @@ Use this when suggesting code, tests, documentation, or CI changes for this repo
 ### Scope
 
 - This is a **Symfony bundle** published as `nowo-tech/word-template-bundle` on Packagist.
-- Respect the **PHP** (`>=8.2 <8.6`) and **Symfony** (`^7.0 || ^8.0`) ranges in `composer.json`.
+- Respect the **PHP** (`>=8.2 <8.7`) and **Symfony** (`^7.0 || ^8.0`) ranges in `composer.json`.
 - Prefer **PHP 8 attributes**. Do not introduce `doctrine/annotations`.
 - Template merge (`WordTemplateProcessor::process()`) is blocking in-process work; always keep configurable **`timeout`** (REQ-RUNTIME-001) and FrankenPHP hierarchy docs in sync.
 
